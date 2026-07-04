@@ -44,7 +44,7 @@ yay -S flow-network-monitor-bin
 2. Homebrew:
 
 ```sh
-brew install programmersd21/tap/flow
+brew install programmersd21/flow/flow
 ```
 
 3. Go:
