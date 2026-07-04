@@ -17,6 +17,7 @@ A terminal dashboard for real-time network throughput.
 
 - [Install](#install)
 - [Rationale](#rationale)
+- [Philosophy](#philosophy)
 - [Modes](#modes)
 - [Features](#features)
 - [Usage](#usage)
@@ -49,6 +50,23 @@ Most network monitors display CPU usage, per-process breakdowns, packet counts, 
 Every feature decision is evaluated against a single question: does this help the user understand their network within one second. If not, it is not included.
 
 The result is a small, deliberately scoped tool. There are no additional panels, no required configuration, and no unnecessary complexity in either the interface or the underlying implementation.
+
+## Philosophy
+
+```mermaid
+flowchart LR
+    Input["Network throughput"] --> Q{"Understood within<br/>one second?"}
+    Q -->|Yes| Keep["Retain feature"]
+    Q -->|No| Cut["Remove feature"]
+    Keep --> Result["Calm, minimal interface"]
+    Cut --> Result
+```
+
+Every feature is evaluated against one question: does this help a user understand their network within one second. If not, it is removed.
+
+flow does not include CPU panels, packet counters, or multi-pane layouts. It reports download and upload throughput, in real time, and nothing else.
+
+The interface is built for restraint rather than density: large typography, controlled color, and spring-based motion in place of decoration.
 
 ## Modes
 
