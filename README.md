@@ -1,6 +1,10 @@
-# flow
+<div align="center">
 
-A terminal dashboard for real-time network throughput.
+### flow
+
+*A terminal dashboard for real-time network throughput.*
+
+</div>
 
 <img src="./docs/demo.gif" alt="flow demo" width="100%">
 
