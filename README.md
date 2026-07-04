@@ -41,13 +41,19 @@ yay -S flow-network-monitor-bin
 
 **💝 Thanks to [@Dominiquini](https://github.com/Dominiquini) for assisting in AUR deployment!**
 
-2. Go:
+2. Homebrew:
+
+```sh
+brew install programmersd21/tap/flow
+```
+
+3. Go:
 
 ```sh
 go install github.com/programmersd21/flow/cmd/flow@latest
 ```
 
-3. From source:
+4. From source:
 
 ```sh
 git clone https://github.com/programmersd21/flow

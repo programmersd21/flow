@@ -51,3 +51,22 @@ release:
   prerelease: auto
   # Pull the release notes from CHANGELOG.md for the matching version.
   name_template: "v{{.Version}}"
+
+brews:
+  - repository:
+      owner: programmersd21
+      name: homebrew-flow
+    name: flow
+    homepage: "https://github.com/programmersd21/flow"
+    description: "Real-time network bandwidth monitor for the terminal"
+    license: "MIT"
+    commit_author:
+      name: github-actions[bot]
+      email: github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "brew formula update for {{ .ProjectName }} v{{ .Version }}"
+    directory: Formula
+    install: |
+      bin.install "flow"
+    test: |
+      assert_match "flow", shell_output("#{bin}/flow --version")
+    dependencies: []
