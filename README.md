@@ -1,6 +1,6 @@
 # flow
 
-See your network breathe.
+A terminal dashboard for real-time network throughput.
 
 <img src="./docs/demo.gif" alt="flow demo" width="100%">
 
@@ -13,39 +13,18 @@ See your network breathe.
   <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ffcc00" alt="stars">
 </p>
 
-## Modes
+## Contents
 
-flow adapts to your terminal width with three distinct views.
-
-| hero | compact | tiny |
-|:---:|:---:|:---:|
-| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
-| full dashboard with sparklines, peaks, and daily totals | numbers-only view for narrow terminals | single-line output for tmux status bars |
-
-## Anatomy
-
-The UI is intentionally minimal and centered both axes:
-
-```mermaid
-flowchart TD
-    Title["● flow"]
-    Download["╭─ DOWNLOAD ───────────────────────╮<br/>│ ↓ 124.8 MB/s ↗    Peak: 382.0 MB/s │<br/>│ ⢀⣀⣠⣴⣶⣾⣿⣿⣿⣿⋯ │<br/>╰──────────────────────────────────╯"]
-    Upload["╭─ UPLOAD ─────────────────────────╮<br/>│ ↑ 14.6 MB/s ↘     Peak: 56.0 MB/s │<br/>│ ⢀⣀⣠⣴⣶⣾⣿⣿⣿⣿⋯ │<br/>╰──────────────────────────────────╯"]
-    Info["today ↓ 21.8 GB · today ↑ 4.6 GB · wlan0"]
-    Footer["q quit · r reset · i interface · c units · ? help"]
-
-    Title --> Download
-    Download --> Upload
-    Upload --> Info
-    Info --> Footer
-```
-
-- Large centered breathing title row that scales to a multi-line ASCII art logo on larger terminals.
-- Clean stacked panels separating download and upload statistics, wrapped in custom rounded borders with speed-reactive glow (transitions from dark slate/forest to bright cyan/emerald under load).
-- High-resolution U+2800 Braille-grid waveforms scrolling horizontally with sub-pixel precision at 30 FPS.
-- Velocity glyphs (↗ ↘ →) next to values indicating trend direction.
-- Session peaks (flashes white on updates) and daily totals in a clean info bar.
-- Quiet footer with interface name and keybindings.
+- [Install](#install)
+- [Rationale](#rationale)
+- [Modes](#modes)
+- [Features](#features)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Star History](#star-history)
+- [License](#license)
 
 ## Install
 
@@ -61,58 +40,39 @@ cd flow
 make install
 ```
 
-Pre-built binaries for Linux, macOS, Windows (amd64/arm64) are on the
-[releases page](https://github.com/programmersd21/flow/releases).
+Pre-built binaries for Linux, macOS, and Windows (amd64 and arm64) are available on the [releases page](https://github.com/programmersd21/flow/releases).
 
-## Philosophy
+## Rationale
 
-```mermaid
-flowchart LR
-    Input["Network Throughput"] --> Q{"Understood in<br/>under 1 second?"}
-    Q -->|Yes| Keep["Keep Feature"]
-    Q -->|No| Cut["Cut It"]
-    Keep --> Result["Calm · Expensive · Minimal"]
-    Cut --> Result
-```
+Most network monitors display CPU usage, per-process breakdowns, packet counts, and connection tables. flow displays throughput only.
 
-> Does this help someone understand their network in under one second?
-> If no — cut it.
+Every feature decision is evaluated against a single question: does this help the user understand their network within one second. If not, it is not included.
 
-flow stays deliberately small. No CPU panels, no packet counters, no multi-pane layouts. Download and upload throughput, in real time, nothing else.
+The result is a small, deliberately scoped tool. There are no additional panels, no required configuration, and no unnecessary complexity in either the interface or the underlying implementation.
 
-The interface is built to feel calm and expensive: large typography, soft gradients, spring-driven motion, and restrained decoration.
+## Modes
+
+flow adjusts its display according to terminal width.
+
+| hero | compact | tiny |
+|:---:|:---:|:---:|
+| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
+| Full dashboard with sparklines, peaks, and daily totals | Numeric values only, for narrow terminals | Single-line output, intended for status bars |
 
 ## Features
 
-- Real-time download (↓) and upload (↑) throughput
-- Spring-driven interpolation for display values
-- Pulse and shimmer microinteractions tied to live traffic
-- High-resolution Braille-grid waveforms with 30 FPS horizontal smooth scrolling
-- Speed-reactive, glowing rounded borders
-- Typographic peak highlights (bold white flash on breaching records)
-- Velocity glyphs (↗ ↘ →) show traffic direction trend
-- Auto-scaling units: B/s, KB/s, MB/s, GB/s (cycle with `c`)
-- Saturated color gradients that brighten with activity
+- Real-time download and upload throughput
+- Interpolated display values using spring-based animation
+- Braille-grid waveform rendering at 30 frames per second
+- Border color reflects current transfer speed
+- Visual indication when a new session peak is recorded
+- Directional indicators for traffic trend
+- Automatic unit scaling from B/s to GB/s
 - Session peak tracking and daily traffic totals
-- Three view modes: hero, compact, tiny
-- Graceful auto-resize between modes
-- Zero configuration — optional TOML config at
-  `~/.config/flow/config.toml`
-- Non-interactive modes: `--json` and `--once` for scripts
-- Cross-platform: Linux, macOS, Windows
-
-## Keybindings
-
-![keybinds](docs/keybinds.png)
-
-| Key         | Action                      |
-|-------------|-----------------------------|
-| `q` / `^C`  | quit                        |
-| `r`         | reset session peaks         |
-| `i`         | cycle interfaces            |
-| `c`         | cycle units (auto/KB/MB/GB) |
-| `p`         | pause / resume              |
-| `?`         | toggle help                 |
+- Three display modes with automatic switching on resize
+- No required configuration; optional TOML configuration file
+- Non-interactive output modes for use in scripts
+- Supported on Linux, macOS, and Windows
 
 ## Usage
 
@@ -120,18 +80,31 @@ The interface is built to feel calm and expensive: large typography, soft gradie
 
 ```sh
 flow                        # hero view, auto interface
-flow --tiny                 # single-line tmux mode
-flow --compact              # numbers only
-flow --json                 # one-shot JSON, then exit
-flow --once                 # one-shot plain text, then exit
-flow --interface wlan0      # pin interface
-flow --refresh 500ms        # slower sampling (default 100ms)
+flow --tiny                 # single-line mode for status bars
+flow --compact               # numeric values only
+flow --json                  # single JSON output, then exit
+flow --once                  # single plain-text output, then exit
+flow --interface wlan0       # specify network interface
+flow --refresh 500ms         # adjust sampling interval (default 100ms)
 flow --no-color
 flow --version
 flow --help
 ```
 
-### --json output
+### Keybindings
+
+![keybinds](docs/keybinds.png)
+
+| Key         | Action                      |
+|-------------|-----------------------------|
+| `q` / `^C`  | Quit                         |
+| `r`         | Reset session peaks          |
+| `i`         | Cycle network interfaces     |
+| `c`         | Cycle display units          |
+| `p`         | Pause or resume              |
+| `?`         | Toggle help                  |
+
+### JSON output
 
 ```json
 {
@@ -144,7 +117,7 @@ flow --help
 }
 ```
 
-### tmux
+### tmux integration
 
 ```sh
 # ~/.tmux.conf
@@ -154,46 +127,73 @@ set -g status-interval 1
 
 ## Configuration
 
-`~/.config/flow/config.toml` is auto-created on first run. It respects
-`XDG_CONFIG_HOME`.
+A configuration file is created automatically at `~/.config/flow/config.toml` on first run. The `XDG_CONFIG_HOME` environment variable is respected if set.
 
 ```toml
 refresh   = "100ms"   # sampling interval
-history   = 60        # seconds of sparkline history retained
+history   = 60        # seconds of retained sparkline history
 theme     = "default"
-unit      = "auto"    # auto | kb | mb | gb (case-insensitive)
-interface = "auto"    # auto or name (e.g. eth0, wlan0)
+unit      = "auto"    # auto, kb, mb, or gb
+interface = "auto"    # auto, or a specific interface name (e.g. eth0, wlan0)
 no_color  = false
 ```
 
+<details>
+<summary>Interface layout</summary>
+
+```mermaid
+flowchart TD
+    Title["flow"]
+    Download["DOWNLOAD panel: current speed, peak, waveform"]
+    Upload["UPLOAD panel: current speed, peak, waveform"]
+    Info["Daily totals and active interface"]
+    Footer["Keybinding reference"]
+
+    Title --> Download
+    Download --> Upload
+    Upload --> Info
+    Info --> Footer
+```
+
+All elements are centered on both axes. Panel border color changes according to current transfer speed.
+
+</details>
+
 ## Architecture
 
-Two decoupled loops connected by a channel:
+flow runs two independent loops connected by a channel.
 
 ```mermaid
 flowchart LR
-    subgraph Sampling["Sampling Loop (~10 Hz)"]
-        OS["/proc/net/dev · sysctl · GetIfTable2"] --> SlidingWindow["Sliding-Window Average<br/>(last N samples)"]
-        SlidingWindow --> Channel["Channel&lt;Sample&gt;"]
+    subgraph Sampling["Sampling loop, approximately 10 Hz"]
+        OS["Network counters via gopsutil"] --> SlidingWindow["Sliding-window average"]
+        SlidingWindow --> Channel["Sample channel"]
     end
 
-    subgraph Rendering["Render Loop (~30 fps)"]
-        Channel --> Spring["Spring Interpolation<br/>(smooth value animation)"]
-        Spring --> Display["Dashboard Render<br/>(Bubble Tea TUI)"]
-        Theme["Theme Config"] -.-> Display
+    subgraph Rendering["Render loop, approximately 30 fps"]
+        Channel --> Spring["Spring interpolation"]
+        Spring --> Display["Dashboard render (Bubble Tea)"]
+        Theme["Theme configuration"] -.-> Display
     end
 ```
 
-- **Sampling loop** (~10 Hz): reads OS network counters via gopsutil, computes a sliding-window average, emits a sample on a channel.
-- **Render loop** (~30 fps): springs display values toward the latest sample, decays brief pulses, clears the terminal, and renders the full dashboard.
+- The sampling loop reads network counters from the operating system, computes a sliding-window average, and emits a sample on a channel.
+- The render loop interpolates display values toward the latest sample and renders the dashboard.
 
-The model keeps rendering separate from collection so the UI can stay smooth without adding work to the sampler. Idle CPU stays well under 1%.
+Separating collection from rendering keeps the interface responsive without adding load to the sampler. Idle CPU usage remains below one percent.
 
-## Platform notes
+**Platform notes:** Linux reads `/proc/net/dev` via gopsutil. macOS uses sysctl and getifaddrs. Windows uses `GetIfTable2`. No elevated privileges are required on any platform.
 
-- Linux: reads `/proc/net/dev` via gopsutil.
-- macOS: sysctl / getifaddrs.
-- Windows: `GetIfTable2`. No elevated privileges.
+## Development
+
+```sh
+make check       # format check, vet, lint, and test
+make build       # build ./bin/flow
+make test        # go test ./... -race -cover
+make release-dry # goreleaser snapshot build, no publish
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Star History
 
@@ -205,17 +205,6 @@ The model keeps rendering separate from collection so the UI can stay smooth wit
  </picture>
 </a>
 
-## Development
-
-```sh
-make check       # fmt-check + vet + lint + test — run before every PR
-make build       # build ./bin/flow
-make test        # go test ./... -race -cover
-make release-dry # goreleaser snapshot (no publish)
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
-
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
