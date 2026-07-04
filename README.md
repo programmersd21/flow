@@ -86,6 +86,8 @@ soft gradients, spring-driven motion, and restrained decoration.
 
 ## Keybindings
 
+![keybinds](docs/keybinds.png)
+
 | Key         | Action                      |
 |-------------|-----------------------------|
 | `q` / `^C`  | quit                        |
@@ -96,6 +98,8 @@ soft gradients, spring-driven motion, and restrained decoration.
 | `?`         | toggle help                 |
 
 ## Usage
+
+![help](docs/cli_help.png)
 
 ```sh
 flow                        # hero view, auto interface
