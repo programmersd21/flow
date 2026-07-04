@@ -13,6 +13,15 @@ See your network breathe.
   <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ffcc00" alt="stars">
 </p>
 
+## Modes
+
+flow adapts to your terminal width with three distinct views.
+
+| hero | compact | tiny |
+|:---:|:---:|:---:|
+| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
+| full dashboard with sparklines, peaks, and daily totals | numbers-only view for narrow terminals | single-line output for tmux status bars |
+
 ## Anatomy
 
 The UI is intentionally minimal:
@@ -69,8 +78,7 @@ soft gradients, spring-driven motion, and restrained decoration.
 - Saturated color gradients that brighten with activity
 - Session peak tracking and daily traffic totals
 - Three view modes: hero, compact, tiny
-- Tiny mode (`--tiny`) for tmux status-right
-- Graceful resize: hero → compact → tiny automatically
+- Graceful auto-resize between modes
 - Zero configuration — optional TOML config at
   `~/.config/flow/config.toml`
 - Non-interactive modes: `--json` and `--once` for scripts
