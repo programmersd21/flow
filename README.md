@@ -3,12 +3,12 @@
 See your network breathe.
 
 <p align="center">
-  <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=flat&labelColor=000000&color=00d4aa" alt="go version">
-  <img src="https://img.shields.io/github/license/programmersd21/flow?style=flat&labelColor=000000&color=00d4aa" alt="license">
+  <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=for-the-badge&labelColor=000000&color=00d4aa" alt="go version">
+  <img src="https://img.shields.io/github/license/programmersd21/flow?style=for-the-badge&labelColor=000000&color=00d4aa" alt="license">
   <img src="https://img.shields.io/github/actions/workflow/status/programmersd21/flow/ci.yml?branch=main&style=flat&labelColor=000000&color=00d4aa" alt="ci">
-  <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=flat&labelColor=000000&color=00d4aa" alt="release">
-  <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=flat&labelColor=000000&color=00d4aa" alt="downloads">
-  <img src="https://img.shields.io/github/stars/programmersd21/flow?style=flat&labelColor=000000&color=00d4aa" alt="stars">
+  <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=for-the-badge&labelColor=000000&color=00d4aa" alt="release">
+  <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=for-the-badge&labelColor=000000&color=00d4aa" alt="downloads">
+  <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&labelColor=000000&color=00d4aa" alt="stars">
 </p>
 
 <img src="./docs/demo.gif" alt="flow demo" width="100%">
