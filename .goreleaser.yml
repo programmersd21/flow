@@ -1,0 +1,53 @@
+# .goreleaser.yml
+# Cross-compile config for flow.
+# Version is injected from the git tag created by release.yml.
+# Changelog section is disabled — CHANGELOG.md is maintained by hand.
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: flow
+    main: ./cmd/flow
+    binary: flow
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: flow
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: programmersd21
+    name: flow
+  draft: false
+  prerelease: auto
+  # Pull the release notes from CHANGELOG.md for the matching version.
+  name_template: "v{{.Version}}"

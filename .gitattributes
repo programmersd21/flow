@@ -1,0 +1,37 @@
+# .gitattributes
+# Normalize line endings on check-in to LF for all text files.
+# Windows contributors' editors will still see CRLF if core.autocrlf=true,
+# but the repository stores LF only.
+
+* text=auto
+
+# Go source — always LF in the repo
+*.go    text eol=lf
+*.mod   text eol=lf
+*.sum   text eol=lf -diff
+
+# Config / data files — always LF
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+
+# Shell scripts — always LF (they break on CRLF)
+*.sh    text eol=lf
+
+# Windows batch — keep CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# True binary files — no line-ending conversion, no diff
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.zip   binary
+*.tar   binary
+*.gz    binary
+*.exe   binary

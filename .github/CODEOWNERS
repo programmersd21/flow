@@ -1,0 +1,6 @@
+# CODEOWNERS
+# Owners are automatically requested for review on any pull request that
+# touches files matching the pattern.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @programmersd21
