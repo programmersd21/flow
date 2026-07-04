@@ -33,11 +33,19 @@
 
 ## Install
 
+1. AUR:
+
+```sh
+yay -S flow-network-monitor-bin
+```
+
+2. Go:
+
 ```sh
 go install github.com/programmersd21/flow/cmd/flow@latest
 ```
 
-Or build from source:
+3. From source:
 
 ```sh
 git clone https://github.com/programmersd21/flow
