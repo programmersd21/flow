@@ -167,11 +167,13 @@ Idle CPU stays well under 1%.
 
 ## Star History
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=programmersd21/flow&type=Date&theme=dark" />
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=programmersd21/flow&type=Date" />
-  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=programmersd21/flow&type=Date" width="100%" />
-</picture>
+<a href="https://www.star-history.com/?repos=programmersd21%2Fflow&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## Development
 
