@@ -122,24 +122,25 @@ The interface is built for restraint rather than density: large typography, cont
 
 ## Modes
 
-flow adjusts its display according to terminal width.
+flow adjusts its display according to terminal width and height.
 
-| hero | compact | tiny |
-|:---:|:---:|:---:|
-| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
-| Full dashboard with sparklines, peaks, and daily totals | Numeric values only, for narrow terminals | Single-line output, intended for status bars |
+| hero | compact | mini | tiny |
+|:---:|:---:|:---:|:---:|
+| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
+| Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner layout with title row, waveforms, peaks, and daily totals | Graphs-only layout, hiding header logo, today's summary, and help footers | Single-line output, intended for status bars |
 
 ## Features
 
 - Real-time download and upload throughput
 - Interpolated display values using spring-based animation
 - Braille-grid waveform rendering at 30 frames per second
-- Border color reflects current transfer speed
-- Visual indication when a new session peak is recorded
+- Border color reflects current transfer speed with sleek, modern rounded outlines
+- Live peak pulsing white-flash animations when a new session peak is reached
+- Minimalist, high-end unicode today statistics and navigation footer
 - Directional indicators for traffic trend
 - Automatic unit scaling from B/s to GB/s
 - Session peak tracking and daily traffic totals
-- Three display modes with automatic switching on resize
+- Four display modes with automatic responsive switching on both width and height resize
 - No required configuration; optional TOML configuration file
 - Non-interactive output modes for use in scripts
 - Supported on Linux, macOS, and Windows
@@ -151,7 +152,8 @@ flow adjusts its display according to terminal width.
 ```sh
 flow                        # hero view, auto interface
 flow --tiny                 # single-line mode for status bars
-flow --compact               # numeric values only
+flow --mini                 # graphs-only mode, no headers/footers
+flow --compact              # compact layout with title row and waveforms
 flow --json                  # single JSON output, then exit
 flow --once                  # single plain-text output, then exit
 flow --interface wlan0       # specify network interface
@@ -168,6 +170,7 @@ flow --help
 | Key         | Action                      |
 |-------------|-----------------------------|
 | `q` / `^C`  | Quit                         |
+| `m`         | Cycle display/view modes    |
 | `r`         | Reset session peaks          |
 | `i`         | Cycle network interfaces     |
 | `c`         | Cycle display units          |
@@ -197,7 +200,15 @@ set -g status-interval 1
 
 ## Configuration
 
-A configuration file is created automatically at `~/.config/flow/config.toml` on first run. The `XDG_CONFIG_HOME` environment variable is respected if set.
+A configuration file is created automatically on first run:
+
+| Platform | Path |
+|----------|------|
+| Linux | `~/.config/flow/config.toml` |
+| macOS | `~/Library/Application Support/flow/config.toml` |
+| Windows | `%APPDATA%\flow\config.toml` |
+
+The `XDG_CONFIG_HOME` environment variable is respected on Linux if set.
 
 ```toml
 refresh   = "100ms"   # sampling interval

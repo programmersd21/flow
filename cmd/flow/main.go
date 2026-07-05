@@ -24,6 +24,7 @@ var version = "dev"
 
 func main() {
 	flagTiny := flag.Bool("tiny", false, "single-line mode for tmux/status bars")
+	flagMini := flag.Bool("mini", false, "graphs-only mini mode")
 	flagCompact := flag.Bool("compact", false, "numbers-only compact mode")
 	flagJSON := flag.Bool("json", false, "one-shot JSON snapshot, then exit")
 	flagOnce := flag.Bool("once", false, "one-shot plain-text snapshot, then exit")
@@ -71,6 +72,11 @@ func main() {
 		return
 	}
 
+	if *flagTiny {
+		runTiny(col, smp, refresh, cfg.NoColor)
+		return
+	}
+
 	ifaces, err := collector.Interfaces()
 	if err != nil {
 		ifaces = []string{cfg.Interface}
@@ -81,8 +87,8 @@ func main() {
 
 	var forced ui.ViewMode
 	switch {
-	case *flagTiny:
-		forced = ui.ViewTiny
+	case *flagMini:
+		forced = ui.ViewMini
 	case *flagCompact:
 		forced = ui.ViewCompact
 	default:
@@ -98,14 +104,50 @@ func main() {
 	model := ui.New(cfg, smp, ifaces, initialIface, cancel, forced)
 
 	opts := []tea.ProgramOption{tea.WithAltScreen()}
-	if *flagTiny || *flagCompact {
+	if *flagCompact || *flagMini {
 		opts = []tea.ProgramOption{}
 	}
 
 	p := tea.NewProgram(model, opts...)
-	if _, err := p.Run(); err != nil {
+	m, err := p.Run()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
+	}
+	if finalModel, ok := m.(ui.Model); ok && finalModel.Err() != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", finalModel.Err())
+		os.Exit(1)
+	}
+}
+
+// runTiny collects a single sample and prints a compact one-line summary.
+// Completely independent of Bubble Tea — works in tmux, cron, pipes.
+func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, noColor bool) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go smp.Run(ctx)
+
+	// Wait for two samples so the first diff is valid.
+	s1 := <-smp.Out
+	if s1.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
+		os.Exit(1)
+	}
+	s := <-smp.Out
+	if s.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
+		os.Exit(1)
+	}
+	cancel()
+
+	down := ui.FormatBps(s.DownBps, ui.UnitAuto)
+	up := ui.FormatBps(s.UpBps, ui.UnitAuto)
+
+	if noColor {
+		fmt.Printf("↓ %s · ↑ %s\n", down, up)
+	} else {
+		fmt.Printf("↓ %s · ↑ %s\n", down, up)
 	}
 }
 
@@ -118,8 +160,16 @@ func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	go smp.Run(ctx)
 
 	// Wait for two samples so the first diff is valid.
-	<-smp.Out
+	s1 := <-smp.Out
+	if s1.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
+		os.Exit(1)
+	}
 	s := <-smp.Out
+	if s.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
+		os.Exit(1)
+	}
 	cancel()
 
 	if asJSON {

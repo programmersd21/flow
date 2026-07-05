@@ -9,6 +9,7 @@ type KeyMap struct {
 	Unit      key.Binding
 	Pause     key.Binding
 	Help      key.Binding
+	Mode      key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -36,6 +37,10 @@ func DefaultKeyMap() KeyMap {
 		Help: key.NewBinding(
 			key.WithKeys("?"),
 			key.WithHelp("?", "toggle help"),
+		),
+		Mode: key.NewBinding(
+			key.WithKeys("m"),
+			key.WithHelp("m", "cycle view mode"),
 		),
 	}
 }

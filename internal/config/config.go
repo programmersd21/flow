@@ -56,15 +56,19 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-// configPath resolves the config file location (respects XDG_CONFIG_HOME).
+// configPath resolves the config file location using platform-specific paths.
 func configPath() (string, error) {
-	base := os.Getenv("XDG_CONFIG_HOME")
-	if base == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
+	base, err := os.UserConfigDir()
+	if err != nil {
+		// Fallback to XDG-style path if os.UserConfigDir fails.
+		base = os.Getenv("XDG_CONFIG_HOME")
+		if base == "" {
+			home, err2 := os.UserHomeDir()
+			if err2 != nil {
+				return "", err2
+			}
+			base = filepath.Join(home, ".config")
 		}
-		base = filepath.Join(home, ".config")
 	}
 	return filepath.Join(base, "flow", "config.toml"), nil
 }

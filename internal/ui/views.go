@@ -17,8 +17,9 @@ const (
 	compactInnerMax   = 68
 )
 
-func renderHero(m Model) string    { return renderDashboard(m, true) }
-func renderCompact(m Model) string { return renderDashboard(m, false) }
+func renderHero(m Model) string    { return renderDashboard(m, ViewHero) }
+func renderCompact(m Model) string { return renderDashboard(m, ViewCompact) }
+func renderMini(m Model) string    { return renderDashboard(m, ViewMini) }
 
 func renderTiny(m Model) string {
 	downRatio := theme.SpeedRatio(m.dispDown, m.rollingMaxDown)
@@ -36,6 +37,7 @@ func renderHelp(m Model) string {
 	}
 	bindings := []binding{
 		{"q", "quit"},
+		{"m", "cycle view mode"},
 		{"r", "reset peaks"},
 		{"i", "cycle interface"},
 		{"c", "cycle units"},
@@ -43,46 +45,47 @@ func renderHelp(m Model) string {
 		{"?", "toggle help"},
 	}
 
-	// Build key binding lines — all padded to the same visual width
 	var keyLines []string
 	for _, b := range bindings {
-		keyLines = append(keyLines, theme.Accent().Bold(true).Render(b.key)+"     "+theme.Muted().Render(b.desc))
+		kStr := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#cbd5e1")). // slate 300
+			Bold(true).
+			Render(b.key)
+
+		descStr := theme.Muted().Render(b.desc)
+		keyLines = append(keyLines, "  "+kStr+"     "+descStr)
 	}
+
+	// Calculate maximum width
 	maxKeyW := 0
 	for _, line := range keyLines {
 		if w := lipgloss.Width(line); w > maxKeyW {
 			maxKeyW = w
 		}
 	}
-	for i, line := range keyLines {
-		if w := lipgloss.Width(line); w < maxKeyW {
-			keyLines[i] = line + strings.Repeat(" ", maxKeyW-w)
-		}
-	}
 
-	// Separator matches the key binding width for visual consistency
-	sep := theme.Dim().Render(strings.Repeat("─", maxKeyW))
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#f8fafc")).
+		Bold(true)
 
-	// Assemble raw block — every line padded to center within maxKeyW
-	titleFlow := theme.Title().Render("flow")
-	titleCtrl := theme.Muted().Render("controls")
-	titleFooter := theme.Soft().Render("press any key to return")
-
-	flowPad := max(0, (maxKeyW-lipgloss.Width(titleFlow))/2)
-	ctrlPad := max(0, (maxKeyW-lipgloss.Width(titleCtrl))/2)
-	footPad := max(0, (maxKeyW-lipgloss.Width(titleFooter))/2)
+	title := titleStyle.Render("flow controls")
 
 	var block []string
-	block = append(block, strings.Repeat(" ", flowPad)+titleFlow+strings.Repeat(" ", max(0, maxKeyW-flowPad-lipgloss.Width(titleFlow))))
-	block = append(block, strings.Repeat(" ", ctrlPad)+titleCtrl+strings.Repeat(" ", max(0, maxKeyW-ctrlPad-lipgloss.Width(titleCtrl))))
-	block = append(block, sep)
+	block = append(block, "")
+	block = append(block, "  "+title)
 	block = append(block, "")
 	block = append(block, keyLines...)
 	block = append(block, "")
-	block = append(block, sep)
-	block = append(block, strings.Repeat(" ", footPad)+titleFooter+strings.Repeat(" ", max(0, maxKeyW-footPad-lipgloss.Width(titleFooter))))
+	block = append(block, "  "+theme.Dim().Render("press any key to return"))
+	block = append(block, "")
 
-	return centerFrame(strings.Join(block, "\n"), m.width, m.height)
+	helpBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#6366f1")). // Modern Indigo border
+		Padding(0, 2).
+		Render(strings.Join(block, "\n"))
+
+	return centerFrame(helpBox, m.width, m.height)
 }
 
 func TitleRow(breathe float64) string {
@@ -92,7 +95,7 @@ func TitleRow(breathe float64) string {
 	return fmt.Sprintf("%s  %s   %s", dot, title, desc)
 }
 
-func renderDashboard(m Model, hero bool) string {
+func renderDashboard(m Model, mode ViewMode) string {
 	termW := m.width
 	if termW <= 0 {
 		termW = 80
@@ -103,7 +106,7 @@ func renderDashboard(m Model, hero bool) string {
 	}
 
 	contentW := min(termW-4, heroInnerMaxWidth)
-	if !hero {
+	if mode == ViewCompact || mode == ViewMini {
 		contentW = min(termW-4, compactInnerMax)
 	}
 	if contentW < 40 {
@@ -112,8 +115,8 @@ func renderDashboard(m Model, hero bool) string {
 
 	downRatio := theme.SpeedRatio(m.dispDown, maxf(m.rollingMaxDown, m.dispDown))
 	upRatio := theme.SpeedRatio(m.dispUp, maxf(m.rollingMaxUp, m.dispUp))
-	downPulse := 0.0
-	upPulse := 0.0
+	downPulse := m.downPulse
+	upPulse := m.upPulse
 
 	downSamples := m.downHist.Slice()
 	upSamples := m.upHist.Slice()
@@ -144,23 +147,35 @@ func renderDashboard(m Model, hero bool) string {
 		}
 	}
 
+	// Shorter graph for mini mode
+	graphHeight := 4
+	if mode == ViewMini {
+		graphHeight = 3
+	}
+
 	// Render high-resolution Braille graphs with vertical gradients
-	downGraph := renderColoredGraph(downSamples, graphW, 4, maxf(m.rollingMaxDown, m.dispDown), frac, true)
-	upGraph := renderColoredGraph(upSamples, graphW, 4, maxf(m.rollingMaxUp, m.dispUp), frac, false)
+	downGraph := renderColoredGraph(downSamples, graphW, graphHeight, maxf(m.rollingMaxDown, m.dispDown), frac, true)
+	upGraph := renderColoredGraph(upSamples, graphW, graphHeight, maxf(m.rollingMaxUp, m.dispUp), frac, false)
 
 	// Responsive TUI glowing borders
 	downBorderColor := theme.DownloadBorderColor(downRatio)
 	upBorderColor := theme.UploadBorderColor(upRatio)
 
 	lines := make([]string, 0, 24)
-	if hero && termH >= 30 {
-		logo := theme.LogoColored(contentW)
-		lines = append(lines, logo...)
-		lines = append(lines, "")
-		sub := theme.LogoSubtitle(contentW)
-		lines = append(lines, sub)
-		lines = append(lines, "")
-	} else {
+	switch mode {
+	case ViewHero:
+		if termH >= 30 {
+			logo := theme.LogoColored(contentW)
+			lines = append(lines, logo...)
+			lines = append(lines, "")
+			sub := theme.LogoSubtitle(contentW)
+			lines = append(lines, sub)
+			lines = append(lines, "")
+		} else {
+			lines = append(lines, TitleRow(m.breathe))
+			lines = append(lines, "")
+		}
+	case ViewCompact:
 		lines = append(lines, TitleRow(m.breathe))
 		lines = append(lines, "")
 	}
@@ -173,36 +188,94 @@ func renderDashboard(m Model, hero bool) string {
 	peakUpVal := m.FormatBps(m.tracker.PeakUp)
 
 	// Render Download Panel with border
-	downPanel := renderPanel("download", downVal, peakDownVal, downPulse, downGraph, contentW, downBorderColor)
+	downPanel := renderPanel("download", downVal, peakDownVal, downPulse, downGraph, contentW, downBorderColor, mode == ViewMini)
 	lines = append(lines, downPanel)
 	lines = append(lines, "")
 
 	// Render Upload Panel with border
-	upPanel := renderPanel("upload", upVal, peakUpVal, upPulse, upGraph, contentW, upBorderColor)
+	upPanel := renderPanel("upload", upVal, peakUpVal, upPulse, upGraph, contentW, upBorderColor, mode == ViewMini)
 	lines = append(lines, upPanel)
-	lines = append(lines, "")
 
-	// Footer stats and controls (using restored clean arrows and separators)
-	todayLine := fmt.Sprintf(
-		"today %s  %s   today %s  %s",
-		theme.Dim().Render("↓"), theme.Muted().Render(formatBytes(m.tracker.TodayDown)),
-		theme.Dim().Render("↑"), theme.Muted().Render(formatBytes(m.tracker.TodayUp)),
-	)
-	lines = append(lines, todayLine)
-	lines = append(lines, "")
+	// Footer stats and controls (only for non-mini modes)
+	if mode == ViewHero || mode == ViewCompact {
+		lines = append(lines, "")
 
-	iface := m.ifaceName
-	if m.paused {
-		iface += "  [paused]"
+		// Minimalist, high-end unicode today stats line
+		todayLine := fmt.Sprintf(
+			"today  %s  %s    today  %s  %s",
+			lipgloss.NewStyle().Foreground(lipgloss.Color("#3b82f6")).Render("↓"),
+			theme.Accent().Render(formatBytes(m.tracker.TodayDown)),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("#10b981")).Render("↑"),
+			theme.Accent().Render(formatBytes(m.tracker.TodayUp)),
+		)
+		lines = append(lines, todayLine)
+		lines = append(lines, "")
+
+		// Minimalist navigation status line
+		dotColor := "#10b981" // Active Green
+		if m.paused {
+			dotColor = "#ef4444" // Paused Red
+		}
+		statusDot := lipgloss.NewStyle().Foreground(lipgloss.Color(dotColor)).Render("●")
+
+		ifaceStr := fmt.Sprintf("%s %s", statusDot, theme.Accent().Render(m.ifaceName))
+		if m.paused {
+			ifaceStr += theme.Muted().Render(" (paused)")
+		}
+
+		renderKey := func(k, desc string) string {
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("#a5b4fc")).Bold(true).Render(k) + " " + theme.Muted().Render(desc)
+		}
+
+		dotSep := theme.Dim().Render(" · ")
+
+		var keys []string
+		if contentW >= 75 {
+			keys = []string{
+				renderKey("q", "quit"),
+				renderKey("m", "mode"),
+				renderKey("r", "reset"),
+				renderKey("i", "iface"),
+				renderKey("c", "unit"),
+				renderKey("p", "pause"),
+				renderKey("?", "help"),
+			}
+		} else if contentW >= 55 {
+			keys = []string{
+				renderKey("q", "quit"),
+				renderKey("m", "mode"),
+				renderKey("r", "reset"),
+				renderKey("p", "pause"),
+				renderKey("?", "help"),
+			}
+		} else {
+			keys = []string{
+				renderKey("q", "quit"),
+				renderKey("p", "pause"),
+				renderKey("?", "help"),
+			}
+		}
+		rightBar := strings.Join(keys, dotSep)
+
+		leftBarW := lipgloss.Width(ifaceStr)
+		rightBarW := lipgloss.Width(rightBar)
+		gap := contentW - leftBarW - rightBarW
+
+		var footerLine string
+		if gap > 0 {
+			footerLine = ifaceStr + strings.Repeat(" ", gap) + rightBar
+		} else {
+			footerLine = ifaceStr + "   " + rightBar
+		}
+
+		lines = append(lines, footerLine)
 	}
-	lines = append(lines, theme.Muted().Render(iface))
-	lines = append(lines, theme.Muted().Render("q quit · r reset · i interface · c units · p pause · ? help"))
 
 	content := strings.Join(lines, "\n")
 	return centerFrame(content, termW, termH)
 }
 
-func renderPanel(title string, value string, peak string, peakPulse float64, graph string, width int, borderColor lipgloss.Color) string {
+func renderPanel(title string, value string, peak string, peakPulse float64, graph string, width int, borderColor lipgloss.Color, isMini bool) string {
 	innerW := width - 4 // border takes 2, padding takes 2
 	if innerW < 20 {
 		innerW = 20
@@ -225,7 +298,9 @@ func renderPanel(title string, value string, peak string, peakPulse float64, gra
 	var panelLines []string
 	panelLines = append(panelLines, titleLine)
 	panelLines = append(panelLines, headerLine)
-	panelLines = append(panelLines, "")
+	if !isMini {
+		panelLines = append(panelLines, "")
+	}
 
 	panelLines = append(panelLines, strings.Split(graph, "\n")...)
 

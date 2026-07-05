@@ -29,6 +29,7 @@ type ViewMode int
 const (
 	ViewHero ViewMode = iota
 	ViewCompact
+	ViewMini
 	ViewTiny
 )
 
@@ -69,7 +70,10 @@ type Model struct {
 	refreshInterval time.Duration
 	lastSampleTime  time.Time
 
-	breathe float64
+	breathe   float64
+	downPulse float64
+	upPulse   float64
+	err       error
 }
 
 func New(
@@ -131,11 +135,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		m.breathe = 0.5 + 0.5*math.Sin(float64(time.Now().UnixMilli())/500)
+		m.downPulse = math.Max(0, m.downPulse-0.08)
+		m.upPulse = math.Max(0, m.upPulse-0.08)
 		return m, tick()
 
 	case sampleMsg:
+		if msg.Err != nil {
+			m.err = msg.Err
+			m.samplerCtx()
+			return m, tea.Quit
+		}
 		if !m.paused {
 			m.lastSampleTime = time.Now()
+
+			// Trigger pulse on new peaks
+			if msg.DownBps > m.tracker.PeakDown && m.tracker.PeakDown > 0 {
+				m.downPulse = 1.0
+			}
+			if msg.UpBps > m.tracker.PeakUp && m.tracker.PeakUp > 0 {
+				m.upPulse = 1.0
+			}
+
 			m.dispDown = msg.DownBps
 			m.dispUp = msg.UpBps
 			m.tracker.Record(msg.DownBps, msg.UpBps, m.refreshInterval.Seconds())
@@ -159,6 +179,9 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.Help):
 		m.showHelp = !m.showHelp
 
+	case key.Matches(msg, m.keys.Mode):
+		m.viewMode = (m.viewMode + 1) % 4
+
 	case key.Matches(msg, m.keys.Pause):
 		m.paused = !m.paused
 
@@ -172,6 +195,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.dispUp = 0
 		m.downHist.Reset()
 		m.upHist.Reset()
+		m.downPulse = 0
+		m.upPulse = 0
 
 	case key.Matches(msg, m.keys.Unit):
 		m.unitMode = (m.unitMode + 1) % 4
@@ -212,6 +237,8 @@ func (m Model) View() string {
 	switch m.effectiveViewMode() {
 	case ViewTiny:
 		return renderTiny(m)
+	case ViewMini:
+		return renderMini(m)
 	case ViewCompact:
 		return renderCompact(m)
 	default:
@@ -223,13 +250,26 @@ func (m Model) effectiveViewMode() ViewMode {
 	if m.viewMode == ViewTiny {
 		return ViewTiny
 	}
+	if m.viewMode == ViewMini {
+		return ViewMini
+	}
 	if m.viewMode == ViewCompact {
 		return ViewCompact
 	}
+
 	if m.width > 0 && m.width < 40 {
 		return ViewTiny
 	}
+	if m.height > 0 && m.height < 6 {
+		return ViewTiny
+	}
 	if m.width > 0 && m.width < 60 {
+		return ViewCompact
+	}
+	if m.height > 0 && m.height < 16 {
+		return ViewMini
+	}
+	if m.height > 0 && m.height < 22 {
 		return ViewCompact
 	}
 	return ViewHero
@@ -285,4 +325,8 @@ func tick() tea.Cmd {
 	return tea.Tick(130*time.Millisecond, func(time.Time) tea.Msg {
 		return tickMsg{}
 	})
+}
+
+func (m Model) Err() error {
+	return m.err
 }

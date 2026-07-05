@@ -5,6 +5,8 @@ package history
 
 import "time"
 
+var nowFunc = time.Now
+
 type Ring struct {
 	buf  []float64
 	size int
@@ -61,20 +63,26 @@ type Tracker struct {
 	PeakUp    float64
 	TodayDown float64 // bytes
 	TodayUp   float64 // bytes
-	Day       int     // calendar day when totals were last reset
+	Year      int
+	Month     time.Month
+	Day       int
 }
 
 func NewTracker() *Tracker {
-	return &Tracker{Day: time.Now().Day()}
+	y, m, d := nowFunc().Date()
+	return &Tracker{Year: y, Month: m, Day: d}
 }
 
 // Record updates peaks and today totals. intervalSecs is the sample interval.
 func (t *Tracker) Record(downBps, upBps, intervalSecs float64) {
-	now := time.Now()
-	if now.Day() != t.Day {
+	now := nowFunc()
+	y, m, d := now.Date()
+	if y != t.Year || m != t.Month || d != t.Day {
 		t.TodayDown = 0
 		t.TodayUp = 0
-		t.Day = now.Day()
+		t.Year = y
+		t.Month = m
+		t.Day = d
 	}
 	if downBps > t.PeakDown {
 		t.PeakDown = downBps

@@ -209,36 +209,32 @@ func LogoColored(width int) []string {
 	lines := make([]string, len(logoSrc))
 	for i, line := range logoSrc {
 		rowT := float64(i) / float64(len(logoSrc)-1)
-		r, g, b := threeStopLogoGradient(rowT, 1.0)
+		r, g, b := fourStopLogoGradient(rowT, 1.0)
 		color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
 		lines[i] = left + lipgloss.NewStyle().Foreground(color).Bold(true).Render(line) + right
 	}
 	return lines
 }
 
-// threeStopLogoGradient creates smooth blue→cyan progression
-func threeStopLogoGradient(position, brightness float64) (uint8, uint8, uint8) {
+// fourStopLogoGradient creates smooth Fuchsia→Purple→Blue→Cyan progression
+func fourStopLogoGradient(position, brightness float64) (uint8, uint8, uint8) {
 	position = animate.Clamp01(position)
 	brightness = animate.Clamp01(brightness)
 
 	var r, g, b uint8
-	if position <= 0.5 {
-		// First half: stop 0 → stop 1
-		t := position * 2.0
-		r, g, b = animate.ColorLerp(
-			logoStops[0][0], logoStops[0][1], logoStops[0][2],
-			logoStops[1][0], logoStops[1][1], logoStops[1][2],
-			t,
-		)
-	} else {
-		// Second half: stop 1 → stop 2
-		t := (position - 0.5) * 2.0
-		r, g, b = animate.ColorLerp(
-			logoStops[1][0], logoStops[1][1], logoStops[1][2],
-			logoStops[2][0], logoStops[2][1], logoStops[2][2],
-			t,
-		)
+	segment := position * 3.0
+	idx := int(segment)
+	if idx >= 3 {
+		idx = 2
+		segment = 3.0
 	}
+	t := segment - float64(idx)
+
+	r, g, b = animate.ColorLerp(
+		logoStops[idx][0], logoStops[idx][1], logoStops[idx][2],
+		logoStops[idx+1][0], logoStops[idx+1][1], logoStops[idx+1][2],
+		t,
+	)
 
 	// Apply brightness
 	r = uint8(math.Min(255, float64(r)*brightness))
@@ -255,7 +251,7 @@ func DirArrow(download bool) string {
 	return "↑"
 }
 
-const logoSubtitle = "Your Internet, TUIfied."
+const logoSubtitle = "Calm your network. See it breathe."
 
 // LogoSubtitle returns the centered hero subtitle, padded to width.
 func LogoSubtitle(width int) string {

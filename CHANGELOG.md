@@ -1,4 +1,26 @@
-# Changelog
+## [0.1.1] - 2026-07-05
+
+### Added
+
+- Graphs-only "mini" mode (`--mini`) showing just download/upload panels and waveforms, omitting global title, today's summary, active interface, and key help hints.
+- Key binding `m` to interactively cycle through view modes (`hero` -> `compact` -> `mini` -> `tiny` -> `hero`).
+- Responsive vertical layout resizing, automatically scaling down to mini mode when the screen height is too small for compact/hero dashboards.
+- Premium dev-tool theme styling inspired by Stripe, Spotify, and Apple aesthetics, featuring high-contrast vertical gradients.
+- Sleek, modern rounded borders for a clean and unified desktop-TUI look.
+- Minimalist, high-end unicode today statistics using colored down/upload arrows (`↓` / `↑`) and clean accent-colored values.
+- Refined dot-separated (`·`) status and navigation footer containing real-time active/paused interface dot status (`●`) and highlighted key binds.
+- Live peak pulsing white-flash animations when a new session throughput record is reached.
+- Clean modal help overlay with modern rounded border styling and highlighted keys.
+- `--tiny` mode is now fully independent of Bubble Tea, works reliably in tmux `#(...)`, cron, pipes, and redirected stdout
+- Platform-specific config paths: Linux (`~/.config/flow/config.toml`), macOS (`~/Library/Application Support/flow/config.toml`), Windows (`%APPDATA%/flow/config.toml`)
+
+### Fixed
+
+- Daily traffic totals failing to reset when the calendar month/year changes (now compares full date: year, month, and day).
+- TUI and one-shot modes hanging indefinitely on network counter read errors (now propagates errors through sampler and exits gracefully with a message).
+- Config file not being created on macOS and Windows due to non-standard path resolution
+- `--tiny` no longer initializes Bubble Tea, Lip Gloss, termenv, or terminal queries — zero TTY dependency
+- `--tiny --no-color` emits clean plain text with no ANSI sequences
 
 ## [0.1.0] - 2026-07-04
 

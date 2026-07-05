@@ -20,6 +20,7 @@ type Sample struct {
 	UpBps     float64
 	Interface string
 	At        time.Time
+	Err       error
 }
 
 type entry struct {
@@ -55,9 +56,13 @@ func New(col *collector.Collector, interval time.Duration) *Sampler {
 func (s *Sampler) Run(ctx context.Context) {
 	prev, err := s.col.Read()
 	if err != nil {
-		prev = collector.Snapshot{}
+		select {
+		case s.Out <- Sample{Err: err, At: time.Now()}:
+		case <-ctx.Done():
+		}
+		return
 	}
-	prevTime := time.Now()
+	var prevTime time.Time
 
 	// Prime: take two quick reads so the first emitted sample is non-zero.
 	// Windows counters need at least one full second to populate.
@@ -66,7 +71,13 @@ func (s *Sampler) Run(ctx context.Context) {
 	case <-ctx.Done():
 		return
 	case <-primeTimer.C:
-		if snap, err2 := s.col.Read(); err2 == nil {
+		if snap, err2 := s.col.Read(); err2 != nil {
+			select {
+			case s.Out <- Sample{Err: err2, At: time.Now()}:
+			case <-ctx.Done():
+			}
+			return
+		} else {
 			prev = snap
 			prevTime = time.Now()
 		}
@@ -82,7 +93,11 @@ func (s *Sampler) Run(ctx context.Context) {
 		case t := <-ticker.C:
 			snap, err := s.col.Read()
 			if err != nil {
-				continue
+				select {
+				case s.Out <- Sample{Err: err, At: t}:
+				case <-ctx.Done():
+				}
+				return
 			}
 
 			dt := t.Sub(prevTime).Seconds()
