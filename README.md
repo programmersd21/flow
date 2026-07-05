@@ -265,6 +265,18 @@ make release-dry # goreleaser snapshot build, no publish
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
+## 💙 Community
+
+Thank you to everyone who has contributed to or supported flow. Whether you've starred the repository, reported an issue, submitted a pull request, or shared the project with others, your support is greatly appreciated.
+
+#### ⭐ Stargazers
+
+<p align="center">
+  <a href="https://github.com/programmersd21/flow/stargazers">
+    <img src="https://readme-contribs.as93.net/stargazers/programmersd21/flow" alt="Stargazers of flow">
+  </a>
+</p>
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
