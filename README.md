@@ -67,6 +67,8 @@
 
 1. AUR:
 
+<img src="./docs/aurweb.png" alt="AUR package page">
+
 ```sh
 yay -S flow-network-monitor-bin
 ```
