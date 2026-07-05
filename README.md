@@ -126,7 +126,7 @@ flow adjusts its display according to terminal width and height.
 
 | hero | compact | mini | tiny |
 |:---:|:---:|:---:|:---:|
-| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
+| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/mini_mode.png" alt="mini mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
 | Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner layout with title row, waveforms, peaks, and daily totals | Graphs-only layout, hiding header logo, today's summary, and help footers | Single-line output, intended for status bars |
 
 ## Features
