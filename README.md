@@ -9,12 +9,30 @@
 <img src="./docs/demo.gif" alt="flow demo" width="100%">
 
 <p align="center">
-  <img src="https://img.shields.io/badge/build-passing-00d4aa?style=for-the-badge&labelColor=000000" alt="build">
-  <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=for-the-badge&labelColor=000000&color=4488ff" alt="go version">
-  <img src="https://img.shields.io/github/license/programmersd21/flow?style=for-the-badge&labelColor=000000&color=88cc44" alt="license">
-  <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ff6644" alt="release">
-  <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=for-the-badge&labelColor=000000&color=bb44ff" alt="downloads">
-  <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ffcc00" alt="stars">
+  <a href="https://github.com/programmersd21/flow/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/programmersd21/flow/release.yml?style=for-the-badge&logo=githubactions&label=Build&labelColor=000000&color=00d4aa" alt="Build">
+  </a>
+  <a href="https://github.com/programmersd21/flow">
+    <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=for-the-badge&logo=go&labelColor=000000&color=4488ff" alt="Go Version">
+  </a>
+  <a href="https://github.com/programmersd21/flow/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/programmersd21/flow?style=for-the-badge&labelColor=000000&color=88cc44" alt="License">
+  </a>
+  <a href="https://github.com/programmersd21/flow/releases">
+    <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ff6644" alt="Release">
+  </a>
+  <a href="https://github.com/programmersd21/flow/releases">
+    <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=for-the-badge&labelColor=000000&color=bb44ff" alt="Downloads">
+  </a>
+  <a href="https://github.com/programmersd21/flow/stargazers">
+    <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&labelColor=000000&color=ffcc00" alt="Stars">
+  </a>
+  <a href="https://github.com/programmersd21/homebrew-flow">
+    <img src="https://img.shields.io/badge/Homebrew-programmersd21%2Fflow%2Fflow-FBB040?style=for-the-badge&logo=homebrew&labelColor=000000" alt="Homebrew">
+  </a>
+  <a href="https://aur.archlinux.org/packages/flow-network-monitor-bin">
+    <img src="https://img.shields.io/aur/version/flow-network-monitor-bin?style=for-the-badge&logo=archlinux&labelColor=000000&color=1793d1" alt="AUR Version">
+  </a>
 </p>
 
 ## Contents
