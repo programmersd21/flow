@@ -17,10 +17,6 @@ const (
 	compactInnerMax   = 68
 )
 
-func renderHero(m Model) string    { return renderDashboard(m, ViewHero) }
-func renderCompact(m Model) string { return renderDashboard(m, ViewCompact) }
-func renderMini(m Model) string    { return renderDashboard(m, ViewMini) }
-
 func renderTiny(m Model) string {
 	downRatio := theme.SpeedRatio(m.dispDown, m.rollingMaxDown)
 	upRatio := theme.SpeedRatio(m.dispUp, m.rollingMaxUp)
@@ -258,15 +254,71 @@ func TitleRow(breathe float64) string {
 	return fmt.Sprintf("%s  %s   %s", dot, title, desc)
 }
 
-// dashboardLineCount reports how many lines renderDashboard would actually
-// produce for the given mode at the model's current terminal size. Used to
-// pick the largest view mode that still fits, rather than hardcoded height
-// thresholds that can drift out of sync with the real layout.
-func dashboardLineCount(m Model, mode ViewMode) int {
-	return strings.Count(renderDashboard(m, mode), "\n") + 1
+// lineCount reports how many real terminal rows a set of content lines
+// takes up. Elements can themselves be multi-line strings (e.g. a bordered
+// panel is one element with embedded "\n"s), so join first and count real
+// newlines rather than len(lines).
+func lineCount(lines []string) int {
+	return strings.Count(strings.Join(lines, "\n"), "\n") + 1
 }
 
-func renderDashboard(m Model, mode ViewMode) string {
+// dashboardLineCount reports how many content lines the given mode actually
+// needs at the model's current terminal size, BEFORE centerFrame pads or
+// clamps it to fit the viewport. It must measure pre-clamp content, since
+// measuring post-clamp output would always report "fits" (centerFrame's
+// safety net truncates everything to the terminal height) and defeat mode
+// selection entirely.
+func dashboardLineCount(m Model, mode ViewMode) int {
+	return lineCount(dashboardContentLines(m, mode))
+}
+
+// pickViewModeAndContent chooses the best-fitting view mode for the current
+// terminal size and returns it together with its already-built content
+// lines, so the caller doesn't need to render the winning candidate a
+// second time — building a mode's content re-renders braille graphs and
+// styled panels, so doing that twice per frame (once to measure, once to
+// display) would be wasted work. Returns nil lines for ViewTiny, which is
+// rendered separately by renderTiny.
+func pickViewModeAndContent(m Model) (ViewMode, []string) {
+	if m.viewMode == ViewTiny {
+		return ViewTiny, nil
+	}
+	if m.viewMode == ViewMini {
+		return ViewMini, dashboardContentLines(m, ViewMini)
+	}
+	if m.viewMode == ViewCompact {
+		return ViewCompact, dashboardContentLines(m, ViewCompact)
+	}
+
+	if m.width > 0 && m.width < 40 {
+		return ViewTiny, nil
+	}
+	if m.height > 0 && m.height < 6 {
+		return ViewTiny, nil
+	}
+
+	candidates := []ViewMode{ViewHero, ViewCompact, ViewMini}
+	if m.width > 0 && m.width < 60 {
+		candidates = []ViewMode{ViewCompact, ViewMini}
+	}
+
+	// Pick the richest mode whose actual rendered height still fits the
+	// terminal, instead of relying on hardcoded line-count guesses that
+	// drift out of sync with the real layout as panels/footers change.
+	if m.height > 0 {
+		for _, mode := range candidates {
+			lines := dashboardContentLines(m, mode)
+			if lineCount(lines) <= m.height {
+				return mode, lines
+			}
+		}
+		return ViewTiny, nil
+	}
+
+	return candidates[0], dashboardContentLines(m, candidates[0])
+}
+
+func dashboardContentLines(m Model, mode ViewMode) []string {
 	termW := m.width
 	if termW <= 0 {
 		termW = 80
@@ -441,8 +493,7 @@ func renderDashboard(m Model, mode ViewMode) string {
 		}
 	}
 
-	content := strings.Join(lines, "\n")
-	return centerFrame(content, termW, termH)
+	return lines
 }
 
 func renderPanel(title string, value string, peak string, peakPulse float64, graph string, width int, borderColor lipgloss.Color, isMini bool) string {
