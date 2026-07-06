@@ -258,6 +258,14 @@ func TitleRow(breathe float64) string {
 	return fmt.Sprintf("%s  %s   %s", dot, title, desc)
 }
 
+// dashboardLineCount reports how many lines renderDashboard would actually
+// produce for the given mode at the model's current terminal size. Used to
+// pick the largest view mode that still fits, rather than hardcoded height
+// thresholds that can drift out of sync with the real layout.
+func dashboardLineCount(m Model, mode ViewMode) int {
+	return strings.Count(renderDashboard(m, mode), "\n") + 1
+}
+
 func renderDashboard(m Model, mode ViewMode) string {
 	termW := m.width
 	if termW <= 0 {
@@ -591,6 +599,13 @@ func centerFrame(content string, width, height int) string {
 	}
 	for len(out) < height {
 		out = append(out, "")
+	}
+	// Never emit more rows than the terminal actually has: keep the top
+	// (title/current values), drop the tail (footer/hints) if it still
+	// doesn't fit. Without this, content taller than the viewport gets
+	// silently scrolled by the terminal itself, cutting off the top instead.
+	if height > 0 && len(out) > height {
+		out = out[:height]
 	}
 
 	return strings.Join(out, "\n")

@@ -421,16 +421,25 @@ func (m Model) effectiveViewMode() ViewMode {
 	if m.height > 0 && m.height < 6 {
 		return ViewTiny
 	}
+
+	candidates := []ViewMode{ViewHero, ViewCompact, ViewMini}
 	if m.width > 0 && m.width < 60 {
-		return ViewCompact
+		candidates = []ViewMode{ViewCompact, ViewMini}
 	}
-	if m.height > 0 && m.height < 16 {
-		return ViewMini
+
+	// Pick the richest mode whose actual rendered height still fits the
+	// terminal, instead of relying on hardcoded line-count guesses that
+	// drift out of sync with the real layout as panels/footers change.
+	if m.height > 0 {
+		for _, mode := range candidates {
+			if dashboardLineCount(m, mode) <= m.height {
+				return mode
+			}
+		}
+		return ViewTiny
 	}
-	if m.height > 0 && m.height < 22 {
-		return ViewCompact
-	}
-	return ViewHero
+
+	return candidates[0]
 }
 
 func (m *Model) updateRollingMax(down, up float64) {
