@@ -28,10 +28,15 @@ func renderTiny(m Model) string {
 	left := lbl.Render("↓ download") + " " + theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.dispDown))
 	right := lbl.Render("↑ upload") + " " + theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.dispUp))
 	line := left + "   " + right
-	if m.width > 0 {
-		return centerInline(line, m.width)
+	w := m.width
+	if w <= 0 {
+		w = 80
 	}
-	return line
+	h := m.height
+	if h <= 0 {
+		h = 24
+	}
+	return centerFrame(line, w, h)
 }
 
 func renderProcesses(m Model) string {
@@ -49,25 +54,21 @@ func renderProcesses(m Model) string {
 		contentW = max(termW-2, 40)
 	}
 
-	title := lipgloss.NewStyle().
+	titleStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#f8fafc")).
-		Bold(true).
-		Render("network processes")
+		Bold(true)
 
-	var lines []string
-	lines = append(lines, "  "+title)
-	lines = append(lines, "")
+	title := titleStyle.Render("network processes")
+
+	var block []string
+	block = append(block, "")
+	block = append(block, "  "+title)
+	block = append(block, "")
 
 	if len(m.procs) == 0 {
-		muted := theme.Muted().Render("no active network processes detected")
-		pad := (contentW - lipgloss.Width(muted)) / 2
-		if pad < 0 {
-			pad = 0
-		}
-		lines = append(lines, strings.Repeat(" ", pad)+muted)
+		block = append(block, "  "+theme.Muted().Render("no active network processes detected"))
 	} else {
-		// Truncate to top entries that fit the terminal height
-		maxRows := termH - 8
+		maxRows := termH - 10
 		if maxRows < 5 {
 			maxRows = 5
 		}
@@ -76,47 +77,52 @@ func renderProcesses(m Model) string {
 			list = list[:maxRows]
 		}
 
-		// Column widths
+		innerW := contentW - 8
+		if innerW < 30 {
+			innerW = 30
+		}
 		pidW := 7
-		nameW := contentW - pidW - 16
+		nameW := innerW - pidW - 10
 		if nameW < 10 {
 			nameW = 10
 		}
 
-		headerKey := lipgloss.NewStyle().
+		keyStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#a5b4fc")).
 			Bold(true)
-		headerMuted := theme.Muted()
+		muted := theme.Muted()
 
-		header := fmt.Sprintf("  %s  %s  %s",
-			headerKey.Render(fmt.Sprintf("%-*s", pidW, "PID")),
-			headerKey.Render(fmt.Sprintf("%-*s", nameW, "Process")),
-			headerKey.Render(fmt.Sprintf("%*s", 7, "Conns")))
+		pidH := keyStyle.Render(fmt.Sprintf("%-*s", pidW, "PID"))
+		nameH := keyStyle.Render(fmt.Sprintf("%-*s", nameW, "Process"))
+		connH := keyStyle.Render(fmt.Sprintf("%*s", 7, "Conns"))
+		header := fmt.Sprintf("  %s  %s  %s", pidH, nameH, connH)
 
-		sep := theme.Dim().Render(strings.Repeat("─", contentW-2))
-		lines = append(lines, "  "+sep)
-		lines = append(lines, header)
-		lines = append(lines, "  "+sep)
+		sep := muted.Render(strings.Repeat("─", innerW+6))
+
+		block = append(block, "  "+sep)
+		block = append(block, header)
+		block = append(block, "  "+sep)
 
 		for _, p := range list {
-			pidStr := fmt.Sprintf("%-*d", pidW, p.PID)
-			nameStr := fmt.Sprintf("%-*s", nameW, truncate(p.Name, nameW))
-			connStr := fmt.Sprintf("%*d", 7, p.Connections)
-
-			row := fmt.Sprintf("  %s  %s  %s",
-				headerMuted.Render(pidStr),
-				theme.Accent().Render(nameStr),
-				headerKey.Render(connStr))
-			lines = append(lines, row)
+			pidS := muted.Render(fmt.Sprintf("%-*d", pidW, p.PID))
+			nameS := theme.Accent().Render(fmt.Sprintf("%-*s", nameW, truncate(p.Name, nameW)))
+			connS := keyStyle.Render(fmt.Sprintf("%*d", 7, p.Connections))
+			block = append(block, fmt.Sprintf("  %s  %s  %s", pidS, nameS, connS))
 		}
-		lines = append(lines, "  "+sep)
+		block = append(block, "  "+sep)
 	}
 
-	lines = append(lines, "")
-	lines = append(lines, "  "+theme.Dim().Render("press n to return"))
+	block = append(block, "")
+	block = append(block, "  "+theme.Dim().Render("press n to return"))
+	block = append(block, "")
 
-	content := strings.Join(lines, "\n")
-	return centerFrame(content, termW, termH)
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#6366f1")).
+		Padding(0, 2).
+		Render(strings.Join(block, "\n"))
+
+	return centerFrame(box, termW, termH)
 }
 
 func truncate(s string, max int) string {
@@ -176,7 +182,7 @@ func renderHelp(m Model) string {
 	block = append(block, "")
 	block = append(block, keyLines...)
 	block = append(block, "")
-	block = append(block, "  "+theme.Dim().Render("press any key to return"))
+	block = append(block, "  "+theme.Dim().Render("press ? to return"))
 	block = append(block, "")
 
 	helpBox := lipgloss.NewStyle().

@@ -237,9 +237,6 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	default:
-		if m.showHelp {
-			m.showHelp = false
-		}
 	}
 
 	return m, nil

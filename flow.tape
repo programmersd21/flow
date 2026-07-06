@@ -49,31 +49,30 @@ Ctrl+L
 Sleep 300ms
 
 # Steady medium-contention traffic — long-running throttled downloads
-# All --max-time values are generous to cover the full demo duration
-Type "curl -L --limit-rate 4M --max-time 65 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
+Type "curl -L --limit-rate 4M --max-time 75 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
 Enter
 Sleep 400ms
-Type "curl -L --limit-rate 3M --max-time 60 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
+Type "curl -L --limit-rate 3M --max-time 70 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
 Enter
 Sleep 400ms
-Type "curl -L --limit-rate 5M --max-time 62 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
+Type "curl -L --limit-rate 5M --max-time 72 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
 Enter
 Sleep 400ms
-Type "curl -L --limit-rate 2M --max-time 55 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
+Type "curl -L --limit-rate 2M --max-time 65 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
 Enter
 Sleep 400ms
-Type "curl -L --limit-rate 3M --max-time 68 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
+Type "curl -L --limit-rate 3M --max-time 78 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
 Enter
 Sleep 400ms
-Type "curl -X POST --limit-rate 3M --max-time 58 -o /dev/null https://httpbin.org/post &>/dev/null &"
+Type "curl -X POST --limit-rate 3M --max-time 68 -o /dev/null https://httpbin.org/post &>/dev/null &"
 Enter
 Sleep 400ms
 
 # Small delayed bumps for visual texture on the steady baseline
-Type "(sleep 6; curl -L --limit-rate 4M --max-time 45 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null) &"
+Type "(sleep 6; curl -L --limit-rate 4M --max-time 55 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null) &"
 Enter
 Sleep 400ms
-Type "(sleep 12; curl -L --limit-rate 3M --max-time 40 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null) &"
+Type "(sleep 12; curl -L --limit-rate 3M --max-time 50 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null) &"
 Enter
 Sleep 400ms
 
@@ -89,7 +88,7 @@ Sleep 3s
 
 # Reveal — hero logo, breathing dot, subtitle, traffic flowing
 Show
-Sleep 6s
+Sleep 5s
 
 # Reset peaks
 Type "r"
@@ -111,9 +110,9 @@ Sleep 2s
 Type "c"
 Sleep 2s
 
-# Pause — hold longer to show the frozen state
+# Pause — hold to show the frozen state
 Type "p"
-Sleep 4s
+Sleep 3s
 
 # Resume
 Type "p"
@@ -121,12 +120,18 @@ Sleep 2s
 
 # Show the help overlay
 Type "?"
-Sleep 4s
+Sleep 3s
 Type "?"
 Sleep 2s
 
-# Let the fresh burst animate through
+# Show the network processes panel
+Type "n"
 Sleep 4s
+Type "n"
+Sleep 2s
+
+# Let the traffic animate through
+Sleep 3s
 
 # Hide before quitting so the GIF ends on the clean TUI screen
 Hide
