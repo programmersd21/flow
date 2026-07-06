@@ -4,6 +4,7 @@ import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
 	Quit      key.Binding
+	Esc       key.Binding
 	Reset     key.Binding
 	Interface key.Binding
 	Unit      key.Binding
@@ -11,6 +12,10 @@ type KeyMap struct {
 	Help      key.Binding
 	Mode      key.Binding
 	Processes key.Binding
+	Bits      key.Binding
+	Faster    key.Binding
+	Slower    key.Binding
+	Themes    key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -18,6 +23,10 @@ func DefaultKeyMap() KeyMap {
 		Quit: key.NewBinding(
 			key.WithKeys("q", "ctrl+c"),
 			key.WithHelp("q", "quit"),
+		),
+		Esc: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "back"),
 		),
 		Reset: key.NewBinding(
 			key.WithKeys("r"),
@@ -46,6 +55,22 @@ func DefaultKeyMap() KeyMap {
 		Processes: key.NewBinding(
 			key.WithKeys("n"),
 			key.WithHelp("n", "network processes"),
+		),
+		Bits: key.NewBinding(
+			key.WithKeys("b"),
+			key.WithHelp("b", "toggle bits/bytes"),
+		),
+		Faster: key.NewBinding(
+			key.WithKeys("+", "="),
+			key.WithHelp("+", "faster refresh"),
+		),
+		Slower: key.NewBinding(
+			key.WithKeys("-"),
+			key.WithHelp("-", "slower refresh"),
+		),
+		Themes: key.NewBinding(
+			key.WithKeys("t"),
+			key.WithHelp("t", "choose theme"),
 		),
 	}
 }

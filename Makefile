@@ -4,22 +4,38 @@ VERSION   ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "d
 LDFLAGS   := -ldflags "-s -w -X main.version=$(VERSION)"
 GOFLAGS   :=
 
-.PHONY: all build install clean test lint vet tidy demo
+# Cross-platform detection
+ifeq ($(OS),Windows_NT)
+BINARY    := flow.exe
+MKDIR     := mkdir
+RMDIR     := -rmdir /s /q
+SEP       := \\
+else
+MKDIR     := mkdir -p
+RMDIR     := -rm -rf
+SEP       := /
+endif
+
+BUILDDIR  := bin
+
+.PHONY: all build install run test vet lint tidy clean demo help
 
 all: build
 
-## build: compile the binary into ./bin/flow
-build:
-	@mkdir -p bin
-	go build $(GOFLAGS) $(LDFLAGS) -o bin/$(BINARY) $(CMD)
+$(BUILDDIR):
+	$(MKDIR) $(BUILDDIR)
 
-## install: install to $GOPATH/bin (or ~/go/bin)
+## build: compile the binary into ./bin/flow
+build: $(BUILDDIR)
+	go build $(GOFLAGS) $(LDFLAGS) -o $(BUILDDIR)$(SEP)$(BINARY) $(CMD)
+
+## install: install to $$GOPATH/bin (or ~/go/bin)
 install:
 	go install $(GOFLAGS) $(LDFLAGS) $(CMD)
 
-## run: build and run with the default hero view
+## run: build and run
 run: build
-	./bin/$(BINARY)
+	$(BUILDDIR)$(SEP)$(BINARY)
 
 ## test: run the test suite
 test:
@@ -39,7 +55,7 @@ tidy:
 
 ## clean: remove build artifacts
 clean:
-	rm -rf bin/
+	$(RMDIR) $(BUILDDIR)
 
 ## demo: generate docs/demo.gif with VHS
 demo: build
@@ -54,4 +70,4 @@ demo: build
 
 ## help: print this message
 help:
-	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/^## //'
+	@sed -n 's/^## //p' $(MAKEFILE_LIST) 2>/dev/null || findstr /B "##" Makefile

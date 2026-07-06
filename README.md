@@ -138,13 +138,15 @@ flow adjusts its display according to terminal width and height.
 
 ## Features
 
-- Network processes panel — press `n` to view active processes sorted by connection count
+- Live latency (ping) indicator with color-coded ↔ display
+- Network processes panel - press `n` to view active processes sorted by connection count
+- Theme selector with 8 built-in themes - press `t` to browse and select
 - Real-time download and upload throughput
 - Interpolated display values using spring-based animation
 - Braille-grid waveform rendering at 30 frames per second
 - Border color reflects current transfer speed with sleek, modern rounded outlines
 - Live peak pulsing white-flash animations when a new session peak is reached
-- Minimalist, high-end unicode today statistics and navigation footer
+- Minimalist, high-end unicode today statistics and keybinding footer
 - Directional indicators for traffic trend
 - Automatic unit scaling from B/s to GB/s
 - Session peak tracking and daily traffic totals
@@ -152,6 +154,8 @@ flow adjusts its display according to terminal width and height.
 - No required configuration; optional TOML configuration file
 - Non-interactive output modes for use in scripts
 - Supported on Linux, macOS, and Windows
+- Display throughput in bits per second instead of bytes per second by toggling with the `b` key
+- Adjust the sampling and refresh interval interactively using the `+` and `-` keys
 
 ## Usage
 
@@ -166,6 +170,7 @@ flow --json                  # single JSON output, then exit
 flow --once                  # single plain-text output, then exit
 flow --interface wlan0       # specify network interface
 flow --refresh 500ms         # adjust sampling interval (default 100ms)
+flow --bits                 # display in bits/sec instead of bytes/sec
 flow --no-color
 flow --version
 flow --help
@@ -179,12 +184,16 @@ flow --help
 |-------------|-----------------------------|
 | `q` / `^C`  | Quit                         |
 | `m`         | Cycle display/view modes    |
-| `n`         | Toggle network processes panel |
+| `n`         | Open network processes      |
+| `t`         | Choose theme                |
 | `r`         | Reset session peaks          |
 | `i`         | Cycle network interfaces     |
 | `c`         | Cycle display units          |
+| `b`         | Toggle bits/bytes mode       |
+| `+` / `-`   | Adjust refresh interval      |
 | `p`         | Pause or resume              |
-| `?`         | Toggle help                  |
+| `?`         | Open help                    |
+| `esc`       | Back / close overlay         |
 
 ### JSON output
 
@@ -228,6 +237,7 @@ theme     = "default"
 unit      = "auto"    # auto, kb, mb, or gb
 interface = "auto"    # auto, or a specific interface name (e.g. eth0, wlan0)
 no_color  = false
+bits      = false     # display throughput in bits/sec
 ```
 
 <details>
@@ -289,7 +299,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## 💙 Community & Support
 
-Thank you to everyone who has supported **flow**. Whether you've starred the repository, reported an issue, submitted a pull request, shared the project, or simply use it every day—your support is what keeps the project growing.
+Thank you to everyone who has supported **flow**. Whether you've starred the repository, reported an issue, submitted a pull request, shared the project, or simply use it every day - your support is what keeps the project growing.
 
 ### ⭐ Stargazers
 

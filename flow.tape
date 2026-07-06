@@ -29,111 +29,147 @@ Set Theme {
   "selection": "#585b70",
   "cursor": "#f5e0dc"
 }
-Set Width 1200
-Set Height 680
+Set Width 1400
+Set Height 920
 Set Padding 16
 Set MarginFill "#000000"
 Set Margin 8
 Set WindowBar "Colorful"
 Set PlaybackSpeed 1.0
+Set Framerate 12
 
 Hide
 
 # Build
 Type "make build"
 Enter
-Sleep 3s
-
-# Clear for a pristine start
-Ctrl+L
-Sleep 300ms
-
-# Steady medium-contention traffic — long-running throttled downloads
-Type "curl -L --limit-rate 4M --max-time 75 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
-Enter
-Sleep 400ms
-Type "curl -L --limit-rate 3M --max-time 70 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
-Enter
-Sleep 400ms
-Type "curl -L --limit-rate 5M --max-time 72 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
-Enter
-Sleep 400ms
-Type "curl -L --limit-rate 2M --max-time 65 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
-Enter
-Sleep 400ms
-Type "curl -L --limit-rate 3M --max-time 78 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
-Enter
-Sleep 400ms
-Type "curl -X POST --limit-rate 3M --max-time 68 -o /dev/null https://httpbin.org/post &>/dev/null &"
-Enter
-Sleep 400ms
-
-# Small delayed bumps for visual texture on the steady baseline
-Type "(sleep 6; curl -L --limit-rate 4M --max-time 55 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null) &"
-Enter
-Sleep 400ms
-Type "(sleep 12; curl -L --limit-rate 3M --max-time 50 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null) &"
-Enter
-Sleep 400ms
-
-# Clean slate before launch
+Sleep 2s
 Ctrl+L
 Sleep 200ms
 
-# Type the launch command character by character — builds anticipation
+# Background traffic
+Type "curl -L --limit-rate 5M --max-time 60 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
+Enter
+Sleep 300ms
+Type "curl -L --limit-rate 3M --max-time 60 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
+Enter
+Sleep 300ms
+Ctrl+L
+Sleep 200ms
+
+# Launch flow
 Type@50ms "./bin/flow --refresh 100ms"
-Sleep 400ms
+Sleep 300ms
 Enter
 Sleep 3s
 
-# Reveal — hero logo, breathing dot, subtitle, traffic flowing
+# Reveal — hero mode
 Show
-Sleep 5s
+Sleep 4s
 
-# Reset peaks
+# --- All 8 themes ---
+
+# Default → nord
+Type "t"
+Sleep 800ms
+Type "j"
+Sleep 600ms
+Enter
+Sleep 2.5s
+
+# Nord → dracula
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 500ms
+Enter
+Sleep 2.5s
+
+# Dracula → gruvbox
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# Gruvbox → forest
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# Forest → monochrome
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# Monochrome → catppuccin
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# Catppuccin → tokyo-night
+Type "t"
+Sleep 600ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+Sleep 2s
+
+# Reset
 Type "r"
 Sleep 2s
 
-# Cycle through display modes (m key cycles: hero → compact → mini → tiny → hero)
-Type "m"
-Sleep 2s
-Type "m"
-Sleep 2s
-Type "m"
-Sleep 2s
-Type "m"
-Sleep 2s
+# Interface cycle
+Type "i"
+Sleep 1.5s
+Type "i"
+Sleep 1.5s
 
-# Back in hero mode, cycle through units briefly
-Type "c"
-Sleep 2s
-Type "c"
-Sleep 2s
+# View modes
+Type "m"
+Sleep 1.5s
+Type "m"
+Sleep 1.5s
 
-# Pause — hold to show the frozen state
+# Bits + units
+Type "b"
+Sleep 1.5s
+Type "c"
+Sleep 1.2s
+Type "c"
+Sleep 1.2s
+
+# Pause / resume
 Type "p"
 Sleep 3s
-
-# Resume
 Type "p"
-Sleep 2s
+Sleep 1.5s
 
-# Show the help overlay
+# Processes
+Type "n"
+Sleep 3s
+Escape
+Sleep 1.5s
+
+# Help
 Type "?"
 Sleep 3s
-Type "?"
-Sleep 2s
+Escape
+Sleep 1.5s
 
-# Show the network processes panel
-Type "n"
-Sleep 4s
-Type "n"
-Sleep 2s
-
-# Let the traffic animate through
 Sleep 3s
-
-# Hide before quitting so the GIF ends on the clean TUI screen
 Hide
 Type "q"
-Sleep 2s
+Sleep 1s

@@ -1,8 +1,31 @@
+## [0.1.3] - 2026-07-06
+
+### Added
+
+- Theme Selector - Press `t` to open an interactive theme browser with j/k navigation, enter to confirm, and esc to cancel. Includes 8 themes: default, nord, dracula, gruvbox, forest, monochrome, catppuccin, tokyo-night.
+- Bits/sec Display Mode - Press `b` to toggle display between bytes per second and bits per second. Persisted via `bits` config option.
+- Command Line Flag - `--bits` flag to start flow in bits/sec display mode directly.
+- Interactive Refresh Scaling - Press `+` / `-` keys to speed up or slow down the sampling rate dynamically (50ms–2s range).
+- Config Option - `bits = false` TOML option to persist bits/sec preference.
+- In-TUI Tiny Mode - `m` key cycles to a centered single-line output inside the TUI, matching the standalone `--tiny` behavior.
+- Live Latency (Ping) - A minimal ping indicator measures TCP latency to 1.1.1.1 every 5 seconds and displays it color-coded (green <30ms, amber <100ms, red >=100ms) with a ↔ unicode glyph. First ping fires immediately on launch via a separate goroutine, followed by periodic ticks.
+
+### Changed
+
+- Footer Restructure - Three clean centered rows using `lipgloss.Align(Center)` for mathematically precise centering: interface status (top), minimal stats line with ping + bandwidth (middle, no gap between wifi and stats), keybinding hints (bottom). Uniform 2-line gaps between footer sections. Tighter intentional spacing throughout.
+- Overlay Dismiss - All overlays (help, processes, theme selector) now use only `esc` to dismiss. `?` opens help, `n` opens processes, `t` opens theme selector — but none of these toggle them closed. Only `esc` returns to the dashboard.
+- Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected" when empty.
+- Today Stats - Deduplicated "today" label (was showing "today" twice), cleaner formatting.
+- Makefile - Cross-platform support for Linux, macOS, and Windows (automatic binary extension, platform-agnostic directory creation and cleanup).
+- Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected" when empty.
+- Today Stats - Deduplicated "today" label (was showing "today" twice), cleaner formatting.
+- Makefile - Cross-platform support for Linux, macOS, and Windows (automatic binary extension, platform-agnostic directory creation and cleanup).
+
 ## [0.1.2] - 2026-07-05
 
 ### Added
 
-- Network Processes panel — press `n` to view active network processes sorted by connection count
+- Network Processes panel - press `n` to view active network processes sorted by connection count
 - Per-process connection count tracking via gopsutil (cross-platform)
 - Graceful fallback on platforms without per-process bandwidth APIs
 - Friendly message when no active network processes are detected
@@ -33,7 +56,7 @@
 - Daily traffic totals failing to reset when the calendar month/year changes (now compares full date: year, month, and day).
 - TUI and one-shot modes hanging indefinitely on network counter read errors (now propagates errors through sampler and exits gracefully with a message).
 - Config file not being created on macOS and Windows due to non-standard path resolution
-- `--tiny` no longer initializes Bubble Tea, Lip Gloss, termenv, or terminal queries — zero TTY dependency
+- `--tiny` no longer initializes Bubble Tea, Lip Gloss, termenv, or terminal queries - zero TTY dependency
 - `--tiny --no-color` emits clean plain text with no ANSI sequences
 
 ## [0.1.0] - 2026-07-04

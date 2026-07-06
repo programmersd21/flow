@@ -19,6 +19,7 @@ type Config struct {
 	Unit      string   `toml:"unit"`      // auto | kb | mb | gb
 	Interface string   `toml:"interface"` // auto | specific name
 	NoColor   bool     `toml:"no_color"`
+	Bits      bool     `toml:"bits"`
 }
 
 func Defaults() Config {
@@ -29,6 +30,7 @@ func Defaults() Config {
 		Unit:      "auto",
 		Interface: "auto",
 		NoColor:   false,
+		Bits:      false,
 	}
 }
 
@@ -54,6 +56,30 @@ func Load() (Config, error) {
 		return cfg, fmt.Errorf("config: parse %s: %w", path, err)
 	}
 	return cfg, nil
+}
+
+// Save writes the current config structure to the user's config file.
+func Save(cfg Config) error {
+	path, err := configPath()
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close() //nolint:errcheck
+
+	_, err = fmt.Fprintf(f, defaultTOML,
+		cfg.Refresh.String(),
+		cfg.History,
+		cfg.Theme,
+		cfg.Unit,
+		cfg.Interface,
+		boolStr(cfg.NoColor),
+		boolStr(cfg.Bits),
+	)
+	return err
 }
 
 // configPath resolves the config file location using platform-specific paths.
@@ -90,6 +116,7 @@ func writeDefaults(path string, cfg Config) error {
 		cfg.Unit,
 		cfg.Interface,
 		boolStr(cfg.NoColor),
+		boolStr(cfg.Bits),
 	)
 	return err
 }
@@ -103,6 +130,7 @@ theme     = "%s"
 unit      = "%s"     # auto | kb | mb | gb
 interface = "%s"     # auto or interface name (e.g. "eth0", "wlan0")
 no_color  = %s
+bits      = %s       # display throughput in bits/sec instead of bytes/sec
 `
 
 func boolStr(b bool) string {

@@ -13,8 +13,10 @@ import (
 	"github.com/programmersd21/flow/internal/collector"
 	"github.com/programmersd21/flow/internal/config"
 	"github.com/programmersd21/flow/internal/history"
+	"github.com/programmersd21/flow/internal/ping"
 	"github.com/programmersd21/flow/internal/processes"
 	"github.com/programmersd21/flow/internal/sampler"
+	"github.com/programmersd21/flow/internal/theme"
 )
 
 type tickMsg struct{}
@@ -22,6 +24,8 @@ type tickMsg struct{}
 type sampleMsg sampler.Sample
 
 type processesMsg []processes.Info
+
+type pingMsg time.Duration
 
 const (
 	slopeWindow = 6
@@ -64,21 +68,26 @@ type Model struct {
 	upHist   *history.Ring
 	tracker  *history.Tracker
 
-	paused        bool
-	showHelp      bool
-	showProcesses bool
-	unitMode      UnitMode
-	viewMode      ViewMode
-	procs         []processes.Info
+	paused                 bool
+	showHelp               bool
+	showProcesses          bool
+	showThemes             bool
+	themeSelectionIdx      int
+	themeSelectionOriginal string
+	unitMode               UnitMode
+	viewMode               ViewMode
+	bitsMode               bool
+	procs                  []processes.Info
 
 	width, height   int
 	refreshInterval time.Duration
 	lastSampleTime  time.Time
 
-	breathe   float64
-	downPulse float64
-	upPulse   float64
-	err       error
+	breathe     float64
+	downPulse   float64
+	upPulse     float64
+	pingLatency time.Duration
+	err         error
 }
 
 func New(
@@ -106,6 +115,8 @@ func New(
 		unitMode = UnitAuto
 	}
 
+	theme.SetTheme(cfg.Theme)
+
 	return Model{
 		keys:            DefaultKeyMap(),
 		cfg:             cfg,
@@ -118,13 +129,24 @@ func New(
 		tracker:         history.NewTracker(),
 		unitMode:        unitMode,
 		viewMode:        forced,
+		bitsMode:        cfg.Bits,
 		refreshInterval: cfg.RefreshDuration(),
 		lastSampleTime:  time.Now(),
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(waitForSample(m.smp.Out), tick(), refreshProcesses())
+	return tea.Batch(waitForSample(m.smp.Out), tick(), refreshProcesses(), quickPing(), pingTick())
+}
+
+func quickPing() tea.Cmd {
+	return func() tea.Msg {
+		latency, err := ping.Measure("1.1.1.1", 2*time.Second)
+		if err != nil {
+			return pingMsg(0)
+		}
+		return pingMsg(latency)
+	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -146,6 +168,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case processesMsg:
 		m.procs = msg
+		return m, nil
+
+	case pingMsg:
+		m.pingLatency = time.Duration(msg)
 		return m, nil
 
 	case sampleMsg:
@@ -180,20 +206,66 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.showThemes {
+		switch msg.String() {
+		case "q", "ctrl+c":
+			m.samplerCtx()
+			return m, tea.Quit
+		case "esc":
+			theme.SetTheme(m.themeSelectionOriginal)
+			m.showThemes = false
+			return m, nil
+		case "up", "k":
+			themes := theme.ListThemes()
+			m.themeSelectionIdx = (m.themeSelectionIdx - 1 + len(themes)) % len(themes)
+			theme.SetTheme(themes[m.themeSelectionIdx].Name)
+			return m, nil
+		case "down", "j":
+			themes := theme.ListThemes()
+			m.themeSelectionIdx = (m.themeSelectionIdx + 1) % len(themes)
+			theme.SetTheme(themes[m.themeSelectionIdx].Name)
+			return m, nil
+		case "enter":
+			themes := theme.ListThemes()
+			selectedTheme := themes[m.themeSelectionIdx].Name
+			m.cfg.Theme = selectedTheme
+			_ = config.Save(m.cfg)
+			m.showThemes = false
+			return m, nil
+		}
+		return m, nil
+	}
+
+	// Esc closes any open overlay
+	if key.Matches(msg, m.keys.Esc) {
+		if m.showHelp {
+			m.showHelp = false
+			return m, nil
+		}
+		if m.showProcesses {
+			m.showProcesses = false
+			return m, nil
+		}
+	}
+
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		m.samplerCtx()
 		return m, tea.Quit
 
 	case key.Matches(msg, m.keys.Help):
-		m.showHelp = !m.showHelp
+		if !m.showHelp {
+			m.showHelp = true
+			m.showProcesses = false
+		}
 
 	case key.Matches(msg, m.keys.Mode):
 		m.viewMode = (m.viewMode + 1) % 4
 
 	case key.Matches(msg, m.keys.Processes):
-		m.showProcesses = !m.showProcesses
-		if m.showProcesses {
+		if !m.showProcesses {
+			m.showProcesses = true
+			m.showHelp = false
 			return m, refreshProcesses()
 		}
 
@@ -236,13 +308,84 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, waitForSample(m.smp.Out)
 		}
 
+	case key.Matches(msg, m.keys.Bits):
+		m.bitsMode = !m.bitsMode
+
+	case key.Matches(msg, m.keys.Faster):
+		m.adjustRefreshInterval(true)
+		return m, waitForSample(m.smp.Out)
+
+	case key.Matches(msg, m.keys.Slower):
+		m.adjustRefreshInterval(false)
+		return m, waitForSample(m.smp.Out)
+
+	case key.Matches(msg, m.keys.Themes):
+		m.showThemes = true
+		m.themeSelectionOriginal = m.cfg.Theme
+		themes := theme.ListThemes()
+		m.themeSelectionIdx = 0
+		for i, t := range themes {
+			if t.Name == m.cfg.Theme {
+				m.themeSelectionIdx = i
+				break
+			}
+		}
+		m.showHelp = false
+		m.showProcesses = false
+
 	default:
 	}
 
 	return m, nil
 }
 
+func (m *Model) adjustRefreshInterval(faster bool) {
+	intervals := []time.Duration{
+		50 * time.Millisecond,
+		100 * time.Millisecond,
+		250 * time.Millisecond,
+		500 * time.Millisecond,
+		1 * time.Second,
+		2 * time.Second,
+	}
+
+	idx := -1
+	for i, d := range intervals {
+		if m.refreshInterval == d {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		idx = 1
+	}
+
+	if faster {
+		if idx > 0 {
+			idx--
+		}
+	} else {
+		if idx < len(intervals)-1 {
+			idx++
+		}
+	}
+
+	newInterval := intervals[idx]
+	if newInterval != m.refreshInterval {
+		m.refreshInterval = newInterval
+		m.samplerCtx()
+		ctx, cancel := context.WithCancel(context.Background())
+		m.samplerCtx = cancel
+		col := collector.New(m.ifaceName)
+		m.smp = sampler.New(col, m.refreshInterval)
+		go m.smp.Run(ctx)
+	}
+}
+
 func (m Model) View() string {
+	if m.showThemes {
+		return renderThemes(m)
+	}
 	if m.showHelp {
 		return renderHelp(m)
 	}
@@ -303,33 +446,73 @@ func (m *Model) updateRollingMax(down, up float64) {
 }
 
 func (m Model) FormatBps(bps float64) string {
-	return FormatBps(bps, m.unitMode)
+	return FormatBpsExt(bps, m.unitMode, m.bitsMode)
 }
 
 func FormatBps(bps float64, unit UnitMode) string {
+	return FormatBpsExt(bps, unit, false)
+}
+
+func FormatBpsExt(bps float64, unit UnitMode, bits bool) string {
 	if bps < 0 {
 		bps = 0
+	}
+	if bits {
+		bps = bps * 8
+	}
+	suffix := "B/s"
+	if bits {
+		suffix = "b/s"
 	}
 
 	switch unit {
 	case UnitKB:
-		return fmt.Sprintf("%.1f KB/s", bps/1024)
+		unitName := "KB/s"
+		if bits {
+			unitName = "Kb/s"
+		}
+		return fmt.Sprintf("%.1f %s", bps/1024, unitName)
 	case UnitMB:
-		return fmt.Sprintf("%.1f MB/s", bps/1_048_576)
+		unitName := "MB/s"
+		if bits {
+			unitName = "Mb/s"
+		}
+		return fmt.Sprintf("%.1f %s", bps/1_048_576, unitName)
 	case UnitGB:
-		return fmt.Sprintf("%.3f GB/s", bps/1_073_741_824)
+		unitName := "GB/s"
+		if bits {
+			unitName = "Gb/s"
+		}
+		return fmt.Sprintf("%.3f %s", bps/1_073_741_824, unitName)
 	default:
 		switch {
 		case bps >= 1_073_741_824:
-			return fmt.Sprintf("%.2f GB/s", bps/1_073_741_824)
+			unitName := "GB/s"
+			if bits {
+				unitName = "Gb/s"
+			}
+			return fmt.Sprintf("%.2f %s", bps/1_073_741_824, unitName)
 		case bps >= 1_048_576:
-			return fmt.Sprintf("%.1f MB/s", bps/1_048_576)
+			unitName := "MB/s"
+			if bits {
+				unitName = "Mb/s"
+			}
+			return fmt.Sprintf("%.1f %s", bps/1_048_576, unitName)
 		case bps >= 1024:
-			return fmt.Sprintf("%.0f KB/s", bps/1024)
+			unitName := "KB/s"
+			if bits {
+				unitName = "Kb/s"
+			}
+			return fmt.Sprintf("%.0f %s", bps/1024, unitName)
 		default:
-			return fmt.Sprintf("%.0f B/s", bps)
+			return fmt.Sprintf("%.0f %s", bps, suffix)
 		}
 	}
+}
+
+func FormatBpsFixedWidth(bps float64, unit UnitMode, bits bool) string {
+	valStr := FormatBpsExt(bps, unit, bits)
+	return fmt.Sprintf("%10s", valStr)
 }
 
 func waitForSample(ch <-chan sampler.Sample) tea.Cmd {
@@ -339,6 +522,16 @@ func waitForSample(ch <-chan sampler.Sample) tea.Cmd {
 func tick() tea.Cmd {
 	return tea.Tick(130*time.Millisecond, func(time.Time) tea.Msg {
 		return tickMsg{}
+	})
+}
+
+func pingTick() tea.Cmd {
+	return tea.Tick(5*time.Second, func(time.Time) tea.Msg {
+		latency, err := ping.Measure("1.1.1.1", 2*time.Second)
+		if err != nil {
+			return pingMsg(0)
+		}
+		return pingMsg(latency)
 	})
 }
 

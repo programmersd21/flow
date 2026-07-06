@@ -55,7 +55,7 @@ func renderProcesses(m Model) string {
 	}
 
 	titleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#f8fafc")).
+		Foreground(lipgloss.Color(theme.GetTextBrightColor())).
 		Bold(true)
 
 	title := titleStyle.Render("network processes")
@@ -88,7 +88,7 @@ func renderProcesses(m Model) string {
 		}
 
 		keyStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#a5b4fc")).
+			Foreground(lipgloss.Color(theme.GetAccentColor())).
 			Bold(true)
 		muted := theme.Muted()
 
@@ -113,12 +113,12 @@ func renderProcesses(m Model) string {
 	}
 
 	block = append(block, "")
-	block = append(block, "  "+theme.Dim().Render("press n to return"))
+	block = append(block, "  "+theme.Dim().Render("press esc to return"))
 	block = append(block, "")
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#6366f1")).
+		BorderForeground(lipgloss.Color(theme.GetBorderColor())).
 		Padding(0, 2).
 		Render(strings.Join(block, "\n"))
 
@@ -144,9 +144,12 @@ func renderHelp(m Model) string {
 		{"q", "quit"},
 		{"m", "cycle view mode"},
 		{"n", "network processes"},
+		{"t", "choose theme"},
 		{"r", "reset peaks"},
 		{"i", "cycle interface"},
 		{"c", "cycle units"},
+		{"b", "toggle bits/bytes"},
+		{"+ / -", "adjust refresh rate"},
 		{"p", "pause / resume"},
 		{"?", "toggle help"},
 	}
@@ -154,7 +157,7 @@ func renderHelp(m Model) string {
 	var keyLines []string
 	for _, b := range bindings {
 		kStr := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#cbd5e1")). // slate 300
+			Foreground(lipgloss.Color(theme.GetTextSoftColor())).
 			Bold(true).
 			Render(b.key)
 
@@ -171,7 +174,7 @@ func renderHelp(m Model) string {
 	}
 
 	titleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#f8fafc")).
+		Foreground(lipgloss.Color(theme.GetTextBrightColor())).
 		Bold(true)
 
 	title := titleStyle.Render("flow controls")
@@ -182,16 +185,70 @@ func renderHelp(m Model) string {
 	block = append(block, "")
 	block = append(block, keyLines...)
 	block = append(block, "")
-	block = append(block, "  "+theme.Dim().Render("press ? to return"))
+	block = append(block, "  "+theme.Dim().Render("press esc to return"))
 	block = append(block, "")
 
 	helpBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#6366f1")). // Modern Indigo border
+		BorderForeground(lipgloss.Color(theme.GetBorderColor())). // Modern Indigo border
 		Padding(0, 2).
 		Render(strings.Join(block, "\n"))
 
 	return centerFrame(helpBox, m.width, m.height)
+}
+
+func renderThemes(m Model) string {
+	termW := m.width
+	if termW <= 0 {
+		termW = 80
+	}
+	termH := m.height
+	if termH <= 0 {
+		termH = 24
+	}
+
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(theme.GetTextBrightColor())).
+		Bold(true)
+
+	title := titleStyle.Render("choose theme")
+
+	themes := theme.ListThemes()
+
+	var block []string
+	block = append(block, "")
+	block = append(block, "  "+title)
+	block = append(block, "")
+
+	for i, t := range themes {
+		cursor := "  "
+		nameStyle := theme.Muted()
+		descStyle := theme.Dim()
+		if i == m.themeSelectionIdx {
+			cursor = lipgloss.NewStyle().
+				Foreground(lipgloss.Color(theme.GetAccentColor())).
+				Bold(true).
+				Render("> ")
+			nameStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color(theme.GetTextBrightColor())).
+				Bold(true)
+			descStyle = theme.Soft()
+		}
+		line := "  " + cursor + nameStyle.Render(t.Name) + "  " + descStyle.Render(t.Description)
+		block = append(block, line)
+	}
+
+	block = append(block, "")
+	block = append(block, "  "+theme.Dim().Render("j/k navigate  enter confirm  esc cancel"))
+	block = append(block, "")
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(theme.GetBorderColor())).
+		Padding(0, 2).
+		Render(strings.Join(block, "\n"))
+
+	return centerFrame(box, termW, termH)
 }
 
 func TitleRow(breathe float64) string {
@@ -302,89 +359,78 @@ func renderDashboard(m Model, mode ViewMode) string {
 	upPanel := renderPanel("upload", upVal, peakUpVal, upPulse, upGraph, contentW, upBorderColor, mode == ViewMini)
 	lines = append(lines, upPanel)
 
-	// Footer stats and controls (only for non-mini modes)
+	// Footer with interface status and keybinding hints (only for non-mini modes)
 	if mode == ViewHero || mode == ViewCompact {
+		hasTraffic := m.tracker.TodayDown > 0 || m.tracker.TodayUp > 0
+		if hasTraffic && termH >= 24 {
+			lines = append(lines, "")
+			todayLine := fmt.Sprintf(
+				"today  %s %s  %s %s",
+				theme.DownloadColor(0.5).Render("↓"),
+				theme.Accent().Render(formatBytes(m.tracker.TodayDown)),
+				theme.UploadColor(0.5).Render("↑"),
+				theme.Accent().Render(formatBytes(m.tracker.TodayUp)),
+			)
+			lines = append(lines, todayLine)
+		}
+		lines = append(lines, "")
 		lines = append(lines, "")
 
-		// Minimalist, high-end unicode today stats line
-		todayLine := fmt.Sprintf(
-			"today  %s  %s    today  %s  %s",
-			lipgloss.NewStyle().Foreground(lipgloss.Color("#3b82f6")).Render("↓"),
-			theme.Accent().Render(formatBytes(m.tracker.TodayDown)),
-			lipgloss.NewStyle().Foreground(lipgloss.Color("#10b981")).Render("↑"),
-			theme.Accent().Render(formatBytes(m.tracker.TodayUp)),
-		)
-		lines = append(lines, todayLine)
-		lines = append(lines, "")
-
-		// Minimalist navigation status line
-		dotColor := "#10b981" // Active Green
+		dotColor := "#10b981"
 		if m.paused {
-			dotColor = "#ef4444" // Paused Red
+			dotColor = "#ef4444"
 		}
 		statusDot := lipgloss.NewStyle().Foreground(lipgloss.Color(dotColor)).Render("●")
 
 		ifaceStr := fmt.Sprintf("%s %s", statusDot, theme.Accent().Render(m.ifaceName))
 		if m.paused {
-			ifaceStr += theme.Muted().Render(" (paused)")
+			ifaceStr += theme.Muted().Render("  paused")
 		}
 
 		renderKey := func(k, desc string) string {
-			return lipgloss.NewStyle().Foreground(lipgloss.Color("#a5b4fc")).Bold(true).Render(k) + " " + theme.Muted().Render(desc)
+			return lipgloss.NewStyle().Foreground(lipgloss.Color(theme.GetAccentColor())).Bold(true).Render(k) + " " + theme.Muted().Render(desc)
+		}
+		type keyHint struct{ key, desc string }
+		var hints []keyHint
+		switch {
+		case contentW >= 78:
+			hints = []keyHint{
+				{"q", "quit"}, {"m", "mode"}, {"n", "proc"}, {"t", "theme"},
+				{"r", "reset"}, {"i", "iface"}, {"c", "units"}, {"b", "bits"},
+				{"+", "fast"}, {"-", "slow"}, {"p", "pause"}, {"?", "help"},
+			}
+		case contentW >= 55:
+			hints = []keyHint{
+				{"q", "quit"}, {"m", "mode"}, {"n", "proc"}, {"t", "theme"},
+				{"p", "pause"}, {"?", "help"},
+			}
+		case contentW >= 42:
+			hints = []keyHint{
+				{"q", "quit"}, {"?", "help"},
+			}
 		}
 
-		dotSep := theme.Dim().Render(" · ")
+		// Footer container style for precise centering
+		footerStyle := lipgloss.NewStyle().Width(contentW).Align(lipgloss.Center)
 
-		var keys []string
-		if contentW >= 80 {
-			keys = []string{
-				renderKey("q", "quit"),
-				renderKey("m", "mode"),
-				renderKey("n", "procs"),
-				renderKey("r", "reset"),
-				renderKey("i", "iface"),
-				renderKey("c", "unit"),
-				renderKey("p", "pause"),
-				renderKey("?", "help"),
-			}
-		} else if contentW >= 65 {
-			keys = []string{
-				renderKey("q", "quit"),
-				renderKey("m", "mode"),
-				renderKey("n", "procs"),
-				renderKey("r", "reset"),
-				renderKey("p", "pause"),
-				renderKey("?", "help"),
-			}
-		} else if contentW >= 50 {
-			keys = []string{
-				renderKey("q", "quit"),
-				renderKey("m", "mode"),
-				renderKey("n", "procs"),
-				renderKey("p", "pause"),
-				renderKey("?", "help"),
-			}
-		} else {
-			keys = []string{
-				renderKey("q", "quit"),
-				renderKey("p", "pause"),
-				renderKey("?", "help"),
-			}
-		}
-		rightBar := strings.Join(keys, dotSep)
+		// 1. Interface
+		lines = append(lines, footerStyle.Render(ifaceStr))
 
-		leftBarW := lipgloss.Width(ifaceStr)
-		rightBarW := lipgloss.Width(rightBar)
-		gap := contentW - leftBarW - rightBarW
-
-		var footerLine string
-		if gap > 0 {
-			footerLine = ifaceStr + strings.Repeat(" ", gap) + rightBar
-		} else {
-			footerLine = ifaceStr + "   " + rightBar
+		// 2. Minimal stats (middle) — ping + bandwidth
+		if contentW >= 42 {
+			lines = append(lines, footerStyle.Render(renderStatsLine(m)))
 		}
 
-		lines = append(lines, footerLine)
+		if len(hints) > 0 {
+			lines = append(lines, "")
+			lines = append(lines, "")
+			var hintParts []string
+			for _, h := range hints {
+				hintParts = append(hintParts, renderKey(h.key, h.desc))
+			}
+			hintStr := strings.Join(hintParts, " · ")
+			lines = append(lines, footerStyle.Render(hintStr))
+		}
 	}
 
 	content := strings.Join(lines, "\n")
@@ -429,6 +475,74 @@ func renderPanel(title string, value string, peak string, peakPulse float64, gra
 		Width(width)
 
 	return borderStyle.Render(panelContent)
+}
+
+func (m Model) FormatBandwidthMeter() string {
+	if m.err != nil {
+		errStr := m.err.Error()
+		if strings.Contains(errStr, "permission") || strings.Contains(errStr, "denied") {
+			return lipgloss.JoinHorizontal(lipgloss.Left,
+				theme.Dim().Render("↓"), " ", theme.Muted().Render("  no perm"), "   ",
+				theme.Dim().Render("↑"), " ", theme.Muted().Render("  no perm"),
+			)
+		}
+		if strings.Contains(errStr, "not found") || strings.Contains(errStr, "no usable") || strings.Contains(errStr, "interface") {
+			return lipgloss.JoinHorizontal(lipgloss.Left,
+				theme.Dim().Render("↓"), " ", theme.Muted().Render("   no dev"), "   ",
+				theme.Dim().Render("↑"), " ", theme.Muted().Render("   no dev"),
+			)
+		}
+		return lipgloss.JoinHorizontal(lipgloss.Left,
+			theme.Dim().Render("↓"), " ", theme.Muted().Render("    error"), "   ",
+			theme.Dim().Render("↑"), " ", theme.Muted().Render("    error"),
+		)
+	}
+
+	downVal := FormatBpsFixedWidth(m.dispDown, m.unitMode, m.bitsMode)
+	upVal := FormatBpsFixedWidth(m.dispUp, m.unitMode, m.bitsMode)
+
+	downRatio := theme.SpeedRatio(m.dispDown, maxf(m.rollingMaxDown, m.dispDown))
+	upRatio := theme.SpeedRatio(m.dispUp, maxf(m.rollingMaxUp, m.dispUp))
+
+	downStyle := theme.ValuePrimary(downRatio, true)
+	upStyle := theme.ValuePrimary(upRatio, false)
+
+	return lipgloss.JoinHorizontal(lipgloss.Left,
+		theme.Dim().Render("↓"), " ", downStyle.Render(downVal), "   ",
+		theme.Dim().Render("↑"), " ", upStyle.Render(upVal),
+	)
+}
+
+func renderStatsLine(m Model) string {
+	pingStr := ""
+	if m.pingLatency > 0 {
+		ms := m.pingLatency.Seconds() * 1000
+		var color string
+		switch {
+		case ms < 30:
+			color = "#10b981" // green
+		case ms < 100:
+			color = "#f59e0b" // amber
+		default:
+			color = "#ef4444" // red
+		}
+		pingIcon := lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render("↔")
+		pingVal := lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Bold(true).Render(fmt.Sprintf("%.0fms", ms))
+		pingStr = pingIcon + " " + pingVal
+	}
+
+	downRatio := theme.SpeedRatio(m.dispDown, maxf(m.rollingMaxDown, m.dispDown))
+	upRatio := theme.SpeedRatio(m.dispUp, maxf(m.rollingMaxUp, m.dispUp))
+	downVal := theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.dispDown))
+	upVal := theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.dispUp))
+
+	down := theme.Dim().Render("↓") + " " + downVal
+	up := theme.Dim().Render("↑") + " " + upVal
+
+	if pingStr == "" {
+		return down + "   " + up
+	}
+	return pingStr + "   " + down + "   " + up
 }
 
 func renderColoredGraph(samples []float64, width, height int, maxVal float64, frac float64, download bool) string {

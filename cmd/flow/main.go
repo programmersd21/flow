@@ -31,10 +31,11 @@ func main() {
 	flagIface := flag.String("interface", "", "force a specific network interface")
 	flagRefresh := flag.Duration("refresh", 0, "sampling interval (e.g. 250ms)")
 	flagNoColor := flag.Bool("no-color", false, "disable ANSI color output")
+	flagBits := flag.Bool("bits", false, "display throughput in bits/sec instead of bytes/sec")
 	flagVersion := flag.Bool("version", false, "print version and exit")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "flow — See your network breathe.\n\n")
+		fmt.Fprintf(os.Stderr, "flow - See your network breathe.\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n  flow [flags]\n\nFlags:\n")
 		flag.PrintDefaults()
 	}
@@ -61,6 +62,9 @@ func main() {
 		cfg.NoColor = true
 		_ = os.Setenv("NO_COLOR", "1") // honoured by Lip Gloss automatically
 	}
+	if *flagBits {
+		cfg.Bits = true
+	}
 
 	col := collector.New(cfg.Interface)
 
@@ -68,12 +72,12 @@ func main() {
 	smp := sampler.New(col, refresh)
 
 	if *flagJSON || *flagOnce {
-		runOnce(col, smp, refresh, *flagJSON)
+		runOnce(col, smp, refresh, *flagJSON, cfg.Bits)
 		return
 	}
 
 	if *flagTiny {
-		runTiny(col, smp, refresh, cfg.NoColor)
+		runTiny(col, smp, refresh, cfg.NoColor, cfg.Bits)
 		return
 	}
 
@@ -121,8 +125,8 @@ func main() {
 }
 
 // runTiny collects a single sample and prints a compact one-line summary.
-// Completely independent of Bubble Tea — works in tmux, cron, pipes.
-func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, noColor bool) {
+// Completely independent of Bubble Tea - works in tmux, cron, pipes.
+func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, noColor bool, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -141,8 +145,8 @@ func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	}
 	cancel()
 
-	down := ui.FormatBps(s.DownBps, ui.UnitAuto)
-	up := ui.FormatBps(s.UpBps, ui.UnitAuto)
+	down := ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits)
+	up := ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits)
 
 	if noColor {
 		fmt.Printf("↓ %s · ↑ %s\n", down, up)
@@ -153,7 +157,7 @@ func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 
 // runOnce takes exactly one sample and either prints JSON or plain text, then
 // exits. Does not start the TUI.
-func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, asJSON bool) {
+func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, asJSON bool, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -179,7 +183,7 @@ func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 			"peak_down_bps": s.DownBps, // peak = current in one-shot mode
 			"peak_up_bps":   s.UpBps,
 			"interface":     s.Interface,
-			"unit_display":  autoUnit(s.DownBps),
+			"unit_display":  autoUnitExt(s.DownBps, bits),
 		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
@@ -188,12 +192,25 @@ func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	}
 
 	fmt.Printf("%s %s\n",
-		ui.FormatBps(s.DownBps, ui.UnitAuto),
-		ui.FormatBps(s.UpBps, ui.UnitAuto),
+		ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits),
+		ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits),
 	)
 }
 
-func autoUnit(bps float64) string {
+func autoUnitExt(bps float64, bits bool) string {
+	if bits {
+		bps = bps * 8
+		switch {
+		case bps >= 1_073_741_824:
+			return "Gb/s"
+		case bps >= 1_048_576:
+			return "Mb/s"
+		case bps >= 1024:
+			return "Kb/s"
+		default:
+			return "b/s"
+		}
+	}
 	switch {
 	case bps >= 1_073_741_824:
 		return "GB/s"
