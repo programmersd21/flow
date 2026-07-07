@@ -1,3 +1,9 @@
+## [0.1.4] - 2026-07-07
+
+### Fixed
+
+- Dashboard Overflow on Short Terminals - Replaced fixed height thresholds for view mode selection with a measurement-based approach that renders each candidate mode and picks the largest one whose actual line count fits the terminal. Added a safety clamp in `centerFrame` so output never exceeds the terminal height (trims footer instead of clipping the top). This prevents the TUI title and graphs from being scrolled out of view on small windows.
+
 ## [0.1.3] - 2026-07-06
 
 ### Added
