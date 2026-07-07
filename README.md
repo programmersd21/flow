@@ -297,6 +297,16 @@ make release-dry # goreleaser snapshot build, no publish
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=programmersd21%2Fflow&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+ </picture>
+</a>
+
 ## 💙 Community & Support
 
 Thank you to everyone who has supported **flow**. Whether you've starred the repository, reported an issue, submitted a pull request, shared the project, or simply use it every day - your support is what keeps the project growing.
