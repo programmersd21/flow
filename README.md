@@ -7,7 +7,11 @@
 <img src="./docs/demo.gif" alt="flow demo" width="100%">
 
 <h3 align="center">
-  Your Internet Stats, TUIfied.
+  <a href="https://git.io/typing-svg">
+    <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=22&pause=1200&color=00E0A4&center=true&vCenter=true&
+    repeat=false&
+    width=460&lines=Your+Internet+Stats%2C+TUIfied." alt="Typing SVG" />
+  </a>
 </h3>
 
 <p align="center">
