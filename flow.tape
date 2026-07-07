@@ -36,7 +36,6 @@ Set MarginFill "#000000"
 Set Margin 8
 Set WindowBar "Colorful"
 Set PlaybackSpeed 1.0
-Set Framerate 12
 
 Hide
 
@@ -65,111 +64,111 @@ Sleep 3s
 
 # Reveal — hero mode
 Show
-Sleep 4s
+Sleep 3s
 
 # --- All 8 themes ---
 
 # Default → nord
 Type "t"
-Sleep 800ms
-Type "j"
 Sleep 600ms
+Type "j"
+Sleep 400ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Nord → dracula
 Type "t"
-Sleep 600ms
-Type "j"
 Sleep 500ms
+Type "j"
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Dracula → gruvbox
 Type "t"
-Sleep 600ms
+Sleep 500ms
 Type "j"
-Sleep 400ms
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Gruvbox → forest
 Type "t"
-Sleep 600ms
+Sleep 500ms
 Type "j"
-Sleep 400ms
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Forest → monochrome
 Type "t"
-Sleep 600ms
+Sleep 500ms
 Type "j"
-Sleep 400ms
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Monochrome → catppuccin
 Type "t"
-Sleep 600ms
+Sleep 500ms
 Type "j"
-Sleep 400ms
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
 # Catppuccin → tokyo-night
 Type "t"
-Sleep 600ms
+Sleep 500ms
 Type "j"
-Sleep 400ms
+Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 1.5s
 
-Sleep 2s
+Sleep 1.5s
 
 # Reset
 Type "r"
-Sleep 2s
+Sleep 1.5s
 
 # Interface cycle
 Type "i"
-Sleep 1.5s
+Sleep 1s
 Type "i"
-Sleep 1.5s
+Sleep 1s
 
 # View modes
 Type "m"
-Sleep 1.5s
+Sleep 1s
 Type "m"
-Sleep 1.5s
+Sleep 1s
 
 # Bits + units
 Type "b"
-Sleep 1.5s
+Sleep 1s
 Type "c"
-Sleep 1.2s
+Sleep 800ms
 Type "c"
-Sleep 1.2s
+Sleep 800ms
 
 # Pause / resume
 Type "p"
-Sleep 3s
+Sleep 2s
 Type "p"
-Sleep 1.5s
+Sleep 1s
 
 # Processes
 Type "n"
-Sleep 3s
+Sleep 2s
 Escape
-Sleep 1.5s
+Sleep 1s
 
 # Help
 Type "?"
-Sleep 3s
+Sleep 2s
 Escape
-Sleep 1.5s
+Sleep 1s
 
-Sleep 3s
+Sleep 2s
 Hide
 Type "q"
 Sleep 1s
