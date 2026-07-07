@@ -392,45 +392,25 @@ func (m Model) View() string {
 	if m.showProcesses {
 		return renderProcesses(m)
 	}
-	switch m.effectiveViewMode() {
-	case ViewTiny:
+	mode, lines := pickViewModeAndContent(m)
+	if mode == ViewTiny {
 		return renderTiny(m)
-	case ViewMini:
-		return renderMini(m)
-	case ViewCompact:
-		return renderCompact(m)
-	default:
-		return renderHero(m)
 	}
+	termW := m.width
+	termH := m.height
+	if termH <= 0 {
+		termH = 24
+	}
+	return centerFrame(strings.Join(lines, "\n"), termW, termH)
 }
 
+// effectiveViewMode reports which view mode pickViewModeAndContent would
+// pick for the current terminal size, without needing its rendered
+// content. Exists mainly for tests and callers that only care about the
+// decision.
 func (m Model) effectiveViewMode() ViewMode {
-	if m.viewMode == ViewTiny {
-		return ViewTiny
-	}
-	if m.viewMode == ViewMini {
-		return ViewMini
-	}
-	if m.viewMode == ViewCompact {
-		return ViewCompact
-	}
-
-	if m.width > 0 && m.width < 40 {
-		return ViewTiny
-	}
-	if m.height > 0 && m.height < 6 {
-		return ViewTiny
-	}
-	if m.width > 0 && m.width < 60 {
-		return ViewCompact
-	}
-	if m.height > 0 && m.height < 16 {
-		return ViewMini
-	}
-	if m.height > 0 && m.height < 22 {
-		return ViewCompact
-	}
-	return ViewHero
+	mode, _ := pickViewModeAndContent(m)
+	return mode
 }
 
 func (m *Model) updateRollingMax(down, up float64) {
