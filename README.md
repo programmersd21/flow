@@ -65,29 +65,27 @@
 
 ## Install
 
-1. AUR:
-
-<img src="./docs/aurweb.png" alt="AUR package page">
+### Arch Linux (AUR)
 
 ```sh
 yay -S flow-network-monitor-bin
 ```
 
-**💝 Thanks to [@Dominiquini](https://github.com/Dominiquini) for assisting in AUR deployment!**
+> 💝 Thanks to [@Dominiquini](https://github.com/Dominiquini) for helping bring Flow to the AUR!
 
-2. Homebrew:
+### Homebrew:
 
 ```sh
 brew install programmersd21/flow/flow
 ```
 
-3. Go:
+### Go:
 
 ```sh
 go install github.com/programmersd21/flow/cmd/flow@latest
 ```
 
-4. From source:
+### From source:
 
 ```sh
 git clone https://github.com/programmersd21/flow
