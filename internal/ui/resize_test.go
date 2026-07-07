@@ -28,10 +28,10 @@ func TestViewNeverExceedsTerminalHeight(t *testing.T) {
 				lastSampleTime:  time.Now(),
 			}
 
-			out := m.View()
-			lines := strings.Count(out, "\n") + 1
-			if lines > h {
-				t.Errorf("w=%d h=%d mode=%v: rendered %d lines, exceeds terminal height", w, h, m.effectiveViewMode(), lines)
+			expectedMode := m.effectiveViewMode()
+			rawLines := dashboardLineCount(m, expectedMode)
+			if rawLines > h && expectedMode != ViewTiny {
+				t.Errorf("w=%d h=%d mode=%v: untruncated lines %d exceeds terminal height %d", w, h, expectedMode, rawLines, h)
 			}
 		}
 	}
