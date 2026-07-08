@@ -177,13 +177,19 @@ func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	cancel()
 
 	if asJSON {
+		down := ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits)
+		up := ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits)
 		out := map[string]interface{}{
-			"download_bps":  s.DownBps,
-			"upload_bps":    s.UpBps,
-			"peak_down_bps": s.DownBps, // peak = current in one-shot mode
-			"peak_up_bps":   s.UpBps,
-			"interface":     s.Interface,
-			"unit_display":  autoUnitExt(s.DownBps, bits),
+			"status":         "ok",
+			"timestamp":      time.Now().Format(time.RFC3339),
+			"interface":      s.Interface,
+			"download_bps":   s.DownBps,
+			"upload_bps":     s.UpBps,
+			"download_human": down,
+			"upload_human":   up,
+			"peak_down_bps":  s.DownBps,
+			"peak_up_bps":    s.UpBps,
+			"unit_display":   autoUnitExt(s.DownBps, bits),
 		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")

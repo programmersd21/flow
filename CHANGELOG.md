@@ -1,3 +1,11 @@
+## [0.1.5] - 2026-07-08
+
+### Added
+
+- Enriched JSON snapshot output - `--once --json` now includes `status`, `timestamp` (RFC3339), `download_human`, and `upload_human` fields for more self-contained script consumption.
+- Refresh rate notification - Pressing `+`/`-` briefly shows the current sampling interval (e.g. "every 500ms") in the footer.
+- Extended sampling range - Added 3s, 5s, and 10s intervals for long-term monitoring.
+
 ## [0.1.4] - 2026-07-07
 
 ### Fixed
