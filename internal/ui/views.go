@@ -446,6 +446,12 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		if m.paused {
 			ifaceStr += theme.Muted().Render("  paused")
 		}
+		if m.bitsMode {
+			ifaceStr += theme.Muted().Render("  [bits]")
+		}
+		if m.refreshInterval != 100*time.Millisecond {
+			ifaceStr += theme.Muted().Render("  " + formatInterval(m.refreshInterval))
+		}
 
 		renderKey := func(k, desc string) string {
 			return lipgloss.NewStyle().Foreground(lipgloss.Color(theme.GetAccentColor())).Bold(true).Render(k) + " " + theme.Muted().Render(desc)
@@ -699,6 +705,13 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func formatInterval(d time.Duration) string {
+	if d >= time.Second {
+		return fmt.Sprintf("every %ds", int(d.Seconds()))
+	}
+	return fmt.Sprintf("every %dms", d.Milliseconds())
 }
 
 func min(a, b int) int {
