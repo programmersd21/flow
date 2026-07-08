@@ -446,6 +446,9 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		if m.paused {
 			ifaceStr += theme.Muted().Render("  paused")
 		}
+		if m.refreshHint != "" {
+			ifaceStr += theme.Muted().Render("  " + m.refreshHint)
+		}
 
 		renderKey := func(k, desc string) string {
 			return lipgloss.NewStyle().Foreground(lipgloss.Color(theme.GetAccentColor())).Bold(true).Render(k) + " " + theme.Muted().Render(desc)
