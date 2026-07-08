@@ -347,6 +347,12 @@ func (m *Model) adjustRefreshInterval(faster bool) {
 		500 * time.Millisecond,
 		1 * time.Second,
 		2 * time.Second,
+		3 * time.Second,
+		5 * time.Second,
+		10 * time.Second,
+		30 * time.Second,
+		60 * time.Second,
+		300 * time.Second,
 	}
 
 	idx := -1

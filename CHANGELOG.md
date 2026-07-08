@@ -1,3 +1,12 @@
+## [0.1.5] - 2026-07-08
+
+### Added
+
+- Enriched JSON snapshot output -- `--once --json` now includes `status`, `timestamp` (RFC3339), `download_human`, and `upload_human` fields for self-contained script consumption.
+- Refresh interval permanently displayed in footer when non-default (e.g. "every 5s").
+- Extended sampling range up to 5 minutes (30s, 60s, 300s) for long-term overnight monitoring.
+- Bits indicator -- footer shows `[bits]` label when bits mode is active for clear differentiation from bytes mode.
+
 ## [0.1.4] - 2026-07-07
 
 ### Fixed
