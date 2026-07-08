@@ -27,8 +27,6 @@ type processesMsg []processes.Info
 
 type pingMsg time.Duration
 
-type refreshHintClearMsg struct{}
-
 const (
 	slopeWindow = 6
 )
@@ -89,7 +87,6 @@ type Model struct {
 	downPulse   float64
 	upPulse     float64
 	pingLatency time.Duration
-	refreshHint string
 	err         error
 }
 
@@ -168,10 +165,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.downPulse = math.Max(0, m.downPulse-0.08)
 		m.upPulse = math.Max(0, m.upPulse-0.08)
 		return m, tick()
-
-	case refreshHintClearMsg:
-		m.refreshHint = ""
-		return m, nil
 
 	case processesMsg:
 		m.procs = msg
@@ -319,12 +312,12 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.bitsMode = !m.bitsMode
 
 	case key.Matches(msg, m.keys.Faster):
-		cmd := m.adjustRefreshInterval(true)
-		return m, tea.Batch(waitForSample(m.smp.Out), cmd)
+		m.adjustRefreshInterval(true)
+		return m, waitForSample(m.smp.Out)
 
 	case key.Matches(msg, m.keys.Slower):
-		cmd := m.adjustRefreshInterval(false)
-		return m, tea.Batch(waitForSample(m.smp.Out), cmd)
+		m.adjustRefreshInterval(false)
+		return m, waitForSample(m.smp.Out)
 
 	case key.Matches(msg, m.keys.Themes):
 		m.showThemes = true
@@ -346,7 +339,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) adjustRefreshInterval(faster bool) tea.Cmd {
+func (m *Model) adjustRefreshInterval(faster bool) {
 	intervals := []time.Duration{
 		50 * time.Millisecond,
 		100 * time.Millisecond,
@@ -354,9 +347,6 @@ func (m *Model) adjustRefreshInterval(faster bool) tea.Cmd {
 		500 * time.Millisecond,
 		1 * time.Second,
 		2 * time.Second,
-		3 * time.Second,
-		5 * time.Second,
-		10 * time.Second,
 	}
 
 	idx := -1
@@ -389,11 +379,7 @@ func (m *Model) adjustRefreshInterval(faster bool) tea.Cmd {
 		col := collector.New(m.ifaceName)
 		m.smp = sampler.New(col, m.refreshInterval)
 		go m.smp.Run(ctx)
-
-		m.refreshHint = fmt.Sprintf("every %s", m.refreshInterval)
-		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg { return refreshHintClearMsg{} })
 	}
-	return nil
 }
 
 func (m Model) View() string {
