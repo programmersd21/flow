@@ -4,13 +4,17 @@
 
 *A terminal dashboard for real-time network throughput.*
 
-<img src="./docs/demo.gif" alt="flow demo" width="100%">
+<img src="./assets/demo.gif" alt="flow demo" width="100%">
 
 <h3 align="center">
+  Featured on&nbsp;&nbsp;<a href="https://terminaltrove.com/flow"><img src="assets/terminal_trove_black_green.png" alt="Terminal Trove logo" width="140" valign="middle"></a>
+</h3>
+
+<p align="center">
   <a href="https://git.io/typing-svg">
     <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=22&pause=1200&color=00E0A4&center=true&vCenter=true&repeat=false&width=460&lines=Your+Internet+Stats%2C+TUIfied." alt="Typing SVG" />
   </a>
-</h3>
+</p>
 
 <p align="center">
   <i>Fast • Beautiful • Cross-Platform • Open Source</i>
@@ -103,7 +107,7 @@ Most network monitors display CPU usage, per-process breakdowns, packet counts, 
 
 | btop | flow |
 |:---:|:---:|
-| <img src="./docs/btop.png" alt="btop"> | <img src="./docs/flow.png" alt="flow"> |
+| <img src="./assets/btop.png" alt="btop"> | <img src="./assets/flow.png" alt="flow"> |
 | CPU, memory, disks, processes, network | throughput only |
 
 Every feature decision is evaluated against a single question: does this help the user understand their network within one second. If not, it is not included.
@@ -133,7 +137,7 @@ flow adjusts its display according to terminal width and height.
 
 | hero | compact | mini | tiny |
 |:---:|:---:|:---:|:---:|
-| <img src="./docs/normal_mode.png" alt="hero mode"> | <img src="./docs/compact_mode.png" alt="compact mode"> | <img src="./docs/mini_mode.png" alt="mini mode"> | <img src="./docs/tiny_mode.png" alt="tiny mode"> |
+| <img src="./assets/normal_mode.png" alt="hero mode"> | <img src="./assets/compact_mode.png" alt="compact mode"> | <img src="./assets/mini_mode.png" alt="mini mode"> | <img src="./assets/tiny_mode.png" alt="tiny mode"> |
 | Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner layout with title row, waveforms, peaks, and daily totals | Graphs-only layout, hiding header logo, today's summary, and help footers | Single-line output, intended for status bars; centered when toggled inside the TUI with `m` |
 
 ## Features
@@ -159,7 +163,7 @@ flow adjusts its display according to terminal width and height.
 
 ## Usage
 
-![help](docs/cli_help.png)
+![help](assets/cli_help.png)
 
 ```sh
 flow                        # hero view, auto interface
@@ -178,7 +182,7 @@ flow --help
 
 ### Keybindings
 
-![keybinds](docs/keybinds.png)
+![keybinds](assets/keybinds.png)
 
 | Key         | Action                      |
 |-------------|-----------------------------|
@@ -210,7 +214,7 @@ flow --help
 
 ### tmux integration
 
-![tmux](docs/tmux.png)
+![tmux](assets/tmux.png)
 
 ```sh
 # ~/.tmux.conf

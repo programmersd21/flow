@@ -57,13 +57,13 @@ tidy:
 clean:
 	$(RMDIR) $(BUILDDIR)
 
-## demo: generate docs/demo.gif with VHS
+## demo: generate assets/demo.gif with VHS
 demo: build
 	vhs flow.tape
 	@if command -v gifsicle >/dev/null 2>&1; then \
 		echo "optimizing with gifsicle..."; \
-		gifsicle -O3 --colors 256 --lossy=80 -o docs/demo.gif docs/demo.gif; \
-		ls -lh docs/demo.gif; \
+		gifsicle -O3 --colors 256 --lossy=80 -o assets/demo.gif assets/demo.gif; \
+		ls -lh assets/demo.gif; \
 	else \
 		echo "install gifsicle for further optimization: brew install gifsicle"; \
 	fi

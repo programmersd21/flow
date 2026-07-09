@@ -1,4 +1,4 @@
-Output docs/demo.gif
+Output assets/demo.gif
 
 Require make
 Require curl
