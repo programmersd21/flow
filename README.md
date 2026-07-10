@@ -143,8 +143,10 @@ flow adjusts its display according to terminal width and height.
 ## Features
 
 - Live latency (ping) indicator with color-coded ↔ display
-- Network processes panel - press `n` to view active processes sorted by connection count
-- Theme selector with 8 built-in themes - press `t` to browse and select
+- Network processes panel — press `n` to view active processes sorted by connection count
+- Interface details overlay — press `I` (capital i) to view IP addresses, MAC, link status, MTU
+- Theme selector with 8 built-in themes — press `t` to browse and select
+- Reset confirmation — press `r` twice to confirm, preventing accidental data loss
 - Real-time download and upload throughput
 - Interpolated display values using spring-based animation
 - Braille-grid waveform rendering at 30 frames per second
@@ -162,8 +164,6 @@ flow adjusts its display according to terminal width and height.
 - Adjust the sampling and refresh interval interactively using the `+` and `-` keys
 
 ## Usage
-
-![help](assets/cli_help.png)
 
 ```sh
 flow                        # hero view, auto interface
@@ -186,12 +186,15 @@ flow --help
 
 | Key         | Action                      |
 |-------------|-----------------------------|
+| Key         | Action                      |
+|-------------|-----------------------------|
 | `q` / `^C`  | Quit                         |
 | `m`         | Cycle display/view modes    |
 | `n`         | Open network processes      |
 | `t`         | Choose theme                |
-| `r`         | Reset session peaks          |
+| `r`         | Reset session peaks (twice)  |
 | `i`         | Cycle network interfaces     |
+| `I`         | Show interface info          |
 | `c`         | Cycle display units          |
 | `b`         | Toggle bits/bytes mode       |
 | `+` / `-`   | Adjust refresh interval      |
@@ -280,11 +283,37 @@ flowchart LR
         Channel --> Spring["Spring interpolation"]
         Spring --> Display["Dashboard render (Bubble Tea)"]
         Theme["Theme configuration"] -.-> Display
+        InterfaceInfo["Interface details (IP, MAC)"] -.-> Display
     end
 ```
 
 - The sampling loop reads network counters from the operating system, computes a sliding-window average, and emits a sample on a channel.
 - The render loop interpolates display values toward the latest sample and renders the dashboard.
+- Interface details (IP addresses, MAC, link status) are fetched on demand via `I` using both gopsutil and the Go standard library.
+
+### Internal package structure
+
+```
+cmd/flow/main.go
+    |
+    ├── internal/config       ← TOML config management
+    ├── internal/collector    ← OS-level network I/O counters + interface details
+    ├── internal/sampler      ← Sliding-window sampling loop
+    |
+    └── internal/ui           ← Bubble Tea Model + views
+         ├── model.go         ← State, update loop, key handling
+         ├── views.go         ← Dashboard layout and mode selection
+         ├── panels.go        ← Download/upload panel rendering
+         ├── overlays.go      ← Help, processes, themes, interface info
+         ├── layout.go        ← Layout utilities (centering, formatting)
+         ├── keys.go          ← Key binding definitions
+         ├── internal/history    ← Ring buffer + tracker (peaks/totals)
+         ├── internal/sparkline  ← Braille/block graph rendering
+         ├── internal/theme      ← 8 colour themes + lipgloss styles
+         ├── internal/animate    ← Spring physics, easing, colour lerps
+         ├── internal/ping       ← TCP ping measurement
+         └── internal/processes  ← Network process enumeration
+```
 
 Separating collection from rendering keeps the interface responsive without adding load to the sampler. Idle CPU usage remains below one percent.
 

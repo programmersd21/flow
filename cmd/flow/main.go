@@ -77,7 +77,7 @@ func main() {
 	}
 
 	if *flagTiny {
-		runTiny(col, smp, refresh, cfg.NoColor, cfg.Bits)
+		runTiny(col, smp, refresh, cfg.Bits)
 		return
 	}
 
@@ -126,7 +126,7 @@ func main() {
 
 // runTiny collects a single sample and prints a compact one-line summary.
 // Completely independent of Bubble Tea - works in tmux, cron, pipes.
-func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, noColor bool, bits bool) {
+func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -148,11 +148,7 @@ func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	down := ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits)
 	up := ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits)
 
-	if noColor {
-		fmt.Printf("↓ %s · ↑ %s\n", down, up)
-	} else {
-		fmt.Printf("↓ %s · ↑ %s\n", down, up)
-	}
+	fmt.Printf("↓ %s · ↑ %s\n", down, up)
 }
 
 // runOnce takes exactly one sample and either prints JSON or plain text, then

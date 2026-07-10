@@ -1,3 +1,29 @@
+## [0.1.6] - 2026-07-10
+
+### Added
+
+- Interface Details Overlay — Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU for the current network interface. Uses both gopsutil and the Go standard library for cross-platform compatibility.
+- Reset Confirmation — Pressing `r` now requires a second press within 2 seconds to confirm, preventing accidental data loss. Press `esc` to cancel.
+- Interface Info Keybinding (`I`) — Documented in the help overlay alongside all other bindings.
+- Expanded test coverage — New test suites for layout utilities (centerInline, formatBytes, formatInterval, truncate), overlay rendering (help, processes, themes), collector edge cases (loopback detection, pickBest), and additional FormatBpsExt unit/edge-case tests.
+- ROADMAP.md — Published a public roadmap covering v0.2.x through v0.5.x.
+
+### Improved
+
+- Codebase modularity — views.go (729 lines) split into four focused files: views.go (dashboard layout), panels.go (download/upload panel rendering), overlays.go (help, processes, themes, interface details overlays), and layout.go (shared layout/formatting utilities). Each file has a single responsibility.
+- Help overlay — Now documents the new `I` interface info keybinding and the reset confirmation (press twice) behavior.
+- Collector testability — Added `collector_test.go` with tests for `isLoopback`, `pickBest`, constructor, and `InterfaceDetails`.
+- centerInline now handles empty strings gracefully (returns the input unchanged instead of adding whitespace padding).
+
+### Changed
+
+- Major internal restructuring — views.go decomposed into panels.go, overlays.go, and layout.go with zero behavioural changes.
+- VERSION bumped to 0.1.6 (significant architecture improvements and new features).
+
+### Fixed
+
+- `runTiny` in main.go had identical branches in the `noColor` if/else block (dead code). Removed the conditional — both branches did the same thing.
+
 ## [0.1.5] - 2026-07-08
 
 ### Added
@@ -29,9 +55,6 @@
 
 - Footer Restructure - Three clean centered rows using `lipgloss.Align(Center)` for mathematically precise centering: interface status (top), minimal stats line with ping + bandwidth (middle, no gap between wifi and stats), keybinding hints (bottom). Uniform 2-line gaps between footer sections. Tighter intentional spacing throughout.
 - Overlay Dismiss - All overlays (help, processes, theme selector) now use only `esc` to dismiss. `?` opens help, `n` opens processes, `t` opens theme selector — but none of these toggle them closed. Only `esc` returns to the dashboard.
-- Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected" when empty.
-- Today Stats - Deduplicated "today" label (was showing "today" twice), cleaner formatting.
-- Makefile - Cross-platform support for Linux, macOS, and Windows (automatic binary extension, platform-agnostic directory creation and cleanup).
 - Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected" when empty.
 - Today Stats - Deduplicated "today" label (was showing "today" twice), cleaner formatting.
 - Makefile - Cross-platform support for Linux, macOS, and Windows (automatic binary extension, platform-agnostic directory creation and cleanup).
@@ -103,17 +126,12 @@
 
 ### Changed
 
-- Simplified the hero branding to a plain FLOW title for a calmer,
-  more iconic terminal identity.
-- Reworked the terminal UI into a calmer, premium dashboard with a
-  larger title hierarchy and more whitespace.
-- Replaced abrupt value easing with spring-driven interpolation for
-  smoother motion in the render loop.
+- Simplified the hero branding to a plain FLOW title for a calmer, more iconic terminal identity.
+- Reworked the terminal UI into a calmer, premium dashboard with a larger title hierarchy and more whitespace.
+- Replaced abrupt value easing with spring-driven interpolation for smoother motion in the render loop.
 - Added brief pulse and shimmer feedback for peaks and live traffic.
-- Refreshed the theme system with a restrained blue, cyan, emerald, and
-  near-white palette that degrades cleanly in low-color terminals.
-- Updated history and graph presentation to better emphasize flowing
-  movement over static dashboard chrome.
+- Refreshed the theme system with a restrained blue, cyan, emerald, and near-white palette that degrades cleanly in low-color terminals.
+- Updated history and graph presentation to better emphasize flowing movement over static dashboard chrome.
 - Theme system supports light and dark palettes simultaneously
 - Sparkline engine rewritten for block-element output
 - Default sampling interval decreased from 250ms to 100ms
@@ -125,11 +143,9 @@
 
 ### Fixed
 
-- Reset key fully clears peak tracking, daily totals, rolling maxima,
-  display values, and history ring buffers
+- Reset key fully clears peak tracking, daily totals, rolling maxima, display values, and history ring buffers
 - Interface cycling no longer stalls updates
 - Interface cycling resets all display state and ring buffers
 - Config unit field is case-insensitive
 - Various lint and typecheck violations resolved
-- Sampler uses a sliding-window average to eliminate zero reads from
-  coarse OS counter granularity
+- Sampler uses a sliding-window average to eliminate zero reads from coarse OS counter granularity

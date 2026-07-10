@@ -27,8 +27,14 @@ type processesMsg []processes.Info
 
 type pingMsg time.Duration
 
+type ifaceDetailMsg struct {
+	detail *collector.InterfaceDetail
+	err    error
+}
+
 const (
-	slopeWindow = 6
+	slopeWindow         = 6
+	resetConfirmTimeout = 2 * time.Second
 )
 
 type ViewMode int
@@ -83,11 +89,15 @@ type Model struct {
 	refreshInterval time.Duration
 	lastSampleTime  time.Time
 
-	breathe     float64
-	downPulse   float64
-	upPulse     float64
-	pingLatency time.Duration
-	err         error
+	breathe         float64
+	downPulse       float64
+	upPulse         float64
+	pingLatency     time.Duration
+	ifaceDetails    *collector.InterfaceDetail
+	showIfaceDetail bool
+	resetConfirm    bool
+	resetConfirmAt  time.Time
+	err             error
 }
 
 func New(
@@ -164,7 +174,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.breathe = 0.5 + 0.5*math.Sin(float64(time.Now().UnixMilli())/500)
 		m.downPulse = math.Max(0, m.downPulse-0.08)
 		m.upPulse = math.Max(0, m.upPulse-0.08)
+		if m.resetConfirm && time.Since(m.resetConfirmAt) > resetConfirmTimeout {
+			m.resetConfirm = false
+		}
 		return m, tick()
+
+	case ifaceDetailMsg:
+		if msg.err != nil {
+			m.showIfaceDetail = false
+		} else {
+			m.ifaceDetails = msg.detail
+		}
+		return m, nil
 
 	case processesMsg:
 		m.procs = msg
@@ -182,8 +203,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if !m.paused {
 			m.lastSampleTime = time.Now()
-
-			// Trigger pulse on new peaks
 			if msg.DownBps > m.tracker.PeakDown && m.tracker.PeakDown > 0 {
 				m.downPulse = 1.0
 			}
@@ -236,14 +255,21 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Esc closes any open overlay
 	if key.Matches(msg, m.keys.Esc) {
+		if m.showIfaceDetail {
+			m.showIfaceDetail = false
+			return m, nil
+		}
 		if m.showHelp {
 			m.showHelp = false
 			return m, nil
 		}
 		if m.showProcesses {
 			m.showProcesses = false
+			return m, nil
+		}
+		if m.resetConfirm {
+			m.resetConfirm = false
 			return m, nil
 		}
 	}
@@ -273,40 +299,52 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.paused = !m.paused
 
 	case key.Matches(msg, m.keys.Reset):
-		m.tracker.ResetPeaks()
-		m.tracker.TodayDown = 0
-		m.tracker.TodayUp = 0
-		m.rollingMaxDown = 0
-		m.rollingMaxUp = 0
-		m.dispDown = 0
-		m.dispUp = 0
-		m.downHist.Reset()
-		m.upHist.Reset()
-		m.downPulse = 0
-		m.upPulse = 0
+		if m.resetConfirm {
+			m.tracker.ResetPeaks()
+			m.tracker.TodayDown = 0
+			m.tracker.TodayUp = 0
+			m.rollingMaxDown = 0
+			m.rollingMaxUp = 0
+			m.dispDown = 0
+			m.dispUp = 0
+			m.downHist.Reset()
+			m.upHist.Reset()
+			m.downPulse = 0
+			m.upPulse = 0
+			m.resetConfirm = false
+		} else {
+			m.resetConfirm = true
+			m.resetConfirmAt = time.Now()
+		}
 
 	case key.Matches(msg, m.keys.Unit):
 		m.unitMode = (m.unitMode + 1) % 4
 
+	case key.Matches(msg, m.keys.InterfaceInfo):
+		m.showIfaceDetail = true
+		return m, refreshIfaceDetails(m.ifaceName)
+
 	case key.Matches(msg, m.keys.Interface):
-		if len(m.ifaces) > 1 {
-			m.ifaceIdx = (m.ifaceIdx + 1) % len(m.ifaces)
-			newIface := m.ifaces[m.ifaceIdx]
-			m.ifaceName = newIface
-			m.dispDown = 0
-			m.dispUp = 0
-			m.rollingMaxDown = 0
-			m.rollingMaxUp = 0
-			m.downHist = history.New(m.downHist.Cap())
-			m.upHist = history.New(m.upHist.Cap())
-			m.samplerCtx()
-			ctx, cancel := context.WithCancel(context.Background())
-			m.samplerCtx = cancel
-			col := collector.New(newIface)
-			m.smp = sampler.New(col, m.refreshInterval)
-			go m.smp.Run(ctx)
-			return m, waitForSample(m.smp.Out)
+		if len(m.ifaces) <= 1 {
+			m.showIfaceDetail = true
+			return m, refreshIfaceDetails(m.ifaceName)
 		}
+		m.ifaceIdx = (m.ifaceIdx + 1) % len(m.ifaces)
+		newIface := m.ifaces[m.ifaceIdx]
+		m.ifaceName = newIface
+		m.dispDown = 0
+		m.dispUp = 0
+		m.rollingMaxDown = 0
+		m.rollingMaxUp = 0
+		m.downHist = history.New(m.downHist.Cap())
+		m.upHist = history.New(m.upHist.Cap())
+		m.samplerCtx()
+		ctx, cancel := context.WithCancel(context.Background())
+		m.samplerCtx = cancel
+		col := collector.New(newIface)
+		m.smp = sampler.New(col, m.refreshInterval)
+		go m.smp.Run(ctx)
+		return m, waitForSample(m.smp.Out)
 
 	case key.Matches(msg, m.keys.Bits):
 		m.bitsMode = !m.bitsMode
@@ -398,6 +436,9 @@ func (m Model) View() string {
 	if m.showProcesses {
 		return renderProcesses(m)
 	}
+	if m.showIfaceDetail {
+		return renderIfaceDetails(m)
+	}
 	mode, lines := pickViewModeAndContent(m)
 	if mode == ViewTiny {
 		return renderTiny(m)
@@ -410,10 +451,6 @@ func (m Model) View() string {
 	return centerFrame(strings.Join(lines, "\n"), termW, termH)
 }
 
-// effectiveViewMode reports which view mode pickViewModeAndContent would
-// pick for the current terminal size, without needing its rendered
-// content. Exists mainly for tests and callers that only care about the
-// decision.
 func (m Model) effectiveViewMode() ViewMode {
 	mode, _ := pickViewModeAndContent(m)
 	return mode
@@ -535,5 +572,15 @@ func refreshProcesses() tea.Cmd {
 			return processesMsg(nil)
 		}
 		return processesMsg(list)
+	}
+}
+
+func refreshIfaceDetails(ifaceName string) tea.Cmd {
+	return func() tea.Msg {
+		detail, err := collector.InterfaceDetails(ifaceName)
+		if err != nil {
+			return ifaceDetailMsg{err: err}
+		}
+		return ifaceDetailMsg{detail: detail}
 	}
 }

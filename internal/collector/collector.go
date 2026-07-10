@@ -1,8 +1,3 @@
-// internal/collector/collector.go
-//
-// Cross-platform network byte counter reader via gopsutil/v3.
-// gopsutil avoids writing three platform-specific syscall layers.
-
 package collector
 
 import (
@@ -68,6 +63,44 @@ func Interfaces() ([]string, error) {
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+type InterfaceDetail struct {
+	Name         string
+	HardwareAddr string
+	Addrs        []string
+	IsUp         bool
+	Speed        uint64 // Mbps, 0 if unknown
+	Mtu          int
+}
+
+func InterfaceDetails(name string) (*InterfaceDetail, error) {
+	interfaces, err := gnet.Interfaces()
+	if err != nil {
+		return nil, fmt.Errorf("collector: Interfaces: %w", err)
+	}
+	for _, iface := range interfaces {
+		if iface.Name == name {
+			detail := &InterfaceDetail{
+				Name:         iface.Name,
+				HardwareAddr: iface.HardwareAddr,
+				IsUp:         len(iface.Flags) > 0,
+				Mtu:          iface.MTU,
+			}
+			for _, addr := range iface.Addrs {
+				detail.Addrs = append(detail.Addrs, addr.Addr)
+			}
+			// Check if interface is up via flags
+			for _, flag := range iface.Flags {
+				if flag == "up" {
+					detail.IsUp = true
+					break
+				}
+			}
+			return detail, nil
+		}
+	}
+	return nil, fmt.Errorf("collector: interface %q not found", name)
 }
 
 func pickBest(stats []gnet.IOCountersStat) *gnet.IOCountersStat {

@@ -36,139 +36,120 @@ Set MarginFill "#000000"
 Set Margin 8
 Set WindowBar "Colorful"
 Set PlaybackSpeed 1.0
+Set Framerate 24
 
 Hide
 
 # Build
 Type "make build"
 Enter
-Sleep 2s
+Sleep 1.5s
 Ctrl+L
 Sleep 200ms
 
-# Background traffic
+# Background traffic — real network I/O so flow shows genuine throughput
 Type "curl -L --limit-rate 5M --max-time 60 -o /dev/null https://speed.hetzner.de/100MB.bin &>/dev/null &"
 Enter
-Sleep 300ms
+Sleep 250ms
 Type "curl -L --limit-rate 3M --max-time 60 -o /dev/null https://proof.ovh.net/files/100Mb.dat &>/dev/null &"
 Enter
-Sleep 300ms
+Sleep 250ms
 Ctrl+L
 Sleep 200ms
 
 # Launch flow
-Type@50ms "./bin/flow --refresh 100ms"
-Sleep 300ms
+Type@50ms "./bin/flow --refresh 250ms"
+Sleep 200ms
 Enter
-Sleep 3s
+Sleep 1.5s
 
 # Reveal — hero mode
 Show
-Sleep 3s
+Sleep 2s
 
-# --- All 8 themes ---
+# --- Interface info (new in 0.1.6) ---
+Type "I"
+Sleep 1.2s
+Escape
+Sleep 500ms
+
+# --- Reset confirmation (new in 0.1.6) ---
+Type "r"
+Sleep 600ms
+Type "r"
+Sleep 800ms
+
+# --- Themes: sample 3 instead of cycling all 8, cuts ~7s of dead frames ---
 
 # Default → nord
 Type "t"
-Sleep 600ms
-Type "j"
-Sleep 400ms
-Enter
-Sleep 1.5s
-
-# Nord → dracula
-Type "t"
-Sleep 500ms
-Type "j"
 Sleep 300ms
-Enter
-Sleep 1.5s
-
-# Dracula → gruvbox
-Type "t"
-Sleep 500ms
 Type "j"
-Sleep 300ms
+Sleep 200ms
 Enter
-Sleep 1.5s
+Sleep 800ms
 
-# Gruvbox → forest
+# Nord → gruvbox (skip dracula, jump two)
 Type "t"
-Sleep 500ms
-Type "j"
 Sleep 300ms
+Type "jj"
+Sleep 200ms
 Enter
-Sleep 1.5s
+Sleep 800ms
 
-# Forest → monochrome
+# Gruvbox → tokyo-night (skip to last)
 Type "t"
-Sleep 500ms
-Type "j"
 Sleep 300ms
+Type "jjjj"
+Sleep 200ms
 Enter
-Sleep 1.5s
+Sleep 800ms
 
-# Monochrome → catppuccin
-Type "t"
-Sleep 500ms
-Type "j"
-Sleep 300ms
-Enter
-Sleep 1.5s
-
-# Catppuccin → tokyo-night
-Type "t"
-Sleep 500ms
-Type "j"
-Sleep 300ms
-Enter
-Sleep 1.5s
-
-Sleep 1.5s
-
-# Reset
+# Reset (with confirmation)
 Type "r"
-Sleep 1.5s
+Sleep 500ms
+Type "r"
+Sleep 800ms
 
 # Interface cycle
 Type "i"
-Sleep 1s
+Sleep 600ms
 Type "i"
-Sleep 1s
+Sleep 600ms
 
 # View modes
 Type "m"
-Sleep 1s
+Sleep 600ms
 Type "m"
-Sleep 1s
+Sleep 600ms
 
 # Bits + units
 Type "b"
-Sleep 1s
+Sleep 600ms
 Type "c"
-Sleep 800ms
+Sleep 500ms
 Type "c"
-Sleep 800ms
+Sleep 500ms
 
 # Pause / resume
 Type "p"
-Sleep 2s
-Type "p"
 Sleep 1s
+Type "p"
+Sleep 500ms
 
 # Processes
 Type "n"
-Sleep 2s
+Sleep 1.2s
 Escape
-Sleep 1s
+Sleep 500ms
 
 # Help
 Type "?"
-Sleep 2s
+Sleep 1.2s
 Escape
-Sleep 1s
+Sleep 500ms
 
-Sleep 2s
+Sleep 1s
 Hide
 Type "q"
-Sleep 1s
+Sleep 500ms

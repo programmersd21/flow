@@ -3,19 +3,20 @@ package ui
 import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
-	Quit      key.Binding
-	Esc       key.Binding
-	Reset     key.Binding
-	Interface key.Binding
-	Unit      key.Binding
-	Pause     key.Binding
-	Help      key.Binding
-	Mode      key.Binding
-	Processes key.Binding
-	Bits      key.Binding
-	Faster    key.Binding
-	Slower    key.Binding
-	Themes    key.Binding
+	Quit          key.Binding
+	Esc           key.Binding
+	Reset         key.Binding
+	Interface     key.Binding
+	InterfaceInfo key.Binding
+	Unit          key.Binding
+	Pause         key.Binding
+	Help          key.Binding
+	Mode          key.Binding
+	Processes     key.Binding
+	Bits          key.Binding
+	Faster        key.Binding
+	Slower        key.Binding
+	Themes        key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -36,6 +37,10 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("i"),
 			key.WithHelp("i", "cycle interface"),
 		),
+		InterfaceInfo: key.NewBinding(
+			key.WithKeys("I"),
+			key.WithHelp("I", "interface info"),
+		),
 		Unit: key.NewBinding(
 			key.WithKeys("c"),
 			key.WithHelp("c", "cycle units"),
@@ -46,7 +51,7 @@ func DefaultKeyMap() KeyMap {
 		),
 		Help: key.NewBinding(
 			key.WithKeys("?"),
-			key.WithHelp("?", "toggle help"),
+			key.WithHelp("?", "open help"),
 		),
 		Mode: key.NewBinding(
 			key.WithKeys("m"),
