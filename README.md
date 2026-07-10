@@ -186,8 +186,6 @@ flow --help
 
 | Key         | Action                      |
 |-------------|-----------------------------|
-| Key         | Action                      |
-|-------------|-----------------------------|
 | `q` / `^C`  | Quit                         |
 | `m`         | Cycle display/view modes    |
 | `n`         | Open network processes      |
