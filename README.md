@@ -138,7 +138,7 @@ flow adjusts its display according to terminal width and height.
 | hero | compact | mini | tiny |
 |:---:|:---:|:---:|:---:|
 | <img src="./assets/normal_mode.png" alt="hero mode"> | <img src="./assets/compact_mode.png" alt="compact mode"> | <img src="./assets/mini_mode.png" alt="mini mode"> | <img src="./assets/tiny_mode.png" alt="tiny mode"> |
-| Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner layout with title row, waveforms, peaks, and daily totals | Graphs-only layout, hiding header logo, today's summary, and help footers | Single-line output, intended for status bars; centered when toggled inside the TUI with `m` |
+| Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner, numbers-only layout with title row, peaks, and daily totals | Graphs-only layout showing waveforms and titles, hiding header logo, daily totals, and footers | Single-line output, intended for status bars; centered when toggled inside the TUI with `m` |
 
 ## Features
 
@@ -162,6 +162,30 @@ flow adjusts its display according to terminal width and height.
 - Supported on Linux, macOS, and Windows
 - Display throughput in bits per second instead of bytes per second by toggling with the `b` key
 - Adjust the sampling and refresh interval interactively using the `+` and `-` keys
+
+## Network Processes
+
+Press `n` to view active network processes sorted by connection count.
+
+<p align="center">
+  <img src="./assets/processes.png" alt="Network processes overlay">
+</p>
+
+## Theme Selector
+
+Press `t` to open the theme browser with `j`/`k` navigation, `enter` to confirm, `esc` to cancel. 8 themes included.
+
+<p align="center">
+  <img src="./assets/theme.png" alt="Theme selector overlay">
+</p>
+
+## Interface Info
+
+Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU for the current network interface.
+
+<p align="center">
+  <img src="./assets/interface_info.png" alt="Interface info overlay">
+</p>
 
 ## Usage
 

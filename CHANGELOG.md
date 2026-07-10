@@ -1,3 +1,24 @@
+## [0.1.7] - 2026-07-10
+
+### Added
+- Sample Heartbeat Dot — The logo dot now flashes in the active theme's accent color upon receiving a network sample and decays smoothly, replacing the continuous decorative breathing animation with a state-driven heartbeat.
+
+### Improved
+- Typography Hierarchy — Established a strict 3-tier typographic hierarchy: Tier 1 (throughput values, bold/brightest), Tier 2 (labels, peaks, secondary stats, medium weight/muted), and Tier 3 (footer hints, interface metadata, timestamps, dimmest).
+- Color restraint — Overhauled all 8 color themes to use neutral slate/gray borders. Accent colors are reserved strictly for interactive focus and peak/sampling pulses, and colors are reserved strictly for semantic download/upload direction.
+- Onboarding & Footer Clarity — Replaced the long list of shortcuts in the footer with a clean, low-clutter, three-item group (`q quit · m mode · ? help`) to simplify the interface on startup.
+- Spacing System — Applied a consistent character-grid layout with a standard 1-row vertical gap between all layout sections. Re-derived panel and graph width calculations to align waveforms precisely with panel borders.
+- Duplicate data removal — Removed redundant download/upload stats from the footer status line, displaying only ping latency if active.
+
+### Changed
+- Strictly numbers-only Compact mode — Refined `ViewCompact` (`--compact`) to display only throughput numbers, peaks, and trends (graphs are now omitted as defined).
+- Strictly graphs-only Mini mode — Refined `ViewMini` (`--mini`) to show only the waveforms and titles, omitting throughput numbers and peaks to maintain graphs-only utility.
+- VERSION bumped to 0.1.7.
+
+### Fixed
+- Color config option handling — Fixed a bug where configuring `no_color = true` in the TOML file did not set the `NO_COLOR` environment variable or disable Lip Gloss color formatting on startup.
+- Redeclarations and duplicate code — Cleaned up several duplicate functions and unused helpers in theme and animate packages.
+
 ## [0.1.6] - 2026-07-10
 
 ### Added

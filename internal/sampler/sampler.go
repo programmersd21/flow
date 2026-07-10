@@ -1,11 +1,3 @@
-// internal/sampler/sampler.go
-//
-// Polls OS byte counters, accumulates deltas in a sliding window,
-// emits bytes/sec averaged over the window.
-//
-// Windows note: GetIfTable2 counters update roughly every 1 s regardless of
-// read rate. The sliding window (4 slots × 250 ms = 1 s) smooths this out.
-
 package sampler
 
 import (
@@ -64,8 +56,6 @@ func (s *Sampler) Run(ctx context.Context) {
 	}
 	var prevTime time.Time
 
-	// Prime: take two quick reads so the first emitted sample is non-zero.
-	// Windows counters need at least one full second to populate.
 	primeTimer := time.NewTimer(10 * time.Millisecond)
 	select {
 	case <-ctx.Done():

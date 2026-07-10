@@ -36,7 +36,7 @@ Set MarginFill "#000000"
 Set Margin 8
 Set WindowBar "Colorful"
 Set PlaybackSpeed 1.0
-Set Framerate 24
+Set Framerate 60
 
 Hide
 

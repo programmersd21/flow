@@ -89,7 +89,7 @@ type Model struct {
 	refreshInterval time.Duration
 	lastSampleTime  time.Time
 
-	breathe         float64
+	samplePulse     float64
 	downPulse       float64
 	upPulse         float64
 	pingLatency     time.Duration
@@ -142,6 +142,7 @@ func New(
 		bitsMode:        cfg.Bits,
 		refreshInterval: cfg.RefreshDuration(),
 		lastSampleTime:  time.Now(),
+		samplePulse:     1.0,
 	}
 }
 
@@ -171,9 +172,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
-		m.breathe = 0.5 + 0.5*math.Sin(float64(time.Now().UnixMilli())/500)
-		m.downPulse = math.Max(0, m.downPulse-0.08)
-		m.upPulse = math.Max(0, m.upPulse-0.08)
+		m.samplePulse = math.Max(0, m.samplePulse-0.15)
+		m.downPulse = math.Max(0, m.downPulse-0.1)
+		m.upPulse = math.Max(0, m.upPulse-0.1)
 		if m.resetConfirm && time.Since(m.resetConfirmAt) > resetConfirmTimeout {
 			m.resetConfirm = false
 		}
@@ -202,6 +203,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if !m.paused {
+			m.samplePulse = 1.0
 			m.lastSampleTime = time.Now()
 			if msg.DownBps > m.tracker.PeakDown && m.tracker.PeakDown > 0 {
 				m.downPulse = 1.0

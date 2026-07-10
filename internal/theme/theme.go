@@ -42,8 +42,8 @@ var themes = []Theme{
 		TextBase:   "#e2e8f0",
 		TextBright: "#f8fafc",
 		TextPure:   "#ffffff",
-		Border:     "#6366f1",
-		Accent:     "#a5b4fc",
+		Border:     "#334155", // Neutral slate-700
+		Accent:     "#6366f1", // Indigo
 		DownloadStops: [5][3]uint8{
 			{0x3b, 0x82, 0xf6}, // Vibrant Blue (#3B82F6)
 			{0x63, 0x66, 0xf1}, // Indigo (#6366F1)
@@ -77,7 +77,7 @@ var themes = []Theme{
 		TextBase:   "#e5e9f0", // Snow Storm Base
 		TextBright: "#eceff4", // Snow Storm Bright
 		TextPure:   "#ffffff",
-		Border:     "#81a1c1", // Frost Blue
+		Border:     "#3b4252", // Neutral Polar Night gray
 		Accent:     "#88c0d0", // Frost Cyan
 		DownloadStops: [5][3]uint8{
 			{0x5e, 0x81, 0xac}, // Frost Blue (Dark)
@@ -88,7 +88,7 @@ var themes = []Theme{
 		},
 		UploadStops: [5][3]uint8{
 			{0xa3, 0xbe, 0x8c}, // Aurora Green
-			{0xeb, 0xcb, 0x8b}, // Aurora Yellow (for highlights)
+			{0xeb, 0xcb, 0x8b}, // Aurora Yellow
 			{0xd0, 0x87, 0x70}, // Aurora Orange
 			{0xbf, 0x61, 0x6a}, // Aurora Red
 			{0xff, 0xff, 0xff},
@@ -112,7 +112,7 @@ var themes = []Theme{
 		TextBase:   "#f8f8f2",
 		TextBright: "#f1fa8c", // Yellow Accent
 		TextPure:   "#ffffff",
-		Border:     "#bd93f9", // Purple Border
+		Border:     "#44475a", // Neutral comment gray
 		Accent:     "#ff79c6", // Pink Accent
 		DownloadStops: [5][3]uint8{
 			{0xbd, 0x93, 0xf9}, // Purple
@@ -147,7 +147,7 @@ var themes = []Theme{
 		TextBase:   "#ebdbb2",
 		TextBright: "#fabd2f", // Yellow
 		TextPure:   "#ffffff",
-		Border:     "#fabd2f", // Yellow Border
+		Border:     "#3c3836", // Neutral dark gray
 		Accent:     "#fe8019", // Orange Accent
 		DownloadStops: [5][3]uint8{
 			{0x45, 0x85, 0x88}, // Blue
@@ -168,10 +168,10 @@ var themes = []Theme{
 		UploadBorderStart:   [3]uint8{0x98, 0x97, 0x1a},
 		UploadBorderEnd:     [3]uint8{0xb8, 0xbb, 0x26},
 		LogoStops: [4][3]uint8{
-			{0xd3, 0x86, 0x9b}, // Purple
-			{0xfe, 0x80, 0x19}, // Orange
-			{0xb8, 0xbb, 0x26}, // Green
-			{0x8c, 0xc0, 0x7c}, // Aqua
+			{0xd9, 0x46, 0xef},
+			{0xfe, 0x80, 0x19},
+			{0xb8, 0xbb, 0x26},
+			{0x8c, 0xc0, 0x7c},
 		},
 	},
 	{
@@ -182,8 +182,8 @@ var themes = []Theme{
 		TextBase:   "#dcfce7", // Very Soft Green
 		TextBright: "#f0fdf4", // Bright leaf
 		TextPure:   "#ffffff",
-		Border:     "#22c55e", // Leaf Green
-		Accent:     "#86efac", // Highlight Green
+		Border:     "#27272a", // Neutral dark gray
+		Accent:     "#4ade80", // Highlight Green
 		DownloadStops: [5][3]uint8{
 			{0x0d, 0x94, 0x88}, // Ocean Teal
 			{0x14, 0xb8, 0xa6}, // Teal
@@ -217,20 +217,20 @@ var themes = []Theme{
 		TextBase:   "#e5e5e5", // Off-white
 		TextBright: "#ffffff", // Pure White
 		TextPure:   "#ffffff",
-		Border:     "#d4d4d4", // Silver Border
-		Accent:     "#a3a3a3", // Neutral Gray Accent
+		Border:     "#404040", // Neutral gray border
+		Accent:     "#a3a3a3", // Neutral Accent
 		DownloadStops: [5][3]uint8{
-			{0xff, 0xff, 0xff}, // Pure White
-			{0xe5, 0xe5, 0xe5}, // Silver
-			{0xd4, 0x00, 0xd4}, // Muted Silver
-			{0xa3, 0xa3, 0xa3}, // Soft Gray
+			{0xff, 0xff, 0xff},
+			{0xe5, 0xe5, 0xe5},
+			{0xd4, 0xd4, 0xd4},
+			{0xa3, 0xa3, 0xa3},
 			{0xff, 0xff, 0xff},
 		},
 		UploadStops: [5][3]uint8{
-			{0x73, 0x73, 0x73}, // Medium Gray
+			{0x73, 0x73, 0x73},
 			{0x8a, 0x8a, 0x8a},
-			{0xa3, 0xa3, 0xa3}, // Soft Gray
-			{0xd4, 0xd4, 0xd4}, // Silver
+			{0xa3, 0xa3, 0xa3},
+			{0xd4, 0xd4, 0xd4},
 			{0xff, 0xff, 0xff},
 		},
 		DownloadBorderStart: [3]uint8{0xff, 0xff, 0xff},
@@ -252,31 +252,31 @@ var themes = []Theme{
 		TextBase:   "#cdd6f4",
 		TextBright: "#f5e0dc",
 		TextPure:   "#ffffff",
-		Border:     "#cba6f7",
-		Accent:     "#89b4fa",
+		Border:     "#313244", // Neutral surface0
+		Accent:     "#cba6f7", // Mauve
 		DownloadStops: [5][3]uint8{
 			{0x89, 0xb4, 0xfa}, // Blue
 			{0x74, 0xc7, 0xec}, // Sapphire
 			{0x89, 0xdc, 0xeb}, // Sky
 			{0x94, 0xe2, 0xd5}, // Teal
-			{0xff, 0xff, 0xff}, // White
+			{0xff, 0xff, 0xff},
 		},
 		UploadStops: [5][3]uint8{
 			{0xa6, 0xe3, 0xa1}, // Green
 			{0x94, 0xe2, 0xd5}, // Teal
 			{0xf9, 0xe2, 0xaf}, // Yellow
 			{0xfa, 0xb3, 0x87}, // Peach
-			{0xff, 0xff, 0xff}, // White
+			{0xff, 0xff, 0xff},
 		},
 		DownloadBorderStart: [3]uint8{0x89, 0xb4, 0xfa},
 		DownloadBorderEnd:   [3]uint8{0x89, 0xdc, 0xeb},
 		UploadBorderStart:   [3]uint8{0xa6, 0xe3, 0xa1},
 		UploadBorderEnd:     [3]uint8{0xf9, 0xe2, 0xaf},
 		LogoStops: [4][3]uint8{
-			{0xcb, 0xa6, 0xf7}, // Mauve
-			{0xf5, 0xc2, 0xe7}, // Pink
-			{0x89, 0xb4, 0xfa}, // Blue
-			{0x89, 0xdc, 0xeb}, // Sky
+			{0xcb, 0xa6, 0xf7},
+			{0xf5, 0xc2, 0xe7},
+			{0x89, 0xb4, 0xfa},
+			{0x89, 0xdc, 0xeb},
 		},
 	},
 	{
@@ -287,31 +287,31 @@ var themes = []Theme{
 		TextBase:   "#a9b1d6",
 		TextBright: "#c0caf5",
 		TextPure:   "#ffffff",
-		Border:     "#7aa2f7",
-		Accent:     "#bb9af7",
+		Border:     "#1f2335", // Neutral border/surface
+		Accent:     "#bb9af7", // Purple
 		DownloadStops: [5][3]uint8{
-			{0x3b, 0x82, 0xf6}, // Vibrant Blue
-			{0x7a, 0xa2, 0xf7}, // Tokyo Blue
-			{0x7d, 0xcf, 0xff}, // Cyan
-			{0xbb, 0x9a, 0xf7}, // Purple
-			{0xff, 0xff, 0xff}, // White
+			{0x3b, 0x82, 0xf6},
+			{0x7a, 0xa2, 0xf7},
+			{0x7d, 0xcf, 0xff},
+			{0xbb, 0x9a, 0xf7},
+			{0xff, 0xff, 0xff},
 		},
 		UploadStops: [5][3]uint8{
-			{0x9e, 0xce, 0x6a}, // Green
-			{0xe0, 0xaf, 0x68}, // Yellow
-			{0xff, 0x9e, 0x64}, // Orange
-			{0xf7, 0x76, 0x8e}, // Red
-			{0xff, 0xff, 0xff}, // White
+			{0x9e, 0xce, 0x6a},
+			{0xe0, 0xaf, 0x68},
+			{0xff, 0x9e, 0x64},
+			{0xf7, 0x76, 0x8e},
+			{0xff, 0xff, 0xff},
 		},
 		DownloadBorderStart: [3]uint8{0x3b, 0x82, 0xf6},
 		DownloadBorderEnd:   [3]uint8{0x7d, 0xcf, 0xff},
 		UploadBorderStart:   [3]uint8{0x9e, 0xce, 0x6a},
 		UploadBorderEnd:     [3]uint8{0xe0, 0xaf, 0x68},
 		LogoStops: [4][3]uint8{
-			{0xbb, 0x9a, 0xf7}, // Purple
-			{0x7a, 0xa2, 0xf7}, // Blue
-			{0x7d, 0xcf, 0xff}, // Cyan
-			{0xf7, 0x76, 0x8e}, // Pink
+			{0xbb, 0x9a, 0xf7},
+			{0x7a, 0xa2, 0xf7},
+			{0x7d, 0xcf, 0xff},
+			{0xf7, 0x76, 0x8e},
 		},
 	},
 }
@@ -325,7 +325,6 @@ func SetTheme(name string) {
 			return
 		}
 	}
-	// Fallback to default
 	activeTheme = &themes[0]
 }
 
@@ -368,7 +367,7 @@ func GetTextDimColor() string {
 
 func Title() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color(activeTheme.TextPure)).
+		Foreground(lipgloss.Color(activeTheme.TextSoft)).
 		Bold(true)
 }
 
@@ -384,11 +383,11 @@ func Dim() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.TextDim))
 }
 
-func LogoDotColor(breathe float64) lipgloss.Style {
-	breathe = animate.Clamp01(breathe)
+func LogoDotColor(pulse float64) lipgloss.Style {
+	pulse = animate.Clamp01(pulse)
 	r1, g1, b1 := hexToRGB(activeTheme.TextDim)
-	r2, g2, b2 := hexToRGB(activeTheme.TextBright)
-	r, g, b := animate.ColorLerp(r1, g1, b1, r2, g2, b2, breathe)
+	r2, g2, b2 := hexToRGB(activeTheme.Accent)
+	r, g, b := animate.ColorLerp(r1, g1, b1, r2, g2, b2, pulse)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
@@ -403,10 +402,6 @@ func Label() lipgloss.Style {
 
 func TextDim() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.TextDim))
-}
-
-func TextPrimary() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.TextBright))
 }
 
 func DownloadColor(intensity float64) lipgloss.Style {
@@ -444,13 +439,9 @@ func UploadBorderColor(intensity float64) lipgloss.Color {
 func PeakColor(pulse float64) lipgloss.Style {
 	pulse = animate.Clamp01(pulse)
 	r1, g1, b1 := hexToRGB(activeTheme.TextMuted)
-	r2, g2, b2 := hexToRGB(activeTheme.TextPure)
+	r2, g2, b2 := hexToRGB(activeTheme.Accent)
 	r, g, b := animate.ColorLerp(r1, g1, b1, r2, g2, b2, pulse)
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
-	if pulse > 0.4 {
-		style = style.Bold(true)
-	}
-	return style
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
 func fiveStopGradient(stops [5][3]uint8, t float64) (uint8, uint8, uint8) {
@@ -480,38 +471,6 @@ func ValuePrimary(intensity float64, download bool) lipgloss.Style {
 		st = UploadColor(intensity)
 	}
 	return st.Bold(true)
-}
-
-func ValueSecondary(download bool) lipgloss.Style {
-	if download {
-		r, g, b := activeTheme.DownloadBorderStart[0], activeTheme.DownloadBorderStart[1], activeTheme.DownloadBorderStart[2]
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
-	}
-	r, g, b := activeTheme.UploadBorderStart[0], activeTheme.UploadBorderStart[1], activeTheme.UploadBorderStart[2]
-	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
-}
-
-func GraphColor(intensity float64, download bool) lipgloss.Style {
-	if download {
-		return DownloadColor(intensity)
-	}
-	return UploadColor(intensity)
-}
-
-func PulseColor(download bool, pulse float64) lipgloss.Style {
-	intensity := 0.5 + pulse*0.5
-	base := DownloadColor(intensity)
-	if !download {
-		base = UploadColor(intensity)
-	}
-	return base.Bold(true)
-}
-
-func Highlight(download bool, pulse float64) lipgloss.Style {
-	if pulse <= 0 {
-		return Soft()
-	}
-	return PulseColor(download, pulse)
 }
 
 var logoSrc = []string{

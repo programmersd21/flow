@@ -22,7 +22,7 @@ func New(iface string) *Collector {
 }
 
 func (c *Collector) Read() (Snapshot, error) {
-	stats, err := gnet.IOCounters(true) // per-interface
+	stats, err := gnet.IOCounters(true)
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("collector: IOCounters: %w", err)
 	}
@@ -40,7 +40,6 @@ func (c *Collector) Read() (Snapshot, error) {
 		return Snapshot{}, fmt.Errorf("collector: interface %q not found", c.iface)
 	}
 
-	// Auto-select: prefer non-loopback interface with most traffic.
 	best := pickBest(stats)
 	if best == nil {
 		return Snapshot{}, fmt.Errorf("collector: no usable network interface found")
@@ -70,7 +69,6 @@ type InterfaceDetail struct {
 	HardwareAddr string
 	Addrs        []string
 	IsUp         bool
-	Speed        uint64 // Mbps, 0 if unknown
 	Mtu          int
 }
 
@@ -90,7 +88,6 @@ func InterfaceDetails(name string) (*InterfaceDetail, error) {
 			for _, addr := range iface.Addrs {
 				detail.Addrs = append(detail.Addrs, addr.Addr)
 			}
-			// Check if interface is up via flags
 			for _, flag := range iface.Flags {
 				if flag == "up" {
 					detail.IsUp = true
@@ -121,13 +118,11 @@ func pickBest(stats []gnet.IOCountersStat) *gnet.IOCountersStat {
 	return best
 }
 
-// isLoopback returns true for common loopback/virtual interface names.
 func isLoopback(name string) bool {
 	switch name {
 	case "lo", "lo0":
 		return true
 	}
-	// Skip common virtual/container prefixes.
 	prefixes := []string{"docker", "br-", "veth", "virbr", "vmnet", "vbox"}
 	for _, p := range prefixes {
 		if len(name) >= len(p) && name[:len(p)] == p {

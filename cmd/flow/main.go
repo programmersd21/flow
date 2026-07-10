@@ -1,7 +1,3 @@
-// cmd/flow/main.go
-//
-// Entry point: flag parsing, configuration wiring, TUI or non-interactive mode.
-
 package main
 
 import (
@@ -60,6 +56,8 @@ func main() {
 	}
 	if *flagNoColor {
 		cfg.NoColor = true
+	}
+	if cfg.NoColor {
 		_ = os.Setenv("NO_COLOR", "1") // honoured by Lip Gloss automatically
 	}
 	if *flagBits {
@@ -99,7 +97,6 @@ func main() {
 		forced = ui.ViewHero
 	}
 
-	// Determine initial interface name (first sample may correct it).
 	initialIface := cfg.Interface
 	if initialIface == "auto" || initialIface == "" {
 		initialIface = "auto"
@@ -124,15 +121,12 @@ func main() {
 	}
 }
 
-// runTiny collects a single sample and prints a compact one-line summary.
-// Completely independent of Bubble Tea - works in tmux, cron, pipes.
 func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go smp.Run(ctx)
 
-	// Wait for two samples so the first diff is valid.
 	s1 := <-smp.Out
 	if s1.Err != nil {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
@@ -151,15 +145,12 @@ func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	fmt.Printf("↓ %s · ↑ %s\n", down, up)
 }
 
-// runOnce takes exactly one sample and either prints JSON or plain text, then
-// exits. Does not start the TUI.
 func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, asJSON bool, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go smp.Run(ctx)
 
-	// Wait for two samples so the first diff is valid.
 	s1 := <-smp.Out
 	if s1.Err != nil {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
