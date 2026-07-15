@@ -13,24 +13,26 @@ import (
 )
 
 type Config struct {
-	Refresh   duration `toml:"refresh"`
-	History   int      `toml:"history"` // seconds of sparkline history
-	Theme     string   `toml:"theme"`
-	Unit      string   `toml:"unit"`      // auto | kb | mb | gb
-	Interface string   `toml:"interface"` // auto | specific name
-	NoColor   bool     `toml:"no_color"`
-	Bits      bool     `toml:"bits"`
+	Refresh    duration `toml:"refresh"`
+	History    int      `toml:"history"`
+	Theme      string   `toml:"theme"`
+	Unit       string   `toml:"unit"`
+	Interface  string   `toml:"interface"`
+	NoColor    bool     `toml:"no_color"`
+	Bits       bool     `toml:"bits"`
+	PingTarget string   `toml:"ping_target"`
 }
 
 func Defaults() Config {
 	return Config{
-		Refresh:   duration{100 * time.Millisecond},
-		History:   60,
-		Theme:     "default",
-		Unit:      "auto",
-		Interface: "auto",
-		NoColor:   false,
-		Bits:      false,
+		Refresh:    duration{100 * time.Millisecond},
+		History:    60,
+		Theme:      "default",
+		Unit:       "auto",
+		Interface:  "auto",
+		NoColor:    false,
+		Bits:       false,
+		PingTarget: "1.1.1.1",
 	}
 }
 
@@ -78,6 +80,7 @@ func Save(cfg Config) error {
 		cfg.Interface,
 		boolStr(cfg.NoColor),
 		boolStr(cfg.Bits),
+		cfg.PingTarget,
 	)
 	return err
 }
@@ -117,6 +120,7 @@ func writeDefaults(path string, cfg Config) error {
 		cfg.Interface,
 		boolStr(cfg.NoColor),
 		boolStr(cfg.Bits),
+		cfg.PingTarget,
 	)
 	return err
 }
@@ -124,13 +128,14 @@ func writeDefaults(path string, cfg Config) error {
 const defaultTOML = `# flow configuration
 # https://github.com/programmersd21/flow
 
-refresh   = "%s"     # sampling interval (e.g. "100ms", "250ms", "1s")
-history   = %d       # seconds of sparkline history retained
-theme     = "%s"
-unit      = "%s"     # auto | kb | mb | gb
-interface = "%s"     # auto or interface name (e.g. "eth0", "wlan0")
-no_color  = %s
-bits      = %s       # display throughput in bits/sec instead of bytes/sec
+refresh     = "%s"     # sampling interval (e.g. "100ms", "250ms", "1s")
+history     = %d       # seconds of sparkline history
+theme       = "%s"
+unit        = "%s"     # auto | kb | mb | gb
+interface   = "%s"     # auto or interface name (e.g. "eth0", "wlan0")
+no_color    = %s
+bits        = %s       # display in bits/sec instead of bytes/sec
+ping_target = "%s"     # host for latency measurement
 `
 
 func boolStr(b bool) string {

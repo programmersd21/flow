@@ -68,6 +68,13 @@ demo: build
 		echo "install gifsicle for further optimization: brew install gifsicle"; \
 	fi
 
+## check: format, vet, lint, and test
+check:
+	go fmt ./...
+	go vet ./...
+	golangci-lint run ./...
+	go test ./...
+
 ## help: print this message
 help:
 	@sed -n 's/^## //p' $(MAKEFILE_LIST) 2>/dev/null || findstr /B "##" Makefile

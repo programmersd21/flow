@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/programmersd21/flow/internal/animate"
 	"github.com/programmersd21/flow/internal/collector"
 	"github.com/programmersd21/flow/internal/config"
 	"github.com/programmersd21/flow/internal/history"
@@ -66,7 +67,9 @@ type Model struct {
 	ifaceIdx  int
 	ifaceName string
 
-	dispDown, dispUp float64
+	dispDown, dispUp       float64
+	animDown, animUp       float64
+	animDownVel, animUpVel float64
 
 	rollingMaxDown, rollingMaxUp float64
 
@@ -136,7 +139,7 @@ func New(
 		ifaceName:       initialIface,
 		downHist:        history.New(histCap),
 		upHist:          history.New(histCap),
-		tracker:         history.NewTracker(),
+		tracker:         loadTracker(),
 		unitMode:        unitMode,
 		viewMode:        forced,
 		bitsMode:        cfg.Bits,
@@ -147,12 +150,16 @@ func New(
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(waitForSample(m.smp.Out), tick(), refreshProcesses(), quickPing(), pingTick())
+	return tea.Batch(waitForSample(m.smp.Out), tick(), refreshProcesses(), m.quickPing(), m.pingTick())
 }
 
-func quickPing() tea.Cmd {
+func (m Model) quickPing() tea.Cmd {
+	target := m.cfg.PingTarget
+	if target == "" {
+		target = "1.1.1.1"
+	}
 	return func() tea.Msg {
-		latency, err := ping.Measure("1.1.1.1", 2*time.Second)
+		latency, err := ping.Measure(target, 2*time.Second)
 		if err != nil {
 			return pingMsg(0)
 		}
@@ -175,6 +182,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.samplePulse = math.Max(0, m.samplePulse-0.15)
 		m.downPulse = math.Max(0, m.downPulse-0.1)
 		m.upPulse = math.Max(0, m.upPulse-0.1)
+		m.animDown = animate.Spring(m.animDown, m.dispDown, &m.animDownVel, 0.13)
+		m.animUp = animate.Spring(m.animUp, m.dispUp, &m.animUpVel, 0.13)
 		if m.resetConfirm && time.Since(m.resetConfirmAt) > resetConfirmTimeout {
 			m.resetConfirm = false
 		}
@@ -231,6 +240,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			m.samplerCtx()
+			_ = m.tracker.Save()
 			return m, tea.Quit
 		case "esc":
 			theme.SetTheme(m.themeSelectionOriginal)
@@ -279,6 +289,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		m.samplerCtx()
+		_ = m.tracker.Save()
 		return m, tea.Quit
 
 	case key.Matches(msg, m.keys.Help):
@@ -550,9 +561,13 @@ func tick() tea.Cmd {
 	})
 }
 
-func pingTick() tea.Cmd {
+func (m Model) pingTick() tea.Cmd {
+	target := m.cfg.PingTarget
+	if target == "" {
+		target = "1.1.1.1"
+	}
 	return tea.Tick(5*time.Second, func(time.Time) tea.Msg {
-		latency, err := ping.Measure("1.1.1.1", 2*time.Second)
+		latency, err := ping.Measure(target, 2*time.Second)
 		if err != nil {
 			return pingMsg(0)
 		}
@@ -585,4 +600,10 @@ func refreshIfaceDetails(ifaceName string) tea.Cmd {
 		}
 		return ifaceDetailMsg{detail: detail}
 	}
+}
+
+func loadTracker() *history.Tracker {
+	t := history.NewTracker()
+	_ = t.Load()
+	return t
 }

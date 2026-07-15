@@ -318,6 +318,12 @@ var themes = []Theme{
 
 var activeTheme = &themes[0]
 
+var customThemes []Theme
+
+func init() {
+	customThemes = LoadCustomThemes()
+}
+
 func SetTheme(name string) {
 	for i := range themes {
 		if themes[i].Name == name {
@@ -325,11 +331,17 @@ func SetTheme(name string) {
 			return
 		}
 	}
+	for i := range customThemes {
+		if customThemes[i].Name == name {
+			activeTheme = &customThemes[i]
+			return
+		}
+	}
 	activeTheme = &themes[0]
 }
 
 func ListThemes() []ThemeInfo {
-	return []ThemeInfo{
+	builtin := []ThemeInfo{
 		{Name: "default", Description: "The standard flow palette with electric blue and emerald green"},
 		{Name: "nord", Description: "A cool-toned, low-saturation polar palette with frost blues"},
 		{Name: "dracula", Description: "A vibrant gothic theme with lavender, pinks, and cyans"},
@@ -339,6 +351,10 @@ func ListThemes() []ThemeInfo {
 		{Name: "catppuccin", Description: "A soothing pastel palette with mauves, blues, and teals"},
 		{Name: "tokyo-night", Description: "A deep dark theme with vibrant blues, cyans, and purples"},
 	}
+	for _, ct := range customThemes {
+		builtin = append(builtin, ThemeInfo{Name: ct.Name, Description: "custom theme"})
+	}
+	return builtin
 }
 
 func GetBorderColor() string {

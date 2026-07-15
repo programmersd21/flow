@@ -17,6 +17,7 @@ type KeyMap struct {
 	Faster        key.Binding
 	Slower        key.Binding
 	Themes        key.Binding
+	History       key.Binding
 }
 
 func DefaultKeyMap() KeyMap {

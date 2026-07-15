@@ -1,3 +1,18 @@
+## [0.2.0] - 2026-07-15
+
+### Added
+- Spring-smoothed value animation — Throughput values now glide smoothly toward their targets using spring physics instead of snapping, matching the architecture documented in README.
+- Configurable ping target — Customize the latency check host via `ping_target` in config or `--ping` CLI flag (default: 1.1.1.1).
+- Streaming JSON output (`--json-stream`) — Continuous JSON Lines output to stdout for piping into other tools, one sample per line.
+- Daily totals persistence — Today's traffic totals are saved to `~/.config/flow/stats.json` on quit and restored on next launch, so totals survive process restarts.
+- Custom theme files — Place `.toml` files in `~/.config/flow/themes/` to define user themes with custom colors and gradients, automatically picked up at startup.
+- ROADWAY.md — Published project roadmap covering v0.2.x through v0.5.x.
+- Expanded test coverage — New test suites for animate package (spring physics, easing) and history persistence (save/load round-trip).
+
+### Changed
+- VERSION bumped to 0.2.0.
+- Makefile — Added `make check` target for format, vet, lint, and test in one command.
+
 ## [0.1.7] - 2026-07-10
 
 ### Added

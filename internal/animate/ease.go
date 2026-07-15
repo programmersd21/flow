@@ -2,6 +2,11 @@ package animate
 
 import "math"
 
+const (
+	stiffness = 180.0
+	damping   = 12.0
+)
+
 func Lerp(a, b, t float64) float64 {
 	return a + (b-a)*t
 }
@@ -22,4 +27,14 @@ func Clamp01(t float64) float64 {
 		return 1
 	}
 	return t
+}
+
+func Spring(current, target float64, velocity *float64, dt float64) float64 {
+	force := stiffness * (target - current)
+	*velocity += force * dt
+	*velocity *= 1.0 - damping*dt
+	if *velocity < 0.0001 && *velocity > -0.0001 {
+		*velocity = 0
+	}
+	return current + *velocity*dt
 }

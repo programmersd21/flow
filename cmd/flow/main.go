@@ -23,11 +23,13 @@ func main() {
 	flagMini := flag.Bool("mini", false, "graphs-only mini mode")
 	flagCompact := flag.Bool("compact", false, "numbers-only compact mode")
 	flagJSON := flag.Bool("json", false, "one-shot JSON snapshot, then exit")
+	flagJSONStream := flag.Bool("json-stream", false, "continuous JSON lines output")
 	flagOnce := flag.Bool("once", false, "one-shot plain-text snapshot, then exit")
 	flagIface := flag.String("interface", "", "force a specific network interface")
 	flagRefresh := flag.Duration("refresh", 0, "sampling interval (e.g. 250ms)")
 	flagNoColor := flag.Bool("no-color", false, "disable ANSI color output")
 	flagBits := flag.Bool("bits", false, "display throughput in bits/sec instead of bytes/sec")
+	flagPing := flag.String("ping", "", "ping target host (default: 1.1.1.1)")
 	flagVersion := flag.Bool("version", false, "print version and exit")
 
 	flag.Usage = func() {
@@ -63,11 +65,19 @@ func main() {
 	if *flagBits {
 		cfg.Bits = true
 	}
+	if *flagPing != "" {
+		cfg.PingTarget = *flagPing
+	}
 
 	col := collector.New(cfg.Interface)
 
 	refresh := cfg.RefreshDuration()
 	smp := sampler.New(col, refresh)
+
+	if *flagJSONStream {
+		runJSONStream(smp, refresh, cfg.Bits)
+		return
+	}
 
 	if *flagJSON || *flagOnce {
 		runOnce(col, smp, refresh, *flagJSON, cfg.Bits)
@@ -188,6 +198,34 @@ func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 		ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits),
 		ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits),
 	)
+}
+
+func runJSONStream(smp *sampler.Sampler, refresh time.Duration, bits bool) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go smp.Run(ctx)
+
+	enc := json.NewEncoder(os.Stdout)
+	s1 := <-smp.Out
+	if s1.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
+		os.Exit(1)
+	}
+	for s := range smp.Out {
+		if s.Err != nil {
+			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
+			os.Exit(1)
+		}
+		_ = enc.Encode(map[string]interface{}{
+			"interface":      s.Interface,
+			"download_bps":   s.DownBps,
+			"upload_bps":     s.UpBps,
+			"download_human": ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits),
+			"upload_human":   ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits),
+			"timestamp":      s.At.Format(time.RFC3339Nano),
+		})
+	}
 }
 
 func autoUnitExt(bps float64, bits bool) string {

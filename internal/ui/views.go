@@ -127,10 +127,10 @@ func TitleRow(pulse float64) string {
 }
 
 func renderTiny(m Model) string {
-	downRatio := theme.SpeedRatio(m.dispDown, m.rollingMaxDown)
-	upRatio := theme.SpeedRatio(m.dispUp, m.rollingMaxUp)
-	left := theme.Label().Render("↓ download") + " " + theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.dispDown))
-	right := theme.Label().Render("↑ upload") + " " + theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.dispUp))
+	downRatio := theme.SpeedRatio(m.animDown, m.rollingMaxDown)
+	upRatio := theme.SpeedRatio(m.animUp, m.rollingMaxUp)
+	left := theme.Label().Render("↓ download") + " " + theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.animDown))
+	right := theme.Label().Render("↑ upload") + " " + theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.animUp))
 	w := m.width
 	if w <= 0 {
 		w = 80
@@ -440,8 +440,8 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 	}
 	graphW := innerW
 
-	downRatio := theme.SpeedRatio(m.dispDown, maxf(m.rollingMaxDown, m.dispDown))
-	upRatio := theme.SpeedRatio(m.dispUp, maxf(m.rollingMaxUp, m.dispUp))
+	downRatio := theme.SpeedRatio(m.animDown, maxf(m.rollingMaxDown, m.animDown))
+	upRatio := theme.SpeedRatio(m.animUp, maxf(m.rollingMaxUp, m.animUp))
 	downSamples := m.downHist.Slice()
 	upSamples := m.upHist.Slice()
 	downTrend := sparkline.VelocityGlyph(downSamples, slopeWindow)
@@ -469,8 +469,8 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 
 	var downGraph, upGraph string
 	if mode != ViewCompact {
-		downGraph = renderColoredGraph(downSamples, graphW, graphHeight, maxf(m.rollingMaxDown, m.dispDown), frac, true)
-		upGraph = renderColoredGraph(upSamples, graphW, graphHeight, maxf(m.rollingMaxUp, m.dispUp), frac, false)
+		downGraph = renderColoredGraph(downSamples, graphW, graphHeight, maxf(m.rollingMaxDown, m.animDown), frac, true)
+		upGraph = renderColoredGraph(upSamples, graphW, graphHeight, maxf(m.rollingMaxUp, m.animUp), frac, false)
 	}
 
 	downBorderColor := theme.DownloadBorderColor(downRatio)
@@ -494,8 +494,8 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		lines = append(lines, GapRow)
 	}
 
-	downVal := theme.Muted().Render(theme.DirArrow(true)) + " " + theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.dispDown)) + " " + theme.Muted().Render(downTrend)
-	upVal := theme.Muted().Render(theme.DirArrow(false)) + " " + theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.dispUp)) + " " + theme.Muted().Render(upTrend)
+	downVal := theme.Muted().Render(theme.DirArrow(true)) + " " + theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.animDown)) + " " + theme.Muted().Render(downTrend)
+	upVal := theme.Muted().Render(theme.DirArrow(false)) + " " + theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.animUp)) + " " + theme.Muted().Render(upTrend)
 	peakDownVal := m.FormatBps(m.tracker.PeakDown)
 	peakUpVal := m.FormatBps(m.tracker.PeakUp)
 

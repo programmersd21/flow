@@ -142,10 +142,11 @@ flow adjusts its display according to terminal width and height.
 
 ## Features
 
-- Live latency (ping) indicator with color-coded ↔ display
+- Live latency (ping) indicator with color-coded ↔ display and configurable target
+- Spring-smoothed throughput animation for premium visual feel
 - Network processes panel — press `n` to view active processes sorted by connection count
 - Interface details overlay — press `I` (capital i) to view IP addresses, MAC, link status, MTU
-- Theme selector with 8 built-in themes — press `t` to browse and select
+- Theme selector with 8 built-in themes plus custom user themes — press `t` to browse and select
 - Reset confirmation — press `r` twice to confirm, preventing accidental data loss
 - Real-time download and upload throughput
 - Interpolated display values using spring-based animation
@@ -155,7 +156,9 @@ flow adjusts its display according to terminal width and height.
 - Minimalist, high-end unicode today statistics and keybinding footer
 - Directional indicators for traffic trend
 - Automatic unit scaling from B/s to GB/s
-- Session peak tracking and daily traffic totals
+- Session peak tracking and daily traffic totals (persisted across restarts)
+- Streaming JSON output (`--json-stream`) for real-time data pipelines
+- Custom theme files in `~/.config/flow/themes/`
 - Four display modes with automatic responsive switching on both width and height resize
 - No required configuration; optional TOML configuration file
 - Non-interactive output modes for use in scripts
@@ -195,8 +198,10 @@ flow --tiny                 # single-line mode for status bars
 flow --mini                 # graphs-only mode, no headers/footers
 flow --compact              # compact layout with title row and waveforms
 flow --json                  # single JSON output, then exit
+flow --json-stream           # continuous JSON lines output
 flow --once                  # single plain-text output, then exit
 flow --interface wlan0       # specify network interface
+flow --ping 8.8.8.8          # ping target for latency measurement
 flow --refresh 500ms         # adjust sampling interval (default 100ms)
 flow --bits                 # display in bits/sec instead of bytes/sec
 flow --no-color
@@ -260,13 +265,14 @@ A configuration file is created automatically on first run:
 The `XDG_CONFIG_HOME` environment variable is respected on Linux if set.
 
 ```toml
-refresh   = "100ms"   # sampling interval
-history   = 60        # seconds of retained sparkline history
-theme     = "default"
-unit      = "auto"    # auto, kb, mb, or gb
-interface = "auto"    # auto, or a specific interface name (e.g. eth0, wlan0)
-no_color  = false
-bits      = false     # display throughput in bits/sec
+refresh     = "100ms"   # sampling interval
+history     = 60        # seconds of retained sparkline history
+theme       = "default"
+unit        = "auto"    # auto, kb, mb, or gb
+interface   = "auto"    # auto, or a specific interface name (e.g. eth0, wlan0)
+no_color    = false
+bits        = false     # display throughput in bits/sec
+ping_target = "1.1.1.1" # host for latency measurement
 ```
 
 <details>
@@ -289,6 +295,24 @@ flowchart TD
 All elements are centered on both axes. Panel border color changes according to current transfer speed.
 
 </details>
+
+### Custom themes
+
+Place `.toml` files in `~/.config/flow/themes/` to define user themes:
+
+```toml
+name = "my-theme"
+text_dim    = "#64748b"
+text_muted  = "#94a3b8"
+text_soft   = "#cbd5e1"
+text_base   = "#e2e8f0"
+text_bright = "#f8fafc"
+text_pure   = "#ffffff"
+border      = "#334155"
+accent      = "#6366f1"
+download    = ["#3b82f6", "#6366f1", "#06b6d4", "#00f5d4", "#ffffff"]
+upload      = ["#10b981", "#22c55e", "#84cc16", "#a3e635", "#ffffff"]
+```
 
 ## Architecture
 
