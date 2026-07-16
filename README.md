@@ -3,8 +3,9 @@
 ### • flow •
 
 *A terminal dashboard for real-time network throughput.*
-
-<img src="./assets/demo.gif" alt="flow demo" width="100%">
+<p align="center">
+  <img src="./assets/demo.gif" alt="flow demo" width="100%">
+</p>
 
 <p align="center">
   <a href="https://trendshift.io/repositories/72650?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-72650" target="_blank" rel="noopener noreferrer">
