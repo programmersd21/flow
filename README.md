@@ -95,14 +95,14 @@ Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) are on the [relea
 - Real-time download/upload throughput with spring-smoothed animation
 - Braille-grid waveform rendering at 30 FPS
 - Live latency (ping) indicator, configurable target
-- Network processes panel (`n`) — active connections sorted by count
-- Interface details overlay (`I`) — IP, MAC, link status, MTU
+- Network processes panel (`n`) -- active connections sorted by count
+- Interface details overlay (`I`) -- IP, MAC, link status, MTU
 - 8 built-in themes plus custom themes via TOML
 - Session peak tracking and daily totals, persisted across restarts
 - Streaming JSON output (`--json-stream`) for pipelines
 - Four responsive display modes, switching on both width and height
 - Zero required configuration
-- Linux, macOS, and Windows — no elevated privileges required
+- Linux, macOS, and Windows -- no elevated privileges required
 
 <p align="center">
   <img src="./assets/processes.png" alt="Network processes overlay" width="32%">
@@ -187,7 +187,7 @@ bits        = false
 ping_target = "1.1.1.1"
 ```
 
-**Custom themes** — drop `.toml` files in `~/.config/flow/themes/`:
+**Custom themes** -- drop `.toml` files in `~/.config/flow/themes/`:
 
 ```toml
 name = "my-theme"
@@ -205,7 +205,7 @@ upload      = ["#10b981", "#22c55e", "#84cc16", "#a3e635", "#ffffff"]
 
 ## Architecture
 
-Two independent loops connected by a channel — sampling never blocks rendering.
+Two independent loops connected by a channel -- sampling never blocks rendering.
 
 ```mermaid
 flowchart LR
@@ -254,12 +254,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 <a href="https://www.star-history.com/?repos=programmersd21%2Fflow&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
  </picture>
 </a>
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT: see [LICENSE](LICENSE).
