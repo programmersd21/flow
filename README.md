@@ -1,193 +1,112 @@
 <div align="center">
 
-### flow
+### • flow •
 
 *A terminal dashboard for real-time network throughput.*
 
 <img src="./assets/demo.gif" alt="flow demo" width="100%">
 
-<h3 align="center">
-  Featured on&nbsp;&nbsp;<a href="https://terminaltrove.com/flow"><img src="assets/terminal_trove_black_green.png" alt="Terminal Trove logo" width="140" valign="middle"></a>
-</h3>
-
 <p align="center">
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=22&pause=1200&color=00E0A4&center=true&vCenter=true&repeat=false&width=460&lines=Your+Internet+Stats%2C+TUIfied." alt="Typing SVG" />
+  <a href="https://trendshift.io/repositories/72650?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-72650" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/trendshift/repositories/72650/daily?language=Go" alt="flow on Trendshift" width="250" height="55"/>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://terminaltrove.com/flow">
+    <img src="assets/terminal_trove_black_green.png" alt="Featured on Terminal Trove" width="140">
   </a>
 </p>
 
 <p align="center">
-  <i>Fast • Beautiful • Cross-Platform • Open Source</i>
+  <img src="https://img.shields.io/github/actions/workflow/status/programmersd21/flow/release.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=Build&labelColor=111111&color=00c853" alt="Build">
+  <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=for-the-badge&logo=github&logoColor=white&label=Release&labelColor=111111&color=ff6d00" alt="Release">
+  <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=for-the-badge&logo=github&logoColor=white&label=Downloads&labelColor=111111&color=8e24aa" alt="Downloads">
+  <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&logo=github&logoColor=white&label=Stars&labelColor=111111&color=fbc02d" alt="Stars">
 </p>
+<p align="center">
+  <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=for-the-badge&logo=go&logoColor=white&label=Go&labelColor=111111&color=2196f3" alt="Go Version">
+  <img src="https://img.shields.io/github/license/programmersd21/flow?style=for-the-badge&label=License&labelColor=111111&color=43a047" alt="License">
+  <img src="https://img.shields.io/badge/Homebrew-brew%20install%20programmersd21%2Fflow%2Fflow?style=for-the-badge&logo=homebrew&logoColor=white&labelColor=111111&color=fbb040" alt="Homebrew">
+  <img src="https://img.shields.io/aur/version/flow-network-monitor-bin?style=for-the-badge&logo=archlinux&logoColor=white&label=AUR&labelColor=111111&color=1793d1" alt="AUR Version">
+</p>
+
+**[Install](#install) · [Usage](#usage) · [Configuration](#configuration) · [Architecture](#architecture) · [Contributing](CONTRIBUTING.md)**
 
 </div>
 
-<p align="center">
-  <a href="https://github.com/programmersd21/flow/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/programmersd21/flow/release.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=Build&labelColor=111111&color=00c853" alt="Build">
-  </a>
-  <a href="https://github.com/programmersd21/flow/releases">
-    <img src="https://img.shields.io/github/v/release/programmersd21/flow?style=for-the-badge&logo=github&logoColor=white&label=Release&labelColor=111111&color=ff6d00" alt="Release">
-  </a>
-  <a href="https://github.com/programmersd21/flow/releases">
-    <img src="https://img.shields.io/github/downloads/programmersd21/flow/total?style=for-the-badge&logo=github&logoColor=white&label=Downloads&labelColor=111111&color=8e24aa" alt="Downloads">
-  </a>
-  <a href="https://github.com/programmersd21/flow/stargazers">
-    <img src="https://img.shields.io/github/stars/programmersd21/flow?style=for-the-badge&logo=github&logoColor=white&label=Stars&labelColor=111111&color=fbc02d" alt="Stars">
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/programmersd21/flow">
-    <img src="https://img.shields.io/github/go-mod/go-version/programmersd21/flow?style=for-the-badge&logo=go&logoColor=white&label=Go&labelColor=111111&color=2196f3" alt="Go Version">
-  </a>
-  <a href="https://github.com/programmersd21/flow/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/programmersd21/flow?style=for-the-badge&label=License&labelColor=111111&color=43a047" alt="License">
-  </a>
-  <a href="https://github.com/programmersd21/homebrew-flow">
-    <img src="https://img.shields.io/badge/Homebrew-brew%20install%20programmersd21%2Fflow%2Fflow?style=for-the-badge&logo=homebrew&logoColor=white&labelColor=111111&color=fbb040" alt="Homebrew">
-  </a>
-  <a href="https://aur.archlinux.org/packages/flow-network-monitor-bin">
-    <img src="https://img.shields.io/aur/version/flow-network-monitor-bin?style=for-the-badge&logo=archlinux&logoColor=white&label=AUR&labelColor=111111&color=1793d1" alt="AUR Version">
-  </a>
-  <a href="https://aur.archlinux.org/packages/flow-network-monitor-bin">
-    <img src="https://img.shields.io/aur/popularity/flow-network-monitor-bin?style=for-the-badge&logo=archlinux&logoColor=white&label=Popularity&labelColor=111111&color=1976d2" alt="AUR Popularity">
-  </a>
-</p>
-
-## Contents
-
-- [Install](#install)
-- [Rationale](#rationale)
-- [Philosophy](#philosophy)
-- [Modes](#modes)
-- [Features](#features)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Architecture](#architecture)
-- [Development](#development)
-- [Star History](#star-history)
-- [License](#license)
-
-## Install
-
-### Arch Linux (AUR)
-
-```sh
-yay -S flow-network-monitor-bin
-```
-
-> 💝 Thanks to [@Dominiquini](https://github.com/Dominiquini) for helping bring Flow to the AUR!
-
-### Homebrew:
-
-```sh
-brew install programmersd21/flow/flow
-```
-
-### Go:
-
-```sh
-go install github.com/programmersd21/flow/cmd/flow@latest
-```
-
-### From source:
-
-```sh
-git clone https://github.com/programmersd21/flow
-cd flow
-make install
-```
-
-Pre-built binaries for Linux, macOS, and Windows (amd64 and arm64) are available on the [releases page](https://github.com/programmersd21/flow/releases).
+---
 
 ## Rationale
 
-Most network monitors display CPU usage, per-process breakdowns, packet counts, and connection tables. flow displays throughput only.
+Most network monitors show CPU, memory, per-process breakdowns, and connection tables alongside throughput. `flow` shows throughput. Nothing else.
 
 | btop | flow |
 |:---:|:---:|
 | <img src="./assets/btop.png" alt="btop"> | <img src="./assets/flow.png" alt="flow"> |
 | CPU, memory, disks, processes, network | throughput only |
 
-Every feature decision is evaluated against a single question: does this help the user understand their network within one second. If not, it is not included.
-
-The result is a small, deliberately scoped tool. There are no additional panels, no required configuration, and no unnecessary complexity in either the interface or the underlying implementation.
-
-## Philosophy
+Every feature is weighed against one question: **does this help you read your network within one second?** If not, it doesn't ship.
 
 ```mermaid
 flowchart LR
-    Input["Network throughput"] --> Q{"Understood within<br/>one second?"}
-    Q -->|Yes| Keep["Retain feature"]
-    Q -->|No| Cut["Remove feature"]
-    Keep --> Result["Calm, minimal interface"]
-    Cut --> Result
+    Input["Feature idea"] --> Q{"Understood within<br/>one second?"}
+    Q -->|Yes| Keep["Ship it"]
+    Q -->|No| Cut["Cut it"]
 ```
 
-Every feature is evaluated against one question: does this help a user understand their network within one second. If not, it is removed.
+## Install
 
-flow does not include CPU panels, packet counters, or multi-pane layouts. It reports download and upload throughput, in real time, and nothing else.
+**Arch Linux (AUR)**
+```sh
+yay -S flow-network-monitor-bin
+```
+> Thanks to [@Dominiquini](https://github.com/Dominiquini) for maintaining the AUR package.
 
-The interface is built for restraint rather than density: large typography, controlled color, and spring-based motion in place of decoration.
+**Homebrew**
+```sh
+brew install programmersd21/flow/flow
+```
+
+**Go**
+```sh
+go install github.com/programmersd21/flow/cmd/flow@latest
+```
+
+**From source**
+```sh
+git clone https://github.com/programmersd21/flow
+cd flow
+make install
+```
+
+Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) are on the [releases page](https://github.com/programmersd21/flow/releases).
 
 ## Modes
 
-flow adjusts its display according to terminal width and height.
+`flow` adjusts its display to terminal width and height automatically.
 
 | hero | compact | mini | tiny |
 |:---:|:---:|:---:|:---:|
 | <img src="./assets/normal_mode.png" alt="hero mode"> | <img src="./assets/compact_mode.png" alt="compact mode"> | <img src="./assets/mini_mode.png" alt="mini mode"> | <img src="./assets/tiny_mode.png" alt="tiny mode"> |
-| Full dashboard with logo branding, waveforms, peaks, and daily totals | Cleaner, numbers-only layout with title row, peaks, and daily totals | Graphs-only layout showing waveforms and titles, hiding header logo, daily totals, and footers | Single-line output, intended for status bars; centered when toggled inside the TUI with `m` |
+| Full dashboard, waveforms, peaks, daily totals | Numbers-only layout with peaks and totals | Waveforms only, no header or footer | Single-line, built for status bars |
 
 ## Features
 
-- Live latency (ping) indicator with color-coded ↔ display and configurable target
-- Spring-smoothed throughput animation for premium visual feel
-- Network processes panel — press `n` to view active processes sorted by connection count
-- Interface details overlay — press `I` (capital i) to view IP addresses, MAC, link status, MTU
-- Theme selector with 8 built-in themes plus custom user themes — press `t` to browse and select
-- Reset confirmation — press `r` twice to confirm, preventing accidental data loss
-- Real-time download and upload throughput
-- Interpolated display values using spring-based animation
-- Braille-grid waveform rendering at 30 frames per second
-- Border color reflects current transfer speed with sleek, modern rounded outlines
-- Live peak pulsing white-flash animations when a new session peak is reached
-- Minimalist, high-end unicode today statistics and keybinding footer
-- Directional indicators for traffic trend
-- Automatic unit scaling from B/s to GB/s
-- Session peak tracking and daily traffic totals (persisted across restarts)
-- Streaming JSON output (`--json-stream`) for real-time data pipelines
-- Custom theme files in `~/.config/flow/themes/`
-- Four display modes with automatic responsive switching on both width and height resize
-- No required configuration; optional TOML configuration file
-- Non-interactive output modes for use in scripts
-- Supported on Linux, macOS, and Windows
-- Display throughput in bits per second instead of bytes per second by toggling with the `b` key
-- Adjust the sampling and refresh interval interactively using the `+` and `-` keys
-
-## Network Processes
-
-Press `n` to view active network processes sorted by connection count.
+- Real-time download/upload throughput with spring-smoothed animation
+- Braille-grid waveform rendering at 30 FPS
+- Live latency (ping) indicator, configurable target
+- Network processes panel (`n`) — active connections sorted by count
+- Interface details overlay (`I`) — IP, MAC, link status, MTU
+- 8 built-in themes plus custom themes via TOML
+- Session peak tracking and daily totals, persisted across restarts
+- Streaming JSON output (`--json-stream`) for pipelines
+- Four responsive display modes, switching on both width and height
+- Zero required configuration
+- Linux, macOS, and Windows — no elevated privileges required
 
 <p align="center">
-  <img src="./assets/processes.png" alt="Network processes overlay">
-</p>
-
-## Theme Selector
-
-Press `t` to open the theme browser with `j`/`k` navigation, `enter` to confirm, `esc` to cancel. 8 themes included.
-
-<p align="center">
-  <img src="./assets/theme.png" alt="Theme selector overlay">
-</p>
-
-## Interface Info
-
-Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU for the current network interface.
-
-<p align="center">
-  <img src="./assets/interface_info.png" alt="Interface info overlay">
+  <img src="./assets/processes.png" alt="Network processes overlay" width="32%">
+  <img src="./assets/theme.png" alt="Theme selector overlay" width="32%">
+  <img src="./assets/interface_info.png" alt="Interface info overlay" width="32%">
 </p>
 
 ## Usage
@@ -195,15 +114,15 @@ Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU fo
 ```sh
 flow                        # hero view, auto interface
 flow --tiny                 # single-line mode for status bars
-flow --mini                 # graphs-only mode, no headers/footers
-flow --compact              # compact layout with title row and waveforms
-flow --json                  # single JSON output, then exit
-flow --json-stream           # continuous JSON lines output
-flow --once                  # single plain-text output, then exit
-flow --interface wlan0       # specify network interface
-flow --ping 8.8.8.8          # ping target for latency measurement
-flow --refresh 500ms         # adjust sampling interval (default 100ms)
-flow --bits                 # display in bits/sec instead of bytes/sec
+flow --mini                 # graphs-only mode
+flow --compact              # compact layout
+flow --json                 # single JSON output, then exit
+flow --json-stream          # continuous JSON lines
+flow --once                 # single plain-text output, then exit
+flow --interface wlan0      # specify network interface
+flow --ping 8.8.8.8          # latency target
+flow --refresh 500ms        # sampling interval (default 100ms)
+flow --bits                 # bits/sec instead of bytes/sec
 flow --no-color
 flow --version
 flow --help
@@ -211,23 +130,15 @@ flow --help
 
 ### Keybindings
 
-![keybinds](assets/keybinds.png)
-
-| Key         | Action                      |
-|-------------|-----------------------------|
-| `q` / `^C`  | Quit                         |
-| `m`         | Cycle display/view modes    |
-| `n`         | Open network processes      |
-| `t`         | Choose theme                |
-| `r`         | Reset session peaks (twice)  |
-| `i`         | Cycle network interfaces     |
-| `I`         | Show interface info          |
-| `c`         | Cycle display units          |
-| `b`         | Toggle bits/bytes mode       |
-| `+` / `-`   | Adjust refresh interval      |
-| `p`         | Pause or resume              |
-| `?`         | Open help                    |
-| `esc`       | Back / close overlay         |
+| Key | Action | Key | Action |
+|---|---|---|---|
+| `q` / `^C` | Quit | `c` | Cycle display units |
+| `m` | Cycle display modes | `b` | Toggle bits/bytes |
+| `n` | Network processes | `+` / `-` | Adjust refresh interval |
+| `t` | Choose theme | `p` | Pause / resume |
+| `i` | Cycle interfaces | `?` | Help |
+| `I` | Interface info | `esc` | Back / close overlay |
+| `r` | Reset peaks (press twice) | | |
 
 ### JSON output
 
@@ -242,9 +153,9 @@ flow --help
 }
 ```
 
-### tmux integration
+### tmux
 
-![tmux](assets/tmux.png)
+<p align="center"><img src="./assets/tmux.png" alt="tmux status bar integration" width="70%"></p>
 
 ```sh
 # ~/.tmux.conf
@@ -254,51 +165,28 @@ set -g status-interval 1
 
 ## Configuration
 
-A configuration file is created automatically on first run:
+Created automatically on first run.
 
 | Platform | Path |
-|----------|------|
+|---|---|
 | Linux | `~/.config/flow/config.toml` |
 | macOS | `~/Library/Application Support/flow/config.toml` |
 | Windows | `%APPDATA%\flow\config.toml` |
 
-The `XDG_CONFIG_HOME` environment variable is respected on Linux if set.
+`XDG_CONFIG_HOME` is respected on Linux if set.
 
 ```toml
-refresh     = "100ms"   # sampling interval
-history     = 60        # seconds of retained sparkline history
+refresh     = "100ms"
+history     = 60
 theme       = "default"
-unit        = "auto"    # auto, kb, mb, or gb
-interface   = "auto"    # auto, or a specific interface name (e.g. eth0, wlan0)
+unit        = "auto"    # auto, kb, mb, gb
+interface   = "auto"
 no_color    = false
-bits        = false     # display throughput in bits/sec
-ping_target = "1.1.1.1" # host for latency measurement
+bits        = false
+ping_target = "1.1.1.1"
 ```
 
-<details>
-<summary>Interface layout</summary>
-
-```mermaid
-flowchart TD
-    Title["flow"]
-    Download["DOWNLOAD panel: current speed, peak, waveform"]
-    Upload["UPLOAD panel: current speed, peak, waveform"]
-    Info["Daily totals and active interface"]
-    Footer["Keybinding reference"]
-
-    Title --> Download
-    Download --> Upload
-    Upload --> Info
-    Info --> Footer
-```
-
-All elements are centered on both axes. Panel border color changes according to current transfer speed.
-
-</details>
-
-### Custom themes
-
-Place `.toml` files in `~/.config/flow/themes/` to define user themes:
+**Custom themes** — drop `.toml` files in `~/.config/flow/themes/`:
 
 ```toml
 name = "my-theme"
@@ -316,112 +204,61 @@ upload      = ["#10b981", "#22c55e", "#84cc16", "#a3e635", "#ffffff"]
 
 ## Architecture
 
-flow runs two independent loops connected by a channel.
+Two independent loops connected by a channel — sampling never blocks rendering.
 
 ```mermaid
 flowchart LR
-    subgraph Sampling["Sampling loop, approximately 10 Hz"]
-        OS["Network counters via gopsutil"] --> SlidingWindow["Sliding-window average"]
-        SlidingWindow --> Channel["Sample channel"]
+    subgraph Sampling["Sampling loop · ~10 Hz"]
+        OS["gopsutil counters"] --> SW["Sliding-window average"]
+        SW --> CH["Sample channel"]
     end
-
-    subgraph Rendering["Render loop, approximately 30 fps"]
-        Channel --> Spring["Spring interpolation"]
-        Spring --> Display["Dashboard render (Bubble Tea)"]
-        Theme["Theme configuration"] -.-> Display
-        InterfaceInfo["Interface details (IP, MAC)"] -.-> Display
+    subgraph Rendering["Render loop · ~30 FPS"]
+        CH --> SP["Spring interpolation"]
+        SP --> UI["Bubble Tea dashboard"]
     end
 ```
-
-- The sampling loop reads network counters from the operating system, computes a sliding-window average, and emits a sample on a channel.
-- The render loop interpolates display values toward the latest sample and renders the dashboard.
-- Interface details (IP addresses, MAC, link status) are fetched on demand via `I` using both gopsutil and the Go standard library.
-
-### Internal package structure
 
 ```
 cmd/flow/main.go
-    |
-    ├── internal/config       ← TOML config management
-    ├── internal/collector    ← OS-level network I/O counters + interface details
-    ├── internal/sampler      ← Sliding-window sampling loop
-    |
-    └── internal/ui           ← Bubble Tea Model + views
-         ├── model.go         ← State, update loop, key handling
-         ├── views.go         ← Dashboard layout and mode selection
-         ├── panels.go        ← Download/upload panel rendering
-         ├── overlays.go      ← Help, processes, themes, interface info
-         ├── layout.go        ← Layout utilities (centering, formatting)
-         ├── keys.go          ← Key binding definitions
-         ├── internal/history    ← Ring buffer + tracker (peaks/totals)
-         ├── internal/sparkline  ← Braille/block graph rendering
-         ├── internal/theme      ← 8 colour themes + lipgloss styles
-         ├── internal/animate    ← Spring physics, easing, colour lerps
-         ├── internal/ping       ← TCP ping measurement
-         └── internal/processes  ← Network process enumeration
+├── internal/config       TOML config management
+├── internal/collector    OS-level I/O counters + interface details
+├── internal/sampler      Sliding-window sampling loop
+└── internal/ui           Bubble Tea model + views
+    ├── model.go          State, update loop, key handling
+    ├── views.go          Layout and mode selection
+    ├── panels.go         Download/upload rendering
+    ├── overlays.go       Help, processes, themes, interface info
+    ├── internal/history     Ring buffer + peak/total tracker
+    ├── internal/sparkline   Braille/block graph rendering
+    ├── internal/theme       Colour themes + lipgloss styles
+    ├── internal/animate     Spring physics, easing, colour lerp
+    ├── internal/ping        TCP ping measurement
+    └── internal/processes   Network process enumeration
 ```
 
-Separating collection from rendering keeps the interface responsive without adding load to the sampler. Idle CPU usage remains below one percent.
-
-**Platform notes:** Linux reads `/proc/net/dev` via gopsutil. macOS uses sysctl and getifaddrs. Windows uses `GetIfTable2`. No elevated privileges are required on any platform.
+Idle CPU usage stays below 1%. **Linux** reads `/proc/net/dev` via gopsutil. **macOS** uses sysctl/getifaddrs. **Windows** uses `GetIfTable2`.
 
 ## Development
 
 ```sh
-make check       # format check, vet, lint, and test
+make check       # format, vet, lint, test
 make build       # build ./bin/flow
 make test        # go test ./... -race -cover
-make release-dry # goreleaser snapshot build, no publish
+make release-dry # goreleaser snapshot, no publish
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Star History
 
 <a href="https://www.star-history.com/?repos=programmersd21%2Fflow&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left&sealed_token=Ex6LDz-fQOEgmsobQgUgvyATvwqMhS0Sl5f5uW4T1BK02ZT5weEaQ4AC_u2P3aT9kyk6VJZs3UP04IveY23VklyiHpRvF-Kz0Hbaz6vAcT5pCykshfQSkw" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=programmersd21/flow&type=date&legend=top-left" />
  </picture>
 </a>
 
-## 💙 Community & Support
-
-Thank you to everyone who has supported **flow**. Whether you've starred the repository, reported an issue, submitted a pull request, shared the project, or simply use it every day - your support is what keeps the project growing.
-
-### ⭐ Stargazers
-
-<p align="center">
-  <a href="https://github.com/programmersd21/flow/stargazers">
-    <img src="https://readme-contribs.as93.net/stargazers/programmersd21/flow" alt="Stargazers of flow">
-  </a>
-</p>
-
-### ❤️ Sponsor
-
-If **flow** has made your terminal a little better, please consider sponsoring its development on GitHub.
-
-Your sponsorship helps support:
-
-- 🚀 New features
-- 🐛 Bug fixes
-- ⚡ Performance improvements
-- 📖 Better documentation
-- 🛠️ Long-term maintenance
-
-If you're unable to sponsor, you can still make a huge difference by:
-
-- ⭐ Starring the repository
-- 📢 Sharing **flow** with others
-- 💬 Recommending it to friends and colleagues
-- 🐞 Reporting bugs or suggesting improvements
-- 🤝 Contributing code or documentation
-
-Every contribution, no matter how small, helps **flow** continue to grow.
-
-**Thank you for supporting open source. ❤️**
-
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
