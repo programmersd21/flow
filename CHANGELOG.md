@@ -10,6 +10,7 @@
 
 ### Changed
 - VERSION bumped to 0.2.1.
+- Removed ROADMAP.md; future plans will be communicated through GitHub Issues and Releases.
 
 ## [0.2.0] - 2026-07-15
 
