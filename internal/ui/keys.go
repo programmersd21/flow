@@ -14,6 +14,7 @@ type KeyMap struct {
 	Mode          key.Binding
 	Processes     key.Binding
 	Bits          key.Binding
+	Display       key.Binding
 	Faster        key.Binding
 	Slower        key.Binding
 	Themes        key.Binding
@@ -65,6 +66,10 @@ func DefaultKeyMap() KeyMap {
 		Bits: key.NewBinding(
 			key.WithKeys("b"),
 			key.WithHelp("b", "toggle bits/bytes"),
+		),
+		Display: key.NewBinding(
+			key.WithKeys("d"),
+			key.WithHelp("d", "cycle display filter"),
 		),
 		Faster: key.NewBinding(
 			key.WithKeys("+", "="),

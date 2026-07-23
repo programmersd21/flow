@@ -1,3 +1,16 @@
+## [0.2.1] - 2026-07-23
+
+### Added
+- Display filter — Press `d` to cycle through download-only, upload-only, or both panels, allowing full focus on a single direction.
+- Footer indicator shows `[down only]` or `[up only]` when a filter is active.
+
+### Fixed
+- Panic when sampling interval was set to 300s — `Clamp01` now guards against NaN values, preventing `fiveStopGradient` from computing an out-of-range index with `int(NaN)`.
+- Added NaN/Inf guards in `SpeedRatio` and `fiveStopGradient` for defense-in-depth against floating-point edge cases.
+
+### Changed
+- VERSION bumped to 0.2.1.
+
 ## [0.2.0] - 2026-07-15
 
 ### Added

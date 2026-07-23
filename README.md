@@ -132,14 +132,14 @@ flow --help
 ### Keybindings
 
 | Key | Action | Key | Action |
-|---|---|---|---|
+|---|---|---|---|---|
 | `q` / `^C` | Quit | `c` | Cycle display units |
 | `m` | Cycle display modes | `b` | Toggle bits/bytes |
-| `n` | Network processes | `+` / `-` | Adjust refresh interval |
-| `t` | Choose theme | `p` | Pause / resume |
-| `i` | Cycle interfaces | `?` | Help |
-| `I` | Interface info | `esc` | Back / close overlay |
-| `r` | Reset peaks (press twice) | | |
+| `d` | Cycle display filter | `+` / `-` | Adjust refresh interval |
+| `n` | Network processes | `p` | Pause / resume |
+| `t` | Choose theme | `?` | Help |
+| `i` | Cycle interfaces | `esc` | Back / close overlay |
+| `I` | Interface info | `r` | Reset peaks (press twice) |
 
 ### JSON output
 

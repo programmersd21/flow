@@ -464,7 +464,7 @@ func fiveStopGradient(stops [5][3]uint8, t float64) (uint8, uint8, uint8) {
 	t = animate.Clamp01(t)
 	segment := t * 4.0
 	idx := int(segment)
-	if idx >= 4 {
+	if idx >= 4 || idx < 0 {
 		idx = 3
 		segment = 4.0
 	}
@@ -475,7 +475,7 @@ func fiveStopGradient(stops [5][3]uint8, t float64) (uint8, uint8, uint8) {
 }
 
 func SpeedRatio(current, rollingMax float64) float64 {
-	if rollingMax <= 0 {
+	if rollingMax <= 0 || math.IsNaN(rollingMax) || math.IsInf(rollingMax, 0) {
 		return 0
 	}
 	return animate.Clamp01(current / rollingMax)

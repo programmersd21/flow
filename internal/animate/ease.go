@@ -20,7 +20,7 @@ func ColorLerp(r1, g1, b1, r2, g2, b2 uint8, t float64) (uint8, uint8, uint8) {
 }
 
 func Clamp01(t float64) float64 {
-	if t < 0 {
+	if t < 0 || math.IsNaN(t) {
 		return 0
 	}
 	if t > 1 {

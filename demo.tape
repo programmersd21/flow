@@ -123,6 +123,14 @@ Sleep 600ms
 Type "m"
 Sleep 600ms
 
+# Display filter — cycle through download-only → upload-only → both
+Type "d"
+Sleep 1s
+Type "d"
+Sleep 1s
+Type "d"
+Sleep 800ms
+
 # Bits + units
 Type "b"
 Sleep 600ms

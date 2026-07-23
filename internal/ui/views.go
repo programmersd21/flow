@@ -224,6 +224,7 @@ func renderHelp(m Model) string {
 	items := []item{
 		{"q", "quit"},
 		{"m", "cycle view mode"},
+		{"d", "cycle display filter"},
 		{"n", "network processes"},
 		{"t", "choose theme"},
 		{"r", "reset peaks (press twice)"},
@@ -499,18 +500,38 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 	peakDownVal := m.FormatBps(m.tracker.PeakDown)
 	peakUpVal := m.FormatBps(m.tracker.PeakUp)
 
-	lines = append(lines, renderPanel("download", downVal, peakDownVal, m.downPulse, downGraph, contentW, downBorderColor, mode))
-	lines = append(lines, GapRow)
-	lines = append(lines, renderPanel("upload", upVal, peakUpVal, m.upPulse, upGraph, contentW, upBorderColor, mode))
+	switch m.displayFilter {
+	case DisplayBoth:
+		lines = append(lines, renderPanel("download", downVal, peakDownVal, m.downPulse, downGraph, contentW, downBorderColor, mode))
+		lines = append(lines, GapRow)
+		lines = append(lines, renderPanel("upload", upVal, peakUpVal, m.upPulse, upGraph, contentW, upBorderColor, mode))
+	case DisplayDownOnly:
+		lines = append(lines, renderPanel("download", downVal, peakDownVal, m.downPulse, downGraph, contentW, downBorderColor, mode))
+	case DisplayUpOnly:
+		lines = append(lines, renderPanel("upload", upVal, peakUpVal, m.upPulse, upGraph, contentW, upBorderColor, mode))
+	}
 
 	if mode == ViewHero || mode == ViewCompact {
 		if (m.tracker.TodayDown > 0 || m.tracker.TodayUp > 0) && termH >= 20 {
 			lines = append(lines, GapRow)
-			lines = append(lines, fmt.Sprintf("today  %s %s  %s %s",
-				theme.DownloadColor(0.5).Render("↓"),
-				theme.Soft().Render(formatBytes(m.tracker.TodayDown)),
-				theme.UploadColor(0.5).Render("↑"),
-				theme.Soft().Render(formatBytes(m.tracker.TodayUp))))
+			var todayLine string
+			switch m.displayFilter {
+			case DisplayDownOnly:
+				todayLine = fmt.Sprintf("today  %s %s",
+					theme.DownloadColor(0.5).Render("↓"),
+					theme.Soft().Render(formatBytes(m.tracker.TodayDown)))
+			case DisplayUpOnly:
+				todayLine = fmt.Sprintf("today  %s %s",
+					theme.UploadColor(0.5).Render("↑"),
+					theme.Soft().Render(formatBytes(m.tracker.TodayUp)))
+			default:
+				todayLine = fmt.Sprintf("today  %s %s  %s %s",
+					theme.DownloadColor(0.5).Render("↓"),
+					theme.Soft().Render(formatBytes(m.tracker.TodayDown)),
+					theme.UploadColor(0.5).Render("↑"),
+					theme.Soft().Render(formatBytes(m.tracker.TodayUp)))
+			}
+			lines = append(lines, todayLine)
 		}
 
 		lines = append(lines, GapRow)
@@ -524,6 +545,12 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		}
 		if m.bitsMode {
 			ifaceStr += theme.Dim().Render("  [bits]")
+		}
+		switch m.displayFilter {
+		case DisplayDownOnly:
+			ifaceStr += theme.Dim().Render("  [down only]")
+		case DisplayUpOnly:
+			ifaceStr += theme.Dim().Render("  [up only]")
 		}
 		if m.refreshInterval != 100*time.Millisecond {
 			ifaceStr += theme.Dim().Render("  " + formatInterval(m.refreshInterval))

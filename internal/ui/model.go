@@ -33,6 +33,14 @@ type ifaceDetailMsg struct {
 	err    error
 }
 
+type DisplayFilter int
+
+const (
+	DisplayBoth DisplayFilter = iota
+	DisplayDownOnly
+	DisplayUpOnly
+)
+
 const (
 	slopeWindow         = 6
 	resetConfirmTimeout = 2 * time.Second
@@ -86,6 +94,7 @@ type Model struct {
 	unitMode               UnitMode
 	viewMode               ViewMode
 	bitsMode               bool
+	displayFilter          DisplayFilter
 	procs                  []processes.Info
 
 	width, height   int
@@ -361,6 +370,9 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(msg, m.keys.Bits):
 		m.bitsMode = !m.bitsMode
+
+	case key.Matches(msg, m.keys.Display):
+		m.displayFilter = (m.displayFilter + 1) % 3
 
 	case key.Matches(msg, m.keys.Faster):
 		m.adjustRefreshInterval(true)
