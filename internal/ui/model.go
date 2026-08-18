@@ -212,7 +212,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case pingMsg:
 		m.pingLatency = time.Duration(msg)
-		return m, nil
+		return m, m.pingTick()
 
 	case sampleMsg:
 		if msg.Err != nil {
@@ -502,7 +502,7 @@ func FormatBps(bps float64, unit UnitMode) string {
 }
 
 func FormatBpsExt(bps float64, unit UnitMode, bits bool) string {
-	if bps < 0 {
+	if bps < 0 || math.IsNaN(bps) || math.IsInf(bps, 0) {
 		bps = 0
 	}
 	if bits {

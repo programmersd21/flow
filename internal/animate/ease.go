@@ -30,11 +30,30 @@ func Clamp01(t float64) float64 {
 }
 
 func Spring(current, target float64, velocity *float64, dt float64) float64 {
+	if math.IsNaN(target) || math.IsInf(target, 0) {
+		target = 0
+	}
+	if math.IsNaN(current) || math.IsInf(current, 0) {
+		current = target
+	}
+	if velocity == nil {
+		return target
+	}
+	if math.IsNaN(*velocity) || math.IsInf(*velocity, 0) {
+		*velocity = 0
+	}
+	if dt <= 0 || math.IsNaN(dt) || math.IsInf(dt, 0) {
+		return current
+	}
 	force := stiffness * (target - current)
 	*velocity += force * dt
 	*velocity *= math.Exp(-damping * dt)
 	if *velocity < 0.0001 && *velocity > -0.0001 {
 		*velocity = 0
 	}
-	return current + *velocity*dt
+	res := current + *velocity*dt
+	if math.IsNaN(res) || math.IsInf(res, 0) {
+		return target
+	}
+	return res
 }

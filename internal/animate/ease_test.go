@@ -67,3 +67,31 @@ func TestSpringStableAtUITickInterval(t *testing.T) {
 		t.Errorf("Spring oscillated negative at dt=0.13 (min %f) — value would render as 0 B/s", minVal)
 	}
 }
+
+func TestSpringNaNAndInfGuards(t *testing.T) {
+	var vel float64
+	// Target is NaN
+	val := Spring(100, math.NaN(), &vel, 0.13)
+	if math.IsNaN(val) || math.IsInf(val, 0) {
+		t.Errorf("Spring with NaN target returned %f", val)
+	}
+
+	// Current is NaN
+	val = Spring(math.NaN(), 100, &vel, 0.13)
+	if math.IsNaN(val) || math.IsInf(val, 0) {
+		t.Errorf("Spring with NaN current returned %f", val)
+	}
+
+	// Velocity is NaN
+	vel = math.NaN()
+	val = Spring(100, 100, &vel, 0.13)
+	if math.IsNaN(val) || math.IsInf(val, 0) || math.IsNaN(vel) {
+		t.Errorf("Spring with NaN velocity returned val=%f, vel=%f", val, vel)
+	}
+
+	// dt is NaN
+	val = Spring(100, 100, &vel, math.NaN())
+	if math.IsNaN(val) || math.IsInf(val, 0) {
+		t.Errorf("Spring with NaN dt returned %f", val)
+	}
+}

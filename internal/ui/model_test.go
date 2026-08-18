@@ -42,10 +42,15 @@ func TestFormatBpsExt(t *testing.T) {
 }
 
 func TestFormatBpsExt_EdgeCases(t *testing.T) {
-	// Test NaN and Inf - should not crash
-	_ = FormatBpsExt(math.NaN(), UnitAuto, false)
-	_ = FormatBpsExt(math.Inf(1), UnitAuto, false)
-	_ = FormatBpsExt(math.Inf(-1), UnitAuto, false)
+	if got := FormatBpsExt(math.NaN(), UnitAuto, false); got != "0 B/s" {
+		t.Errorf("FormatBpsExt(NaN) = %q; want '0 B/s'", got)
+	}
+	if got := FormatBpsExt(math.Inf(1), UnitAuto, false); got != "0 B/s" {
+		t.Errorf("FormatBpsExt(+Inf) = %q; want '0 B/s'", got)
+	}
+	if got := FormatBpsExt(math.Inf(-1), UnitAuto, false); got != "0 B/s" {
+		t.Errorf("FormatBpsExt(-Inf) = %q; want '0 B/s'", got)
+	}
 }
 
 func TestFormatBpsFixedWidth(t *testing.T) {
