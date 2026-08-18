@@ -32,7 +32,7 @@ func Clamp01(t float64) float64 {
 func Spring(current, target float64, velocity *float64, dt float64) float64 {
 	force := stiffness * (target - current)
 	*velocity += force * dt
-	*velocity *= 1.0 - damping*dt
+	*velocity *= math.Exp(-damping * dt)
 	if *velocity < 0.0001 && *velocity > -0.0001 {
 		*velocity = 0
 	}
