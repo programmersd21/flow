@@ -1,3 +1,11 @@
+## [0.2.2] - 2026-08-18
+
+### Fixed
+- Current download/upload speed always displaying `0 B/s` — the spring animation in `animate.Spring` was numerically unstable at the UI tick interval (130ms), since `1 - damping*dt` evaluated to a negative damping factor. Velocity flipped sign and grew every tick, driving the animated value deeply negative, where `FormatBpsExt` clamped it to `0 B/s`. Damping now uses an exponential factor (`exp(-damping*dt)`), keeping the spring stable and convergent at any step size. The sparkline and peak values were unaffected because they read raw history samples directly.
+
+### Changed
+- VERSION bumped to 0.2.2.
+
 ## [0.2.1] - 2026-07-23
 
 ### Added

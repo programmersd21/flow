@@ -48,3 +48,22 @@ func TestSpringConverges(t *testing.T) {
 		t.Errorf("Spring did not converge: %f (want ~100)", val)
 	}
 }
+
+func TestSpringStableAtUITickInterval(t *testing.T) {
+	const target = 34603008.0
+	var vel float64
+	val := 0.0
+	minVal := val
+	for i := 0; i < 1000; i++ {
+		val = Spring(val, target, &vel, 0.13)
+		if val < minVal {
+			minVal = val
+		}
+	}
+	if math.Abs(val-target) > target*0.01 {
+		t.Errorf("Spring did not converge at dt=0.13: %f (want ~%f)", val, target)
+	}
+	if minVal < 0 {
+		t.Errorf("Spring oscillated negative at dt=0.13 (min %f) — value would render as 0 B/s", minVal)
+	}
+}
