@@ -1,7 +1,16 @@
+## [0.2.3] - 2026-08-19
+
+### Fixed
+- Spring animation and views hardened against non-finite (NaN/Inf) values across `animate.Spring`, `FormatBpsExt`, `maxf`, and `formatBytes` to prevent propagation of invalid numbers.
+- Ping measurements rescheduled in the Bubble Tea update loop to prevent blocking, isolating `TestLoadMissing` for reliability.
+
+### Changed
+- VERSION bumped to 0.2.3.
+
 ## [0.2.2] - 2026-08-18
 
 ### Fixed
-- Current download/upload speed always displaying `0 B/s` — the spring animation in `animate.Spring` was numerically unstable at the UI tick interval (130ms), since `1 - damping*dt` evaluated to a negative damping factor. Velocity flipped sign and grew every tick, driving the animated value deeply negative, where `FormatBpsExt` clamped it to `0 B/s`. Damping now uses an exponential factor (`exp(-damping*dt)`), keeping the spring stable and convergent at any step size. The sparkline and peak values were unaffected because they read raw history samples directly.
+- Current download/upload speed always displaying `0 B/s` — the spring animation in `animate.Spring` was numerically unstable at the UI tick interval (130ms), since `1 - damping*dt` evaluated to a n[...]
 
 ### Changed
 - VERSION bumped to 0.2.2.
@@ -38,13 +47,13 @@
 ## [0.1.7] - 2026-07-10
 
 ### Added
-- Sample Heartbeat Dot — The logo dot now flashes in the active theme's accent color upon receiving a network sample and decays smoothly, replacing the continuous decorative breathing animation with a state-driven heartbeat.
+- Sample Heartbeat Dot — The logo dot now flashes in the active theme's accent color upon receiving a network sample and decays smoothly, replacing the continuous decorative breathing animation with[...]
 
 ### Improved
-- Typography Hierarchy — Established a strict 3-tier typographic hierarchy: Tier 1 (throughput values, bold/brightest), Tier 2 (labels, peaks, secondary stats, medium weight/muted), and Tier 3 (footer hints, interface metadata, timestamps, dimmest).
-- Color restraint — Overhauled all 8 color themes to use neutral slate/gray borders. Accent colors are reserved strictly for interactive focus and peak/sampling pulses, and colors are reserved strictly for semantic download/upload direction.
+- Typography Hierarchy — Established a strict 3-tier typographic hierarchy: Tier 1 (throughput values, bold/brightest), Tier 2 (labels, peaks, secondary stats, medium weight/muted), and Tier 3 (foot[...]
+- Color restraint — Overhauled all 8 color themes to use neutral slate/gray borders. Accent colors are reserved strictly for interactive focus and peak/sampling pulses, and colors are reserved stric[...]
 - Onboarding & Footer Clarity — Replaced the long list of shortcuts in the footer with a clean, low-clutter, three-item group (`q quit · m mode · ? help`) to simplify the interface on startup.
-- Spacing System — Applied a consistent character-grid layout with a standard 1-row vertical gap between all layout sections. Re-derived panel and graph width calculations to align waveforms precisely with panel borders.
+- Spacing System — Applied a consistent character-grid layout with a standard 1-row vertical gap between all layout sections. Re-derived panel and graph width calculations to align waveforms precise[...]
 - Duplicate data removal — Removed redundant download/upload stats from the footer status line, displaying only ping latency if active.
 
 ### Changed
@@ -60,15 +69,15 @@
 
 ### Added
 
-- Interface Details Overlay — Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU for the current network interface. Uses both gopsutil and the Go standard library for cross-platform compatibility.
+- Interface Details Overlay — Press `I` (capital i) to view IP addresses, MAC address, link status, and MTU for the current network interface. Uses both gopsutil and the Go standard library for cros[...]
 - Reset Confirmation — Pressing `r` now requires a second press within 2 seconds to confirm, preventing accidental data loss. Press `esc` to cancel.
 - Interface Info Keybinding (`I`) — Documented in the help overlay alongside all other bindings.
-- Expanded test coverage — New test suites for layout utilities (centerInline, formatBytes, formatInterval, truncate), overlay rendering (help, processes, themes), collector edge cases (loopback detection, pickBest), and additional FormatBpsExt unit/edge-case tests.
+- Expanded test coverage — New test suites for layout utilities (centerInline, formatBytes, formatInterval, truncate), overlay rendering (help, processes, themes), collector edge cases (loopback det[...]
 - ROADMAP.md — Published a public roadmap covering v0.2.x through v0.5.x.
 
 ### Improved
 
-- Codebase modularity — views.go (729 lines) split into four focused files: views.go (dashboard layout), panels.go (download/upload panel rendering), overlays.go (help, processes, themes, interface details overlays), and layout.go (shared layout/formatting utilities). Each file has a single responsibility.
+- Codebase modularity — views.go (729 lines) split into four focused files: views.go (dashboard layout), panels.go (download/upload panel rendering), overlays.go (help, processes, themes, interface [...]
 - Help overlay — Now documents the new `I` interface info keybinding and the reset confirmation (press twice) behavior.
 - Collector testability — Added `collector_test.go` with tests for `isLoopback`, `pickBest`, constructor, and `InterfaceDetails`.
 - centerInline now handles empty strings gracefully (returns the input unchanged instead of adding whitespace padding).
@@ -95,25 +104,25 @@
 
 ### Fixed
 
-- Dashboard Overflow on Short Terminals - Replaced fixed height thresholds for view mode selection with a measurement-based approach that renders each candidate mode and picks the largest one whose actual line count fits the terminal. Added a safety clamp in `centerFrame` so output never exceeds the terminal height (trims footer instead of clipping the top). This prevents the TUI title and graphs from being scrolled out of view on small windows.
+- Dashboard Overflow on Short Terminals - Replaced fixed height thresholds for view mode selection with a measurement-based approach that renders each candidate mode and picks the largest one whose ac[...]
 
 ## [0.1.3] - 2026-07-06
 
 ### Added
 
-- Theme Selector - Press `t` to open an interactive theme browser with j/k navigation, enter to confirm, and esc to cancel. Includes 8 themes: default, nord, dracula, gruvbox, forest, monochrome, catppuccin, tokyo-night.
+- Theme Selector - Press `t` to open an interactive theme browser with j/k navigation, enter to confirm, and esc to cancel. Includes 8 themes: default, nord, dracula, gruvbox, forest, monochrome, catp[...]
 - Bits/sec Display Mode - Press `b` to toggle display between bytes per second and bits per second. Persisted via `bits` config option.
 - Command Line Flag - `--bits` flag to start flow in bits/sec display mode directly.
 - Interactive Refresh Scaling - Press `+` / `-` keys to speed up or slow down the sampling rate dynamically (50ms–2s range).
 - Config Option - `bits = false` TOML option to persist bits/sec preference.
 - In-TUI Tiny Mode - `m` key cycles to a centered single-line output inside the TUI, matching the standalone `--tiny` behavior.
-- Live Latency (Ping) - A minimal ping indicator measures TCP latency to 1.1.1.1 every 5 seconds and displays it color-coded (green <30ms, amber <100ms, red >=100ms) with a ↔ unicode glyph. First ping fires immediately on launch via a separate goroutine, followed by periodic ticks.
+- Live Latency (Ping) - A minimal ping indicator measures TCP latency to 1.1.1.1 every 5 seconds and displays it color-coded (green <30ms, amber <100ms, red >=100ms) with a ↔ unicode glyph. First pi[...]
 
 ### Changed
 
-- Footer Restructure - Three clean centered rows using `lipgloss.Align(Center)` for mathematically precise centering: interface status (top), minimal stats line with ping + bandwidth (middle, no gap between wifi and stats), keybinding hints (bottom). Uniform 2-line gaps between footer sections. Tighter intentional spacing throughout.
-- Overlay Dismiss - All overlays (help, processes, theme selector) now use only `esc` to dismiss. `?` opens help, `n` opens processes, `t` opens theme selector — but none of these toggle them closed. Only `esc` returns to the dashboard.
-- Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected" when empty.
+- Footer Restructure - Three clean centered rows using `lipgloss.Align(Center)` for mathematically precise centering: interface status (top), minimal stats line with ping + bandwidth (middle, no gap b[...]
+- Overlay Dismiss - All overlays (help, processes, theme selector) now use only `esc` to dismiss. `?` opens help, `n` opens processes, `t` opens theme selector — but none of these toggle them closed[...]
+- Processes Panel - Redesigned with a rounded indigo border matching the help menu aesthetic, consistent padding, muted separators, and centered layout. Displays "no active network processes detected"[...]
 - Today Stats - Deduplicated "today" label (was showing "today" twice), cleaner formatting.
 - Makefile - Cross-platform support for Linux, macOS, and Windows (automatic binary extension, platform-agnostic directory creation and cleanup).
 
