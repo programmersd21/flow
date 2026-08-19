@@ -30,6 +30,15 @@ func max(a, b int) int {
 }
 
 func maxf(a, b float64) float64 {
+	if math.IsNaN(a) {
+		if math.IsNaN(b) {
+			return 0
+		}
+		return b
+	}
+	if math.IsNaN(b) {
+		return a
+	}
 	if a > b {
 		return a
 	}
@@ -96,6 +105,9 @@ func formatInterval(d time.Duration) string {
 }
 
 func formatBytes(b float64) string {
+	if b < 0 || math.IsNaN(b) || math.IsInf(b, 0) {
+		b = 0
+	}
 	const (
 		KB = 1024.0
 		MB = 1024 * KB

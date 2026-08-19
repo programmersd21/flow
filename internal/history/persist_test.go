@@ -35,6 +35,13 @@ func TestSaveLoad(t *testing.T) {
 }
 
 func TestLoadMissing(t *testing.T) {
+	dir := t.TempDir()
+	orig := statsPath
+	statsPath = func() (string, error) {
+		return filepath.Join(dir, "nonexistent_stats.json"), nil
+	}
+	defer func() { statsPath = orig }()
+
 	tracker := NewTracker()
 	err := tracker.Load()
 	if err == nil {
