@@ -1,4 +1,4 @@
-## [0.2.4] - 2026-08-20
+## [0.2.4] - 2026-08-27
 
 ### Added
 - In-app version display — the running version (e.g. `v0.2.4`) now appears as a small accent-colored pill, centered under the hero `flow` logo and next to the title in compact/mini modes (and via `flow --version`).
