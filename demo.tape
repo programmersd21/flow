@@ -79,31 +79,31 @@ Sleep 600ms
 Type "r"
 Sleep 800ms
 
-# --- Themes: sample 3 instead of cycling all 8, cuts ~7s of dead frames ---
+# --- Themes: show a few, but linger long enough to actually see each one ---
 
 # Default → nord
 Type "t"
 Sleep 300ms
 Type "j"
-Sleep 200ms
+Sleep 300ms
 Enter
-Sleep 800ms
+Sleep 4s
 
 # Nord → gruvbox (skip dracula, jump two)
 Type "t"
 Sleep 300ms
 Type "jj"
-Sleep 200ms
+Sleep 300ms
 Enter
-Sleep 800ms
+Sleep 4s
 
 # Gruvbox → tokyo-night (skip to last)
 Type "t"
 Sleep 300ms
 Type "jjjj"
-Sleep 200ms
+Sleep 300ms
 Enter
-Sleep 800ms
+Sleep 4.5s
 
 # Reset (with confirmation)
 Type "r"
@@ -113,37 +113,37 @@ Sleep 800ms
 
 # Interface cycle
 Type "i"
-Sleep 600ms
+Sleep 1.2s
 Type "i"
-Sleep 600ms
+Sleep 1.2s
 
 # View modes
 Type "m"
-Sleep 600ms
+Sleep 1.2s
 Type "m"
-Sleep 600ms
+Sleep 1.2s
 
 # Display filter — cycle through download-only → upload-only → both
 Type "d"
-Sleep 1s
+Sleep 1.2s
+Type "d"
+Sleep 1.2s
 Type "d"
 Sleep 1s
-Type "d"
-Sleep 800ms
 
 # Bits + units
 Type "b"
-Sleep 600ms
+Sleep 800ms
 Type "c"
-Sleep 500ms
+Sleep 700ms
 Type "c"
-Sleep 500ms
+Sleep 700ms
 
 # Pause / resume
 Type "p"
-Sleep 1s
+Sleep 1.2s
 Type "p"
-Sleep 500ms
+Sleep 600ms
 
 # Processes
 Type "n"
