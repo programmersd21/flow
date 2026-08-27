@@ -33,6 +33,17 @@ type ifaceDetailMsg struct {
 	err    error
 }
 
+// appVersion is set from the main package via SetVersion so the UI can
+// surface it in the title. Defaults to "dev" for local builds.
+var appVersion = "dev"
+
+// SetVersion records the build version for display inside the UI.
+func SetVersion(v string) {
+	if v != "" {
+		appVersion = v
+	}
+}
+
 type DisplayFilter int
 
 const (

@@ -101,6 +101,8 @@ Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) are on the [relea
 - Session peak tracking and daily totals, persisted across restarts
 - Streaming JSON output (`--json-stream`) for pipelines
 - Four responsive display modes, switching on both width and height
+- Vibrant, cheerful theme out of the box -- colorful direction gradients, borders, and a glowing activity dot (also via `flow --version`)
+- Current version shown in-app as an accent pill under the hero logo / next to the title, and via `flow --version`
 - Zero required configuration
 - Linux, macOS, and Windows -- no elevated privileges required
 
