@@ -1,10 +1,13 @@
 ## [0.2.4] - 2026-08-20
 
 ### Added
-- In-app version display — the running version (e.g. `v0.2.4`) now appears as a small accent-colored pill next to the `flow` name in the title row, clearly labeling the application version (also still available via `flow --version`).
+- In-app version display — the running version (e.g. `v0.2.4`) now appears as a small accent-colored pill, centered under the hero `flow` logo and next to the title in compact/mini modes (and via `flow --version`).
+- The active-interface dot now glows: it flashes bright on each sample in compact and mini modes.
 
 ### Changed
-- A cleaner, truly centered layout — removed the large rainbow ASCII logo and its tagline from hero mode in favor of a single centered `● flow  v0.2.4` title, consistent across hero and compact modes.
+- Much more vibrant, cheerful colors — the default theme's download/upload gradients, borders, and graph colors were brightened and saturated for a lively look.
+- All text is now prominent against any background (black or transparent): the dim/muted text ramp was brightened across every built-in theme so secondary labels, flags, and hints always stay clearly readable.
+- The hero mode now combines the rainbow ASCII `flow` logo with a centered version pill and the `"Calm your network. See it breathe."` tagline.
 - Status and latency indicators now use theme-consistent colors instead of hardcoded green/amber/red, so they always match the active theme. The accent color highlights elevated latency or a down link.
 - Removed the green interface-status dot from the footer for a cleaner, less cluttered look. The interface name and state (paused / down only / up only / refresh interval) remain.
 - VERSION bumped to 0.2.4.

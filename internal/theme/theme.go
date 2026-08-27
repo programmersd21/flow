@@ -3,6 +3,7 @@ package theme
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/programmersd21/flow/internal/animate"
@@ -35,8 +36,8 @@ type ThemeInfo struct {
 var themes = []Theme{
 	{
 		Name:       "default",
-		TextDim:    "#64748b",
-		TextMuted:  "#94a3b8",
+		TextDim:    "#94a3b8",
+		TextMuted:  "#c3cedb",
 		TextSoft:   "#cbd5e1",
 		TextBase:   "#e2e8f0",
 		TextBright: "#f8fafc",
@@ -44,23 +45,23 @@ var themes = []Theme{
 		Border:     "#334155", // Neutral slate-700
 		Accent:     "#6366f1", // Indigo
 		DownloadStops: [5][3]uint8{
-			{0x3b, 0x82, 0xf6}, // Vibrant Blue (#3B82F6)
-			{0x63, 0x66, 0xf1}, // Indigo (#6366F1)
-			{0x06, 0xb6, 0xd4}, // Bright Cyan (#06B6D4)
-			{0x00, 0xf5, 0xd4}, // Glowing Mint-Cyan
+			{0x26, 0x5f, 0xff}, // Strong Blue (#265FFF)
+			{0x22, 0x8b, 0xfa}, // Vivid Azure (#228BFA)
+			{0x08, 0xcf, 0xf6}, // Bright Cyan (#08CFF6)
+			{0x2d, 0xff, 0xd6}, // Neon Mint-Green (#2DFFD6)
 			{0xff, 0xff, 0xff}, // Pure White
 		},
 		UploadStops: [5][3]uint8{
-			{0x10, 0xb9, 0x81}, // Emerald (#10B981)
-			{0x22, 0xc5, 0x5e}, // Green (#22C55E)
-			{0x84, 0xcc, 0x16}, // Lime (#84CC16)
-			{0xa3, 0xe6, 0x35}, // Bright Lime
+			{0x07, 0xc1, 0x6e}, // Vivid Emerald (#07C16E)
+			{0x2f, 0xd3, 0x54}, // Bright Green (#2FD354)
+			{0xa3, 0xe6, 0x35}, // Lime (#A3E635)
+			{0xdd, 0xff, 0x4f}, // Neon Lime (#DDFF4F)
 			{0xff, 0xff, 0xff}, // Pure White
 		},
-		DownloadBorderStart: [3]uint8{0x25, 0x63, 0xeb},
+		DownloadBorderStart: [3]uint8{0x1d, 0x4e, 0xd8},
 		DownloadBorderEnd:   [3]uint8{0x06, 0xb6, 0xd4},
-		UploadBorderStart:   [3]uint8{0x05, 0x96, 0x69},
-		UploadBorderEnd:     [3]uint8{0x84, 0xcc, 0x16},
+		UploadBorderStart:   [3]uint8{0x04, 0x78, 0x57},
+		UploadBorderEnd:     [3]uint8{0xa3, 0xe6, 0x35},
 		LogoStops: [4][3]uint8{
 			{0xd9, 0x46, 0xef}, // Fuchsia
 			{0x8b, 0x5c, 0xf6}, // Purple
@@ -70,8 +71,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "nord",
-		TextDim:    "#4c566a", // Polar Night Gray
-		TextMuted:  "#434c5e", // Darker Gray
+		TextDim:    "#9fb3cc", // Polar Sky Gray
+		TextMuted:  "#c6d3e2", // Light Frost Gray
 		TextSoft:   "#d8dee9", // Snow Storm Soft
 		TextBase:   "#e5e9f0", // Snow Storm Base
 		TextBright: "#eceff4", // Snow Storm Bright
@@ -105,8 +106,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "dracula",
-		TextDim:    "#6272a4", // Comment Purple
-		TextMuted:  "#6272a4",
+		TextDim:    "#8be9fd", // Cyan
+		TextMuted:  "#bd93f9", // Purple
 		TextSoft:   "#f8f8f2", // Foreground
 		TextBase:   "#f8f8f2",
 		TextBright: "#f1fa8c", // Yellow Accent
@@ -140,8 +141,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "gruvbox",
-		TextDim:    "#7c6f64", // Gray
-		TextMuted:  "#a89984", // Light Gray
+		TextDim:    "#b5a28c", // Soft Gray-Brown
+		TextMuted:  "#d4c5a8", // Light Sand
 		TextSoft:   "#ebdbb2", // Cream
 		TextBase:   "#ebdbb2",
 		TextBright: "#fabd2f", // Yellow
@@ -175,8 +176,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "forest",
-		TextDim:    "#3f6212", // Dark Moss Green
-		TextMuted:  "#4ade80", // Light Green
+		TextDim:    "#34d399", // Emerald
+		TextMuted:  "#6ee7b7", // Soft Green
 		TextSoft:   "#86efac", // Soft Green
 		TextBase:   "#dcfce7", // Very Soft Green
 		TextBright: "#f0fdf4", // Bright leaf
@@ -210,8 +211,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "monochrome",
-		TextDim:    "#525252", // Neutral Gray
-		TextMuted:  "#737373", // Lighter Gray
+		TextDim:    "#808080", // Neutral Gray
+		TextMuted:  "#989898", // Light Gray
 		TextSoft:   "#a3a3a3", // Soft Gray
 		TextBase:   "#e5e5e5", // Off-white
 		TextBright: "#ffffff", // Pure White
@@ -245,8 +246,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "catppuccin",
-		TextDim:    "#585b70",
-		TextMuted:  "#7f849c",
+		TextDim:    "#8b93ad",
+		TextMuted:  "#a5aec7",
 		TextSoft:   "#a6adc8",
 		TextBase:   "#cdd6f4",
 		TextBright: "#f5e0dc",
@@ -280,8 +281,8 @@ var themes = []Theme{
 	},
 	{
 		Name:       "tokyo-night",
-		TextDim:    "#565f89",
-		TextMuted:  "#737aa2",
+		TextDim:    "#7f8bb8",
+		TextMuted:  "#8f9dcd",
 		TextSoft:   "#9aa5ce",
 		TextBase:   "#a9b1d6",
 		TextBright: "#c0caf5",
@@ -382,7 +383,7 @@ func GetTextDimColor() string {
 
 func Title() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color(activeTheme.TextSoft)).
+		Foreground(lipgloss.Color(activeTheme.TextBright)).
 		Bold(true)
 }
 
@@ -400,9 +401,12 @@ func Dim() lipgloss.Style {
 
 func LogoDotColor(pulse float64) lipgloss.Style {
 	pulse = animate.Clamp01(pulse)
-	r1, g1, b1 := hexToRGB(activeTheme.TextDim)
-	r2, g2, b2 := hexToRGB(activeTheme.Accent)
-	r, g, b := animate.ColorLerp(r1, g1, b1, r2, g2, b2, pulse)
+	ra, ga, ba := hexToRGB(activeTheme.Accent)
+	// Peak color: brighten the accent toward white so the dot flashes a neon glow on each sample.
+	br := uint8(float64(ra)*0.30 + 255*0.70)
+	bg := uint8(float64(ga)*0.30 + 255*0.70)
+	bb := uint8(float64(ba)*0.30 + 255*0.70)
+	r, g, b := animate.ColorLerp(ra, ga, ba, br, bg, bb, pulse)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
@@ -493,6 +497,83 @@ func DirArrow(download bool) string {
 		return "↓"
 	}
 	return "↑"
+}
+
+var logoSrc = []string{
+	"███████╗██╗      ██████╗ ██╗    ██╗",
+	"██╔════╝██║     ██╔═══██╗██║    ██║",
+	"█████╗  ██║     ██║   ██║██║ █╗ ██║",
+	"██╔══╝  ██║     ██║   ██║██║███╗██║",
+	"██║     ███████╗╚██████╔╝╚███╔███╔╝",
+	"╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ ",
+}
+
+func LogoColored(width int) []string {
+	const logoW = 38
+	if width < logoW {
+		return nil
+	}
+
+	pad := (width - logoW) / 2
+	if pad < 0 {
+		pad = 0
+	}
+	left := strings.Repeat(" ", pad)
+	right := strings.Repeat(" ", width-logoW-pad)
+
+	lines := make([]string, len(logoSrc))
+	for i, line := range logoSrc {
+		rowT := float64(i) / float64(len(logoSrc)-1)
+		r, g, b := fourStopLogoGradient(rowT, 1.0)
+		color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+		lines[i] = left + lipgloss.NewStyle().Foreground(color).Bold(true).Render(line) + right
+	}
+	return lines
+}
+
+func fourStopLogoGradient(position, brightness float64) (uint8, uint8, uint8) {
+	position = animate.Clamp01(position)
+	brightness = animate.Clamp01(brightness)
+
+	var r, g, b uint8
+	segment := position * 3.0
+	idx := int(segment)
+	if idx >= 3 {
+		idx = 2
+		segment = 3.0
+	}
+	t := segment - float64(idx)
+
+	r, g, b = animate.ColorLerp(
+		activeTheme.LogoStops[idx][0], activeTheme.LogoStops[idx][1], activeTheme.LogoStops[idx][2],
+		activeTheme.LogoStops[idx+1][0], activeTheme.LogoStops[idx+1][1], activeTheme.LogoStops[idx+1][2],
+		t,
+	)
+
+	r = uint8(math.Min(255, float64(r)*brightness))
+	g = uint8(math.Min(255, float64(g)*brightness))
+	b = uint8(math.Min(255, float64(b)*brightness))
+
+	return r, g, b
+}
+
+const logoSubtitle = "Calm your network. See it breathe."
+
+func LogoSubtitle(width int) string {
+	subtitleW := len(logoSubtitle)
+	color := lipgloss.Color(activeTheme.TextMuted)
+	styled := lipgloss.NewStyle().Foreground(color).Render(logoSubtitle)
+
+	pad := (width - subtitleW) / 2
+	if pad < 0 {
+		pad = 0
+	}
+	rightPad := width - subtitleW - pad
+	if rightPad < 0 {
+		rightPad = 0
+	}
+
+	return strings.Repeat(" ", pad) + styled + strings.Repeat(" ", rightPad)
 }
 
 func hexToRGB(hex string) (uint8, uint8, uint8) {

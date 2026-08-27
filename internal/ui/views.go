@@ -141,6 +141,10 @@ func versionBadge() string {
 		Render("v" + strings.TrimPrefix(appVersion, "v"))
 }
 
+func centerText(s string, width int) string {
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
+}
+
 func TitleRow(pulse float64) string {
 	logo := fmt.Sprintf("%s  %s",
 		theme.LogoDotColor(pulse).Render("●"),
@@ -497,7 +501,24 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 	lines := make([]string, 0, 24)
 
 	switch mode {
-	case ViewHero, ViewCompact:
+	case ViewHero:
+		if termH >= 30 {
+			if logo := theme.LogoColored(contentW); logo != nil {
+				lines = append(lines, logo...)
+				lines = append(lines, GapRow)
+				lines = append(lines, centerText(versionBadge(), contentW))
+				lines = append(lines, GapRow)
+				lines = append(lines, theme.LogoSubtitle(contentW))
+				lines = append(lines, GapRow)
+			} else {
+				lines = append(lines, TitleRow(m.samplePulse))
+				lines = append(lines, GapRow)
+			}
+		} else {
+			lines = append(lines, TitleRow(m.samplePulse))
+			lines = append(lines, GapRow)
+		}
+	case ViewCompact, ViewMini:
 		lines = append(lines, TitleRow(m.samplePulse))
 		lines = append(lines, GapRow)
 	}

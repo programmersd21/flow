@@ -59,7 +59,7 @@ clean:
 
 ## demo: generate assets/demo.gif with VHS
 demo: build
-	vhs flow.tape
+	vhs demo.tape
 	@if command -v gifsicle >/dev/null 2>&1; then \
 		echo "optimizing with gifsicle..."; \
 		gifsicle -O3 --colors 256 --lossy=80 -o assets/demo.gif assets/demo.gif; \
