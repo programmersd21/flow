@@ -132,7 +132,6 @@ func lineCount(lines []string) int {
 	return strings.Count(strings.Join(lines, "\n"), "\n") + 1
 }
 
-// versionBadge is no longer needed as a separate helper.
 // versionBadge renders the running version as a small accent-colored pill.
 func versionBadge() string {
 	return lipgloss.NewStyle().
