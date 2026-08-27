@@ -4,7 +4,7 @@ Require make
 Require curl
 
 Set Shell "bash"
-Set FontFamily "JetBrains Mono"
+Set FontFamily "JetBrainsMono Nerd Font Mono"
 Set FontSize 16
 Set Theme {
   "name": "Flow",
