@@ -132,10 +132,21 @@ func lineCount(lines []string) int {
 	return strings.Count(strings.Join(lines, "\n"), "\n") + 1
 }
 
+// versionBadge is no longer needed as a separate helper.
+// versionBadge renders the running version as a small accent-colored pill.
+func versionBadge() string {
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#ffffff")).
+		Background(lipgloss.Color(theme.GetAccentColor())).
+		Padding(0, 1).
+		Render("v" + strings.TrimPrefix(appVersion, "v"))
+}
+
 func TitleRow(pulse float64) string {
-	return fmt.Sprintf("%s  %s",
+	logo := fmt.Sprintf("%s  %s",
 		theme.LogoDotColor(pulse).Render("●"),
 		theme.Title().Render("flow"))
+	return logo + "  " + versionBadge()
 }
 
 func renderTiny(m Model) string {
@@ -157,17 +168,13 @@ func renderTiny(m Model) string {
 func renderStatsLine(m Model) string {
 	if m.pingLatency > 0 {
 		ms := m.pingLatency.Seconds() * 1000
-		var color string
-		switch {
-		case ms < 30:
-			color = "#10b981"
-		case ms < 100:
-			color = "#f59e0b"
-		default:
-			color = "#ef4444"
+		// Use theme-consistent styling: neutral when healthy, accent when high.
+		style := theme.Soft()
+		if ms >= 100 {
+			style = theme.Accent()
 		}
-		pingIcon := lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render("↔")
-		pingVal := lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Bold(true).Render(fmt.Sprintf("%.0fms", ms))
+		pingIcon := style.Render("↔")
+		pingVal := style.Bold(true).Render(fmt.Sprintf("%.0fms", ms))
 		return theme.Muted().Render("ping ") + pingIcon + " " + pingVal
 	}
 	return ""
@@ -280,13 +287,13 @@ func renderIfaceDetails(m Model) string {
 	for _, addr := range d.Addrs {
 		block = append(block, "  "+theme.Muted().Render("ip   ")+theme.Soft().Render(addr))
 	}
-	statusColor := "#10b981"
+	statusStyle := theme.Soft()
 	statusText := "up"
 	if !d.IsUp {
-		statusColor = "#ef4444"
+		statusStyle = theme.Accent()
 		statusText = "down"
 	}
-	block = append(block, "  "+theme.Muted().Render("link ")+lipgloss.NewStyle().Foreground(lipgloss.Color(statusColor)).Bold(true).Render(statusText))
+	block = append(block, "  "+theme.Muted().Render("link ")+statusStyle.Bold(true).Render(statusText))
 	if d.Mtu > 0 {
 		block = append(block, "  "+theme.Muted().Render("mtu  ")+theme.Soft().Render(fmt.Sprintf("%d", d.Mtu)))
 	}
@@ -491,18 +498,7 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 	lines := make([]string, 0, 24)
 
 	switch mode {
-	case ViewHero:
-		if termH >= 28 {
-			logo := theme.LogoColored(contentW)
-			lines = append(lines, logo...)
-			lines = append(lines, GapRow)
-			lines = append(lines, theme.LogoSubtitle(contentW))
-			lines = append(lines, GapRow)
-		} else {
-			lines = append(lines, TitleRow(m.samplePulse))
-			lines = append(lines, GapRow)
-		}
-	case ViewCompact:
+	case ViewHero, ViewCompact:
 		lines = append(lines, TitleRow(m.samplePulse))
 		lines = append(lines, GapRow)
 	}
@@ -547,11 +543,7 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		}
 
 		lines = append(lines, GapRow)
-		dotColor := "#10b981"
-		if m.paused {
-			dotColor = "#ef4444"
-		}
-		ifaceStr := fmt.Sprintf("%s %s", lipgloss.NewStyle().Foreground(lipgloss.Color(dotColor)).Render("●"), theme.Muted().Render(m.ifaceName))
+		ifaceStr := theme.Muted().Render(m.ifaceName)
 		if m.paused {
 			ifaceStr += theme.Dim().Render("  paused")
 		}

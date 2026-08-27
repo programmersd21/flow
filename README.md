@@ -101,6 +101,7 @@ Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) are on the [relea
 - Session peak tracking and daily totals, persisted across restarts
 - Streaming JSON output (`--json-stream`) for pipelines
 - Four responsive display modes, switching on both width and height
+- Current version shown in-app as an accent pill next to `flow` in the title row, and via `flow --version`
 - Zero required configuration
 - Linux, macOS, and Windows -- no elevated privileges required
 

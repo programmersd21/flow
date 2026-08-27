@@ -3,7 +3,6 @@ package theme
 import (
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/programmersd21/flow/internal/animate"
@@ -489,87 +488,11 @@ func ValuePrimary(intensity float64, download bool) lipgloss.Style {
 	return st.Bold(true)
 }
 
-var logoSrc = []string{
-	"███████╗██╗      ██████╗ ██╗    ██╗",
-	"██╔════╝██║     ██╔═══██╗██║    ██║",
-	"█████╗  ██║     ██║   ██║██║ █╗ ██║",
-	"██╔══╝  ██║     ██║   ██║██║███╗██║",
-	"██║     ███████╗╚██████╔╝╚███╔███╔╝",
-	"╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ ",
-}
-
-func LogoColored(width int) []string {
-	const logoW = 38
-	if width < logoW {
-		return nil
-	}
-
-	pad := (width - logoW) / 2
-	if pad < 0 {
-		pad = 0
-	}
-	left := strings.Repeat(" ", pad)
-	right := strings.Repeat(" ", width-logoW-pad)
-
-	lines := make([]string, len(logoSrc))
-	for i, line := range logoSrc {
-		rowT := float64(i) / float64(len(logoSrc)-1)
-		r, g, b := fourStopLogoGradient(rowT, 1.0)
-		color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
-		lines[i] = left + lipgloss.NewStyle().Foreground(color).Bold(true).Render(line) + right
-	}
-	return lines
-}
-
-func fourStopLogoGradient(position, brightness float64) (uint8, uint8, uint8) {
-	position = animate.Clamp01(position)
-	brightness = animate.Clamp01(brightness)
-
-	var r, g, b uint8
-	segment := position * 3.0
-	idx := int(segment)
-	if idx >= 3 {
-		idx = 2
-		segment = 3.0
-	}
-	t := segment - float64(idx)
-
-	r, g, b = animate.ColorLerp(
-		activeTheme.LogoStops[idx][0], activeTheme.LogoStops[idx][1], activeTheme.LogoStops[idx][2],
-		activeTheme.LogoStops[idx+1][0], activeTheme.LogoStops[idx+1][1], activeTheme.LogoStops[idx+1][2],
-		t,
-	)
-
-	r = uint8(math.Min(255, float64(r)*brightness))
-	g = uint8(math.Min(255, float64(g)*brightness))
-	b = uint8(math.Min(255, float64(b)*brightness))
-
-	return r, g, b
-}
-
 func DirArrow(download bool) string {
 	if download {
 		return "↓"
 	}
 	return "↑"
-}
-
-const logoSubtitle = "Calm your network. See it breathe."
-
-func LogoSubtitle(width int) string {
-	subtitleW := len(logoSubtitle)
-	color := lipgloss.Color(activeTheme.TextMuted)
-	styled := lipgloss.NewStyle().Foreground(color).Render(logoSubtitle)
-
-	pad := (width - subtitleW) / 2
-	if pad < 0 {
-		pad = 0
-	}
-	rightPad := width - subtitleW - pad
-	if rightPad < 0 {
-		rightPad = 0
-	}
-	return strings.Repeat(" ", pad) + styled + strings.Repeat(" ", rightPad)
 }
 
 func hexToRGB(hex string) (uint8, uint8, uint8) {

@@ -1,3 +1,14 @@
+## [0.2.4] - 2026-08-20
+
+### Added
+- In-app version display — the running version (e.g. `v0.2.4`) now appears as a small accent-colored pill next to the `flow` name in the title row, clearly labeling the application version (also still available via `flow --version`).
+
+### Changed
+- A cleaner, truly centered layout — removed the large rainbow ASCII logo and its tagline from hero mode in favor of a single centered `● flow  v0.2.4` title, consistent across hero and compact modes.
+- Status and latency indicators now use theme-consistent colors instead of hardcoded green/amber/red, so they always match the active theme. The accent color highlights elevated latency or a down link.
+- Removed the green interface-status dot from the footer for a cleaner, less cluttered look. The interface name and state (paused / down only / up only / refresh interval) remain.
+- VERSION bumped to 0.2.4.
+
 ## [0.2.3] - 2026-08-19
 
 ### Fixed
