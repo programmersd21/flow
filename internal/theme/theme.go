@@ -26,6 +26,13 @@ type Theme struct {
 	UploadBorderStart   [3]uint8
 	UploadBorderEnd     [3]uint8
 	LogoStops           [4][3]uint8
+	// ANSIDownload, ANSIUpload and ANSILogo hold terminal palette indices
+	// ("0"-"15") instead of RGB triples. When they are set the theme steps
+	// through them rather than interpolating, so the colors the user's
+	// terminal already defines come through untouched.
+	ANSIDownload [5]string
+	ANSIUpload   [5]string
+	ANSILogo     [4]string
 }
 
 type ThemeInfo struct {
@@ -314,6 +321,22 @@ var themes = []Theme{
 			{0xf7, 0x76, 0x8e},
 		},
 	},
+	{
+		Name:       "ansi",
+		TextDim:    "8",  // Bright black
+		TextMuted:  "7",  // White
+		TextSoft:   "7",  // White
+		TextBase:   "7",  // White
+		TextBright: "15", // Bright white
+		TextPure:   "15", // Bright white
+		Border:     "8",  // Bright black
+		Accent:     "6",  // Cyan
+		// No RGB stops: every color below is a terminal palette index, so the
+		// gradients step through the user's own colors instead of blending.
+		ANSIDownload: [5]string{"4", "12", "6", "14", "15"}, // blue -> cyan -> white
+		ANSIUpload:   [5]string{"2", "10", "3", "11", "15"}, // green -> yellow -> white
+		ANSILogo:     [4]string{"5", "13", "4", "6"},        // magenta -> blue -> cyan
+	},
 }
 
 var activeTheme = &themes[0]
@@ -350,6 +373,7 @@ func ListThemes() []ThemeInfo {
 		{Name: "monochrome", Description: "A high-contrast clean theme with neutral grays and silver"},
 		{Name: "catppuccin", Description: "A soothing pastel palette with mauves, blues, and teals"},
 		{Name: "tokyo-night", Description: "A deep dark theme with vibrant blues, cyans, and purples"},
+		{Name: "ansi", Description: "Your terminal's own 16 colors, so flow matches whatever palette it runs in"},
 	}
 	for _, ct := range customThemes {
 		builtin = append(builtin, ThemeInfo{Name: ct.Name, Description: "custom theme"})
@@ -401,6 +425,10 @@ func Dim() lipgloss.Style {
 
 func LogoDotColor(pulse float64) lipgloss.Style {
 	pulse = animate.Clamp01(pulse)
+	if activeTheme.usesANSI() {
+		// No blending available, so the dot flashes from accent to bright white.
+		return lipgloss.NewStyle().Foreground(ansiStop([]string{activeTheme.Accent, activeTheme.TextBright}, pulse))
+	}
 	ra, ga, ba := hexToRGB(activeTheme.Accent)
 	// Peak color: brighten the accent toward white so the dot flashes a neon glow on each sample.
 	br := uint8(float64(ra)*0.30 + 255*0.70)
@@ -425,18 +453,27 @@ func TextDim() lipgloss.Style {
 
 func DownloadColor(intensity float64) lipgloss.Style {
 	intensity = animate.Clamp01(intensity)
+	if activeTheme.usesANSI() {
+		return lipgloss.NewStyle().Foreground(ansiStop(activeTheme.ANSIDownload[:], intensity))
+	}
 	r, g, b := fiveStopGradient(activeTheme.DownloadStops, intensity)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
 func UploadColor(intensity float64) lipgloss.Style {
 	intensity = animate.Clamp01(intensity)
+	if activeTheme.usesANSI() {
+		return lipgloss.NewStyle().Foreground(ansiStop(activeTheme.ANSIUpload[:], intensity))
+	}
 	r, g, b := fiveStopGradient(activeTheme.UploadStops, intensity)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
 func DownloadBorderColor(intensity float64) lipgloss.Color {
 	intensity = animate.Clamp01(intensity)
+	if activeTheme.usesANSI() {
+		return ansiStop(activeTheme.ANSIDownload[:4], intensity)
+	}
 	r, g, b := animate.ColorLerp(
 		activeTheme.DownloadBorderStart[0], activeTheme.DownloadBorderStart[1], activeTheme.DownloadBorderStart[2],
 		activeTheme.DownloadBorderEnd[0], activeTheme.DownloadBorderEnd[1], activeTheme.DownloadBorderEnd[2],
@@ -447,6 +484,9 @@ func DownloadBorderColor(intensity float64) lipgloss.Color {
 
 func UploadBorderColor(intensity float64) lipgloss.Color {
 	intensity = animate.Clamp01(intensity)
+	if activeTheme.usesANSI() {
+		return ansiStop(activeTheme.ANSIUpload[:4], intensity)
+	}
 	r, g, b := animate.ColorLerp(
 		activeTheme.UploadBorderStart[0], activeTheme.UploadBorderStart[1], activeTheme.UploadBorderStart[2],
 		activeTheme.UploadBorderEnd[0], activeTheme.UploadBorderEnd[1], activeTheme.UploadBorderEnd[2],
@@ -457,10 +497,29 @@ func UploadBorderColor(intensity float64) lipgloss.Color {
 
 func PeakColor(pulse float64) lipgloss.Style {
 	pulse = animate.Clamp01(pulse)
+	if activeTheme.usesANSI() {
+		return lipgloss.NewStyle().Foreground(ansiStop([]string{activeTheme.TextMuted, activeTheme.Accent}, pulse))
+	}
 	r1, g1, b1 := hexToRGB(activeTheme.TextMuted)
 	r2, g2, b2 := hexToRGB(activeTheme.Accent)
 	r, g, b := animate.ColorLerp(r1, g1, b1, r2, g2, b2, pulse)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
+}
+
+// usesANSI reports whether the active theme draws from the terminal palette
+// instead of its own RGB gradients.
+func (t *Theme) usesANSI() bool {
+	return t.ANSIDownload[0] != ""
+}
+
+// ansiStop picks one palette entry for t, splitting 0..1 evenly across stops.
+func ansiStop(stops []string, t float64) lipgloss.Color {
+	t = animate.Clamp01(t)
+	idx := int(t * float64(len(stops)))
+	if idx >= len(stops) {
+		idx = len(stops) - 1
+	}
+	return lipgloss.Color(stops[idx])
 }
 
 func fiveStopGradient(stops [5][3]uint8, t float64) (uint8, uint8, uint8) {
@@ -524,8 +583,13 @@ func LogoColored(width int) []string {
 	lines := make([]string, len(logoSrc))
 	for i, line := range logoSrc {
 		rowT := float64(i) / float64(len(logoSrc)-1)
-		r, g, b := fourStopLogoGradient(rowT, 1.0)
-		color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+		var color lipgloss.Color
+		if activeTheme.usesANSI() {
+			color = ansiStop(activeTheme.ANSILogo[:], rowT)
+		} else {
+			r, g, b := fourStopLogoGradient(rowT, 1.0)
+			color = lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+		}
 		lines[i] = left + lipgloss.NewStyle().Foreground(color).Bold(true).Render(line) + right
 	}
 	return lines

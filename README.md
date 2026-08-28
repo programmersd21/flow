@@ -97,7 +97,7 @@ Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) are on the [relea
 - Live latency (ping) indicator, configurable target
 - Network processes panel (`n`) -- active connections sorted by count
 - Interface details overlay (`I`) -- IP, MAC, link status, MTU
-- 8 built-in themes plus custom themes via TOML
+- 9 built-in themes plus custom themes via TOML
 - Session peak tracking and daily totals, persisted across restarts
 - Streaming JSON output (`--json-stream`) for pipelines
 - Four responsive display modes, switching on both width and height
