@@ -1,3 +1,13 @@
+## [0.2.5] - 2026-08-28
+
+### Added
+- New `ansi` theme — uses your terminal's own 16 standard colors, so `flow` matches whatever palette it's running in. Pick it with `t`.
+- README updated with the new theme.
+
+### Changed
+- The demo video now paces itself naturally: each theme lingers on screen long enough to appreciate it, and mode/filter/interface transitions pause a beat so viewers can register each change.
+- VERSION bumped to 0.2.5.
+
 ## [0.2.4] - 2026-08-27
 
 ### Added
