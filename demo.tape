@@ -79,31 +79,81 @@ Sleep 600ms
 Type "r"
 Sleep 800ms
 
-# --- Themes: show a few, but linger long enough to actually see each one ---
+# --- Themes: show every theme, lingering so each one is easy to read ---
+# Starting from default, each theme is one 'j' away; the picker wraps,
+# so one more 'j' from ansi returns to default at the end.
 
-# Default → nord
+# → nord
 Type "t"
-Sleep 300ms
+Sleep 400ms
 Type "j"
-Sleep 300ms
+Sleep 400ms
 Enter
 Sleep 4s
 
-# Nord → gruvbox (skip dracula, jump two)
+# → dracula
 Type "t"
-Sleep 300ms
-Type "jj"
-Sleep 300ms
+Sleep 400ms
+Type "j"
+Sleep 400ms
 Enter
 Sleep 4s
 
-# Gruvbox → tokyo-night (skip to last)
+# → gruvbox
 Type "t"
-Sleep 300ms
-Type "jjjj"
-Sleep 300ms
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 4s
+
+# → forest
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 4s
+
+# → monochrome
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 4s
+
+# → catppuccin
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 4s
+
+# → tokyo-night
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 4s
+
+# → ansi (your terminal's own 16 colors)
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
 Enter
 Sleep 4.5s
+
+# → back to default so the rest of the demo keeps the signature look
+Type "t"
+Sleep 400ms
+Type "j"
+Sleep 400ms
+Enter
+Sleep 2s
 
 # Reset (with confirmation)
 Type "r"
