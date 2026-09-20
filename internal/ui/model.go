@@ -385,11 +385,11 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.Display):
 		m.displayFilter = (m.displayFilter + 1) % 3
 
-	case key.Matches(msg, m.keys.Faster):
+	case key.Matches(msg, m.keys.Faster), msg.String() == "+", msg.String() == "=", msg.String() == "kp+":
 		m.adjustRefreshInterval(true)
 		return m, waitForSample(m.smp.Out)
 
-	case key.Matches(msg, m.keys.Slower):
+	case key.Matches(msg, m.keys.Slower), msg.String() == "-", msg.String() == "_", msg.String() == "kp-":
 		m.adjustRefreshInterval(false)
 		return m, waitForSample(m.smp.Out)
 
@@ -404,8 +404,17 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		m.showHelp = false
-		m.showProcesses = false
+	case key.Matches(msg, m.keys.Repo):
+		openURL("https://github.com/programmersd21/flow")
+
+	case key.Matches(msg, m.keys.Issues):
+		openURL("https://github.com/programmersd21/flow/issues")
+
+	case key.Matches(msg, m.keys.Discussions):
+		openURL("https://github.com/programmersd21/flow/discussions")
+
+	case key.Matches(msg, m.keys.Donate):
+		openURL("https://github.com/sponsors/programmersd21")
 
 	default:
 	}
@@ -415,29 +424,31 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *Model) adjustRefreshInterval(faster bool) {
 	intervals := []time.Duration{
+		25 * time.Millisecond,
 		50 * time.Millisecond,
 		100 * time.Millisecond,
+		150 * time.Millisecond,
 		250 * time.Millisecond,
 		500 * time.Millisecond,
+		750 * time.Millisecond,
 		1 * time.Second,
 		2 * time.Second,
 		3 * time.Second,
 		5 * time.Second,
 		10 * time.Second,
-		30 * time.Second,
-		60 * time.Second,
-		300 * time.Second,
 	}
 
 	idx := -1
+	minDiff := time.Duration(1<<63 - 1)
 	for i, d := range intervals {
-		if m.refreshInterval == d {
-			idx = i
-			break
+		diff := m.refreshInterval - d
+		if diff < 0 {
+			diff = -diff
 		}
-	}
-	if idx == -1 {
-		idx = 1
+		if diff < minDiff {
+			minDiff = diff
+			idx = i
+		}
 	}
 
 	if faster {
@@ -463,6 +474,7 @@ func (m *Model) adjustRefreshInterval(faster bool) {
 }
 
 func (m Model) View() string {
+	// Overlays take precedence
 	if m.showThemes {
 		return renderThemes(m)
 	}
@@ -475,21 +487,25 @@ func (m Model) View() string {
 	if m.showIfaceDetail {
 		return renderIfaceDetails(m)
 	}
+
+	// Main view
 	mode, lines := pickViewModeAndContent(m)
 	if mode == ViewTiny {
 		return renderTiny(m)
 	}
+
+	content := strings.Join(lines, "\n")
+
 	termW := m.width
+	if termW <= 0 {
+		termW = 80
+	}
 	termH := m.height
 	if termH <= 0 {
 		termH = 24
 	}
-	return centerFrame(strings.Join(lines, "\n"), termW, termH)
-}
 
-func (m Model) effectiveViewMode() ViewMode {
-	mode, _ := pickViewModeAndContent(m)
-	return mode
+	return centerFrame(content, termW, termH)
 }
 
 func (m *Model) updateRollingMax(down, up float64) {

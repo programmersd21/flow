@@ -18,7 +18,10 @@ type KeyMap struct {
 	Faster        key.Binding
 	Slower        key.Binding
 	Themes        key.Binding
-	History       key.Binding
+	Repo          key.Binding
+	Issues        key.Binding
+	Discussions   key.Binding
+	Donate        key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -72,16 +75,32 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("d", "cycle display filter"),
 		),
 		Faster: key.NewBinding(
-			key.WithKeys("+", "="),
+			key.WithKeys("+", "=", "kp+", "shift++", "shift+="),
 			key.WithHelp("+", "faster refresh"),
 		),
 		Slower: key.NewBinding(
-			key.WithKeys("-"),
+			key.WithKeys("-", "_", "kp-", "shift+-", "shift+_"),
 			key.WithHelp("-", "slower refresh"),
 		),
 		Themes: key.NewBinding(
 			key.WithKeys("t"),
 			key.WithHelp("t", "choose theme"),
+		),
+		Repo: key.NewBinding(
+			key.WithKeys("g"),
+			key.WithHelp("g", "open github repo"),
+		),
+		Issues: key.NewBinding(
+			key.WithKeys("u"),
+			key.WithHelp("u", "open issues"),
+		),
+		Discussions: key.NewBinding(
+			key.WithKeys("x"),
+			key.WithHelp("x", "open discussions"),
+		),
+		Donate: key.NewBinding(
+			key.WithKeys("$", "v"),
+			key.WithHelp("$", "sponsor / donate"),
 		),
 	}
 }

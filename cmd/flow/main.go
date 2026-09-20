@@ -16,7 +16,7 @@ import (
 	"github.com/programmersd21/flow/internal/ui"
 )
 
-var version = "0.2.5"
+var version = "0.3.0"
 
 func main() {
 	flagTiny := flag.Bool("tiny", false, "single-line mode for tmux/status bars")

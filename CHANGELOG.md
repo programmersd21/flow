@@ -1,3 +1,20 @@
+## [0.3.0] - 2026-09-20
+
+### Added
+- Direct browser teleportation shortcuts: open GitHub repository (`g`), Issues (`u`), Discussions (`x`), and Sponsor/Donate (`$`/`v`) instantly in default web browser.
+- Two new built-in themes: `rose-pine` (serene palette with pine, foam, iris, and love) and `kanagawa` (earthy Japanese watercolor tones inspired by Hokusai).
+- Adaptive scroll window with dynamic indicator in theme picker modal (`t`), rendering cleanly on compact terminal windows.
+- Ultra-smooth 20 FPS UI animation engine driven by fine-tuned spring dynamics (`dt = 0.05`).
+- Noise floor filtering (< 64 B/s) in Braille sparkline renderer to eliminate background keepalive chatter.
+
+### Changed
+- Complete btop-inspired UI/UX redesign featuring embedded header top-border frames (`┌─ download ... peak ─┐`).
+- Restored full-width Braille sparkline graphs for maximum visual impact.
+- Smoothed default color palette with pastel sapphire, ice cyan, mint, and amber gold gradient stops.
+- Single-pass horizontal viewport centering prevents metadata footer drift across terminal widths.
+- Refined theme selector cursor indicator to a sleek typographic arrow (`›`).
+- README and VERSION updated for 0.3.0.
+
 ## [0.2.5] - 2026-08-28
 
 ### Added

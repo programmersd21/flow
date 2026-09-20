@@ -43,37 +43,37 @@ type ThemeInfo struct {
 var themes = []Theme{
 	{
 		Name:       "default",
-		TextDim:    "#94a3b8",
-		TextMuted:  "#c3cedb",
-		TextSoft:   "#cbd5e1",
-		TextBase:   "#e2e8f0",
-		TextBright: "#f8fafc",
+		TextDim:    "#64748b", // Slate 500
+		TextMuted:  "#94a3b8", // Slate 400
+		TextSoft:   "#cbd5e1", // Slate 300
+		TextBase:   "#f1f5f9", // Slate 100
+		TextBright: "#f8fafc", // Slate 50
 		TextPure:   "#ffffff",
-		Border:     "#334155", // Neutral slate-700
-		Accent:     "#6366f1", // Indigo
+		Border:     "#334155", // Slate 700
+		Accent:     "#818cf8", // Soft Indigo
 		DownloadStops: [5][3]uint8{
-			{0x26, 0x5f, 0xff}, // Strong Blue (#265FFF)
-			{0x22, 0x8b, 0xfa}, // Vivid Azure (#228BFA)
-			{0x08, 0xcf, 0xf6}, // Bright Cyan (#08CFF6)
-			{0x2d, 0xff, 0xd6}, // Neon Mint-Green (#2DFFD6)
-			{0xff, 0xff, 0xff}, // Pure White
+			{0x3b, 0x82, 0xf6}, // Sapphire Blue
+			{0x60, 0xa5, 0xfa}, // Soft Sky Blue
+			{0x93, 0xc5, 0xfd}, // Pastel Ice Blue
+			{0xa5, 0xf3, 0xfc}, // Soft Frost Cyan
+			{0xe0, 0xf2, 0xfe}, // Soft White-Blue Tint
 		},
 		UploadStops: [5][3]uint8{
-			{0x07, 0xc1, 0x6e}, // Vivid Emerald (#07C16E)
-			{0x2f, 0xd3, 0x54}, // Bright Green (#2FD354)
-			{0xa3, 0xe6, 0x35}, // Lime (#A3E635)
-			{0xdd, 0xff, 0x4f}, // Neon Lime (#DDFF4F)
-			{0xff, 0xff, 0xff}, // Pure White
+			{0x10, 0xb9, 0x81}, // Soft Emerald
+			{0x34, 0xd3, 0x99}, // Mint Green
+			{0x6e, 0xe7, 0xb7}, // Pastel Sage
+			{0xfd, 0xe0, 0x47}, // Soft Gold Amber
+			{0xfe, 0xf9, 0xc3}, // Soft Cream Tint
 		},
-		DownloadBorderStart: [3]uint8{0x1d, 0x4e, 0xd8},
-		DownloadBorderEnd:   [3]uint8{0x06, 0xb6, 0xd4},
-		UploadBorderStart:   [3]uint8{0x04, 0x78, 0x57},
-		UploadBorderEnd:     [3]uint8{0xa3, 0xe6, 0x35},
+		DownloadBorderStart: [3]uint8{0x3b, 0x82, 0xf6},
+		DownloadBorderEnd:   [3]uint8{0xa5, 0xf3, 0xfc},
+		UploadBorderStart:   [3]uint8{0x10, 0xb9, 0x81},
+		UploadBorderEnd:     [3]uint8{0xfd, 0xe0, 0x47},
 		LogoStops: [4][3]uint8{
-			{0xd9, 0x46, 0xef}, // Fuchsia
-			{0x8b, 0x5c, 0xf6}, // Purple
-			{0x3b, 0x82, 0xf6}, // Blue
-			{0x06, 0xb6, 0xd4}, // Cyan
+			{0x81, 0x8c, 0xf8},
+			{0x60, 0xa5, 0xfa},
+			{0x34, 0xd3, 0x99},
+			{0xa5, 0xf3, 0xfc},
 		},
 	},
 	{
@@ -324,18 +324,87 @@ var themes = []Theme{
 	{
 		Name:       "ansi",
 		TextDim:    "8",  // Bright black
-		TextMuted:  "7",  // White
-		TextSoft:   "7",  // White
-		TextBase:   "7",  // White
+		TextMuted:  "7",  // Standard white
+		TextSoft:   "7",  // Standard white
+		TextBase:   "15", // Bright white
 		TextBright: "15", // Bright white
 		TextPure:   "15", // Bright white
-		Border:     "8",  // Bright black
-		Accent:     "6",  // Cyan
-		// No RGB stops: every color below is a terminal palette index, so the
-		// gradients step through the user's own colors instead of blending.
-		ANSIDownload: [5]string{"4", "12", "6", "14", "15"}, // blue -> cyan -> white
-		ANSIUpload:   [5]string{"2", "10", "3", "11", "15"}, // green -> yellow -> white
-		ANSILogo:     [4]string{"5", "13", "4", "6"},        // magenta -> blue -> cyan
+		Border:     "6",  // Cyan border
+		Accent:     "6",  // Cyan accent
+		// Vibrant 16-color palette gradients using blue/cyan for download & green/yellow for upload
+		ANSIDownload: [5]string{"4", "12", "6", "14", "12"}, // Blue -> Bright Blue -> Cyan -> Bright Cyan
+		ANSIUpload:   [5]string{"2", "10", "3", "11", "10"}, // Green -> Bright Green -> Yellow -> Bright Yellow
+		ANSILogo:     [4]string{"5", "13", "4", "6"},        // Magenta -> Bright Magenta -> Blue -> Cyan
+	},
+	{
+		Name:       "rose-pine",
+		TextDim:    "#6e6a86", // Muted
+		TextMuted:  "#908caa", // Subtle
+		TextSoft:   "#e0def4", // Text
+		TextBase:   "#e0def4",
+		TextBright: "#f7f4ed", // Foam tint bright
+		TextPure:   "#ffffff",
+		Border:     "#26233a", // Overlay border
+		Accent:     "#c4a7e7", // Iris
+		DownloadStops: [5][3]uint8{
+			{0x31, 0x74, 0x8f}, // Pine
+			{0x9c, 0xcf, 0xd8}, // Foam
+			{0xc4, 0xa7, 0xe7}, // Iris
+			{0xeb, 0x6f, 0x92}, // Love
+			{0xff, 0xff, 0xff},
+		},
+		UploadStops: [5][3]uint8{
+			{0x56, 0x95, 0x6f}, // Pine green tint
+			{0xf6, 0xc1, 0x77}, // Gold
+			{0xeb, 0xbc, 0xba}, // Rose
+			{0xeb, 0x6f, 0x92}, // Love
+			{0xff, 0xff, 0xff},
+		},
+		DownloadBorderStart: [3]uint8{0x31, 0x74, 0x8f},
+		DownloadBorderEnd:   [3]uint8{0x9c, 0xcf, 0xd8},
+		UploadBorderStart:   [3]uint8{0x56, 0x95, 0x6f},
+		UploadBorderEnd:     [3]uint8{0xeb, 0xbc, 0xba},
+		LogoStops: [4][3]uint8{
+			{0xc4, 0xa7, 0xe7}, // Iris
+			{0xeb, 0x6f, 0x92}, // Love
+			{0x9c, 0xcf, 0xd8}, // Foam
+			{0x31, 0x74, 0x8f}, // Pine
+		},
+	},
+	{
+		Name:       "kanagawa",
+		TextDim:    "#727169", // Fuji gray
+		TextMuted:  "#938aa9", // Spring violet2
+		TextSoft:   "#dcd7ba", // Fuji white
+		TextBase:   "#dcd7ba",
+		TextBright: "#f2ecbc", // Bright fuji
+		TextPure:   "#ffffff",
+		Border:     "#2a2a37", // Wave blue border
+		Accent:     "#957fb8", // Oni violet
+		DownloadStops: [5][3]uint8{
+			{0x2d, 0x4f, 0x67}, // Wave blue deep
+			{0x22, 0x8b, 0x8d}, // Dragon aqua
+			{0x7e, 0x9c, 0xd8}, // Crystal blue
+			{0x95, 0x7f, 0xb8}, // Oni violet
+			{0xff, 0xff, 0xff},
+		},
+		UploadStops: [5][3]uint8{
+			{0x76, 0x94, 0x6a}, // Autumn green
+			{0xc0, 0xa3, 0x6e}, // Carp yellow
+			{0xff, 0x9e, 0x3b}, // Ronin yellow
+			{0xc3, 0x42, 0x55}, // Samurai red
+			{0xff, 0xff, 0xff},
+		},
+		DownloadBorderStart: [3]uint8{0x2d, 0x4f, 0x67},
+		DownloadBorderEnd:   [3]uint8{0x7e, 0x9c, 0xd8},
+		UploadBorderStart:   [3]uint8{0x76, 0x94, 0x6a},
+		UploadBorderEnd:     [3]uint8{0xc0, 0xa3, 0x6e},
+		LogoStops: [4][3]uint8{
+			{0x95, 0x7f, 0xb8}, // Oni violet
+			{0x7e, 0x9c, 0xd8}, // Crystal blue
+			{0x22, 0x8b, 0x8d}, // Dragon aqua
+			{0x76, 0x94, 0x6a}, // Autumn green
+		},
 	},
 }
 
@@ -373,6 +442,8 @@ func ListThemes() []ThemeInfo {
 		{Name: "monochrome", Description: "A high-contrast clean theme with neutral grays and silver"},
 		{Name: "catppuccin", Description: "A soothing pastel palette with mauves, blues, and teals"},
 		{Name: "tokyo-night", Description: "A deep dark theme with vibrant blues, cyans, and purples"},
+		{Name: "rose-pine", Description: "Serene palette with pine, foam, iris, and love — dusk in a forest"},
+		{Name: "kanagawa", Description: "Earthy Japanese watercolor tones inspired by Hokusai's wave"},
 		{Name: "ansi", Description: "Your terminal's own 16 colors, so flow matches whatever palette it runs in"},
 	}
 	for _, ct := range customThemes {

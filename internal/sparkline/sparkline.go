@@ -101,32 +101,41 @@ func RenderBraille(samples []float64, width int, height int, maxVal float64, fra
 		maxVal = 1
 	}
 
-	// Clamp frac to valid range to prevent infinite/NaN values
+	// Clamp frac to valid range
 	if math.IsNaN(frac) || math.IsInf(frac, 0) {
 		frac = 0
 	}
-	if frac < 0 {
-		frac = 0
-	}
-	if frac > 1 {
-		frac = 1
-	}
+	frac = math.Max(0, math.Min(1, frac))
 
-	// For each dot column, sample the history with fractional scroll offset
+	// Sample the history with fractional scroll offset
 	dotsY := make([]float64, numDotsX)
 	for x := 0; x < numDotsX; x++ {
-		// As time passes (frac goes 0->1), the wave should scroll left.
-		// Therefore, we shift the lookup index forward by `frac`.
+		// Scroll left as time passes (frac 0->1)
 		idx := float64(len(samples)-(numDotsX)) + float64(x) + frac
-		dotsY[x] = sampleAt(samples, idx)
+		v := sampleAt(samples, idx)
+		if v < 64.0 { // Noise gate for background keepalive packets
+			v = 0
+		}
+		dotsY[x] = v
 	}
 
-	// Apply light smoothing to the dots for water-like flow
+	// Apply intelligent smoothing: preserve peaks, smooth valleys
 	smoothed := make([]float64, numDotsX)
 	for i := 0; i < numDotsX; i++ {
 		sum := 0.0
 		weightSum := 0.0
-		for offset := -2; offset <= 2; offset++ {
+
+		// Adaptive window: wider when values are low, tighter when high
+		val := dotsY[i]
+		ratio := val / maxVal
+
+		// Use tighter window for high values to preserve peaks
+		windowSize := 2
+		if ratio < 0.3 {
+			windowSize = 3
+		}
+
+		for offset := -windowSize; offset <= windowSize; offset++ {
 			idx := i + offset
 			if idx >= 0 && idx < numDotsX {
 				w := 1.0
@@ -140,11 +149,11 @@ func RenderBraille(samples []float64, width int, height int, maxVal float64, fra
 				weightSum += w
 			}
 		}
-		// Prevent division by zero
+
 		if weightSum > 0 {
 			smoothed[i] = sum / weightSum
 		} else {
-			smoothed[i] = 0
+			smoothed[i] = dotsY[i]
 		}
 	}
 	dotsY = smoothed
@@ -153,21 +162,15 @@ func RenderBraille(samples []float64, width int, height int, maxVal float64, fra
 	for x := 0; x < numDotsX; x++ {
 		val := dotsY[x]
 		ratio := val / maxVal
-		if ratio < 0 {
-			ratio = 0
-		}
-		if ratio > 1 {
-			ratio = 1
-		}
+		ratio = math.Max(0, math.Min(1, ratio))
 
-		// Apply soft quadratic easing for elegant peak shape
+		// Subtle easing for organic feel
 		ratio = easeOutQuad(ratio)
 
 		hDots := ratio * float64(numDotsY)
 		col := x / 2
 		dx := x % 2
 
-		// Validate column index
 		if col < 0 || col >= width {
 			continue
 		}
@@ -177,7 +180,6 @@ func RenderBraille(samples []float64, width int, height int, maxVal float64, fra
 				row := height - 1 - (yDot / 4)
 				dy := 3 - (yDot % 4)
 
-				// Validate row index
 				if row < 0 || row >= height {
 					continue
 				}

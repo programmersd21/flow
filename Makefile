@@ -1,6 +1,6 @@
 BINARY    := flow
 CMD       := ./cmd/flow
-VERSION   ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+VERSION   := v$(shell cat VERSION 2>/dev/null || echo "0.3.0")
 LDFLAGS   := -ldflags "-s -w -X main.version=$(VERSION)"
 GOFLAGS   :=
 
