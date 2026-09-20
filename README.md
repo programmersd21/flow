@@ -6,8 +6,6 @@
 
 <img src="./assets/demo.png" alt="flow demo" width="100%">
 
-<br>
-
 [![build](https://img.shields.io/github/actions/workflow/status/programmersd21/flow/release.yml?style=flat-square&label=build&labelColor=282828&color=b8bb26)](https://github.com/programmersd21/flow/actions)
 [![release](https://img.shields.io/github/v/release/programmersd21/flow?style=flat-square&label=release&labelColor=282828&color=fabd2f)](https://github.com/programmersd21/flow/releases)
 [![stars](https://img.shields.io/github/stars/programmersd21/flow?style=flat-square&label=stars&labelColor=282828&color=d79921)](https://github.com/programmersd21/flow)
