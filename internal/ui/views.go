@@ -134,7 +134,6 @@ func centerInline(s string, width int) string {
 	return strings.Repeat(" ", (width-w)/2) + s
 }
 
-// spread places left and right strings with a gap to fill exactly `width` chars.
 func spread(left, right string, width int) string {
 	lw := lipgloss.Width(left)
 	rw := lipgloss.Width(right)
@@ -216,10 +215,7 @@ func renderPanel(label, valueStr, peak string, peakPulse float64, graph string, 
 		for _, gl := range strings.Split(graph, "\n") {
 			panelLines = append(panelLines, pipe+" "+gl+" "+pipe)
 		}
-	case ViewCompact:
-		content := spread(leftHdr, rightHdr, innerWidth-2)
-		panelLines = append(panelLines, pipe+" "+content+" "+pipe)
-	default: // ViewHero
+	case ViewHero:
 		for _, gl := range strings.Split(graph, "\n") {
 			panelLines = append(panelLines, pipe+" "+gl+" "+pipe)
 		}
@@ -227,6 +223,53 @@ func renderPanel(label, valueStr, peak string, peakPulse float64, graph string, 
 
 	panelLines = append(panelLines, bottomLine)
 	return strings.Join(panelLines, "\n")
+}
+
+func renderMetricValue(value, trend string, ratio float64, download bool) string {
+	valueStyle := theme.ValuePrimary(ratio, download)
+	return valueStyle.Render(theme.DirArrow(download)+" "+value) + " " + theme.Dim().Render(trend)
+}
+
+func renderCompactRow(label, value, trend, peak string, peakPulse, ratio float64, width int, railColor lipgloss.Color, download bool) string {
+	if width < 1 {
+		width = 1
+	}
+
+	labelText := label
+	labelWidth := 8
+	if width < 48 {
+		switch label {
+		case "download":
+			labelText = "down"
+			labelWidth = 4
+		case "upload":
+			labelText = "up"
+			labelWidth = 2
+		}
+	}
+
+	available := width - (12 + labelWidth + lipgloss.Width(trend))
+	if available < 2 {
+		available = 2
+	}
+	valueWidth := available / 2
+	peakWidth := available - valueWidth
+	if valueWidth < 1 {
+		valueWidth = 1
+	}
+	if peakWidth < 1 {
+		peakWidth = 1
+	}
+	value = truncate(value, valueWidth)
+	peak = truncate(peak, peakWidth)
+
+	valueStyle := theme.ValuePrimary(ratio, download)
+	rail := lipgloss.NewStyle().Foreground(railColor).Bold(true).Render("▌")
+	left := rail + " " + theme.Label().Render(fmt.Sprintf("%-*s", labelWidth, labelText)) + " " +
+		valueStyle.Render(theme.DirArrow(download)+" "+value) + " " + theme.Dim().Render(trend)
+	right := theme.Dim().Render("peak ") + theme.PeakColor(peakPulse).Bold(true).Render(peak)
+	row := spread(left, right, width)
+	return lipgloss.NewStyle().MaxWidth(width).Render(row)
 }
 
 // ─── tiny (single-line) mode ─────────────────────────────────────────────────
@@ -594,24 +637,27 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 
 	// ── Metrics ───────────────────────────────────────────────────────────────
 
-	downVal := theme.DownloadColor(downRatio).Bold(true).Render(theme.DirArrow(true)) + " " +
-		theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.animDown)) + " " +
-		theme.Dim().Render(downTrend)
-	upVal := theme.UploadColor(upRatio).Bold(true).Render(theme.DirArrow(false)) + " " +
-		theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.animUp)) + " " +
-		theme.Dim().Render(upTrend)
+	downSpeed := m.FormatBps(m.animDown)
+	upSpeed := m.FormatBps(m.animUp)
 	peakDown := m.FormatBps(m.tracker.PeakDown)
 	peakUp := m.FormatBps(m.tracker.PeakUp)
 
+	renderMetric := func(label, value, trend, peak string, pulse, ratio float64, graph string, color lipgloss.Color, download bool) string {
+		if mode == ViewCompact {
+			return renderCompactRow(label, value, trend, peak, pulse, ratio, contentW, color, download)
+		}
+		return renderPanel(label, renderMetricValue(value, trend, ratio, download), peak, pulse, graph, contentW, color, mode)
+	}
+
 	switch m.displayFilter {
 	case DisplayBoth:
-		lines = append(lines, renderPanel("download", downVal, peakDown, m.downPulse, downGraph, contentW, downBorderColor, mode))
+		lines = append(lines, renderMetric("download", downSpeed, downTrend, peakDown, m.downPulse, downRatio, downGraph, downBorderColor, true))
 		lines = append(lines, GapRow)
-		lines = append(lines, renderPanel("upload", upVal, peakUp, m.upPulse, upGraph, contentW, upBorderColor, mode))
+		lines = append(lines, renderMetric("upload", upSpeed, upTrend, peakUp, m.upPulse, upRatio, upGraph, upBorderColor, false))
 	case DisplayDownOnly:
-		lines = append(lines, renderPanel("download", downVal, peakDown, m.downPulse, downGraph, contentW, downBorderColor, mode))
+		lines = append(lines, renderMetric("download", downSpeed, downTrend, peakDown, m.downPulse, downRatio, downGraph, downBorderColor, true))
 	case DisplayUpOnly:
-		lines = append(lines, renderPanel("upload", upVal, peakUp, m.upPulse, upGraph, contentW, upBorderColor, mode))
+		lines = append(lines, renderMetric("upload", upSpeed, upTrend, peakUp, m.upPulse, upRatio, upGraph, upBorderColor, false))
 	}
 
 	// ── Footer (hero + compact only) ──────────────────────────────────────────
@@ -661,7 +707,6 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		footerStyle := lipgloss.NewStyle().Width(contentW).Align(lipgloss.Center)
 		lines = append(lines, footerStyle.Render(strings.Join(statusParts, " · ")))
 
-		// Key hints (split into 2 un-wrapped centered lines)
 		lines = append(lines, GapRow)
 		renderKey := func(k, desc string) string {
 			return lipgloss.NewStyle().
@@ -669,21 +714,30 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 				Bold(true).
 				Render(k) + " " + theme.Dim().Render(desc)
 		}
-		appHints := []string{
-			renderKey("q", "quit"),
-			renderKey("m", "mode"),
-			renderKey("d", "filter"),
-			renderKey("t", "theme"),
-			renderKey("?", "help"),
+		if mode == ViewCompact {
+			lines = append(lines, footerStyle.Render(strings.Join([]string{
+				renderKey("q", "quit"),
+				renderKey("m", "mode"),
+				renderKey("d", "filter"),
+				renderKey("?", "help"),
+			}, " · ")))
+		} else {
+			appHints := []string{
+				renderKey("q", "quit"),
+				renderKey("m", "mode"),
+				renderKey("d", "filter"),
+				renderKey("t", "theme"),
+				renderKey("?", "help"),
+			}
+			linkHints := []string{
+				renderKey("g", "github"),
+				renderKey("u", "issues"),
+				renderKey("x", "discuss"),
+				renderKey("$", "sponsor"),
+			}
+			lines = append(lines, footerStyle.Render(strings.Join(appHints, " · ")))
+			lines = append(lines, footerStyle.Render(strings.Join(linkHints, " · ")))
 		}
-		linkHints := []string{
-			renderKey("g", "github"),
-			renderKey("u", "issues"),
-			renderKey("x", "discuss"),
-			renderKey("$", "sponsor"),
-		}
-		lines = append(lines, footerStyle.Render(strings.Join(appHints, " · ")))
-		lines = append(lines, footerStyle.Render(strings.Join(linkHints, " · ")))
 	}
 
 	return lines

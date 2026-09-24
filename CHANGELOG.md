@@ -1,3 +1,12 @@
+## [0.3.1] - 2026-09-24
+
+### Fixed
+- Removed duplicate download and upload rows in Compact mode; each direction now renders one metric row.
+
+### Changed
+- Replaced Compact mode's bordered panels with minimal color-rail metric rows and a single-line hint footer.
+- VERSION bumped to 0.3.1.
+
 ## [0.3.0] - 2026-09-20
 
 ### Added

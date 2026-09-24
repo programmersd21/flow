@@ -1,6 +1,6 @@
 BINARY    := flow
 CMD       := ./cmd/flow
-VERSION   := v$(shell cat VERSION 2>/dev/null || echo "0.3.0")
+VERSION   := v$(shell cat VERSION 2>/dev/null || echo "0.3.1")
 LDFLAGS   := -ldflags "-s -w -X main.version=$(VERSION)"
 GOFLAGS   :=
 
