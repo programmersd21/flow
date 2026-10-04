@@ -57,12 +57,12 @@ fills upward from the axis, upload fills downward.
 
 ### no chrome over the data
 
-Gridlines and the peak-hold rule were both removed after they rendered as
-visual noise on a filled waveform. Braille color is per-cell (2x4 dots), so a
+The peak-hold rule was removed after it rendered as visual noise on a
+filled waveform. Gridlines stay as a single faint midpoint rule, visible only
+where the wave has no fill. Braille color is per-cell (2x4 dots), so a
 rule can only be drawn through *empty* cells — meaning a reference line behind
-the data is either invisible or a row of stray dots. Scale references are
-better served by the numeric caption than by overlay geometry, so the hero
-view keeps the waveform area clean.
+the data is either invisible or a row of stray dots. The rule therefore stays
+subtle by construction: one faint midpoint dotted line, never over data.
 
 ### hero digits
 

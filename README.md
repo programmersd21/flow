@@ -69,7 +69,7 @@ See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
 * **Big Block Digits**: 5x5 bitmap hero numbers (timr-tui technique) — chunky enough to read at a glance, tabular so they never jitter
 * **Calm Motion**: Spring-driven value easing, an idle breathing pulse, a burst ripple, a pulsing link dot, a 180ms theme crossfade, and a skippable launch sequence — all disabled by `--no-anim`
 * **Time Windows**: `w` cycles 1m / 5m / 15m / 1h / 24h
-* **Scale Modes**: `S` cycles auto / linear / sqrt; `G` toggles the midpoint gridline (off by default — see below)
+* **Scale Modes**: `S` cycles auto / linear / sqrt; `G` toggles the faint midpoint gridline
 * **Snapshot Export**: `s` writes the current frame as `.ansi` and `.txt`
 * **11 Built-in Themes**: `default`, `nord`, `dracula`, `gruvbox`, `forest`, `monochrome`, `catppuccin`, `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`
 * **Custom TOML Themes**: Load custom color schemes from your config directory (see [docs/themes.md](docs/themes.md))
