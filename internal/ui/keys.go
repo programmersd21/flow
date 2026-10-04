@@ -22,6 +22,10 @@ type KeyMap struct {
 	Issues        key.Binding
 	Discussions   key.Binding
 	Donate        key.Binding
+	Window        key.Binding
+	Snapshot      key.Binding
+	Scale         key.Binding
+	Grid          key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -101,6 +105,22 @@ func DefaultKeyMap() KeyMap {
 		Donate: key.NewBinding(
 			key.WithKeys("$", "v"),
 			key.WithHelp("$", "sponsor / donate"),
+		),
+		Window: key.NewBinding(
+			key.WithKeys("w"),
+			key.WithHelp("w", "cycle time window"),
+		),
+		Snapshot: key.NewBinding(
+			key.WithKeys("s"),
+			key.WithHelp("s", "export snapshot"),
+		),
+		Scale: key.NewBinding(
+			key.WithKeys("S"),
+			key.WithHelp("S", "cycle graph scale"),
+		),
+		Grid: key.NewBinding(
+			key.WithKeys("G"),
+			key.WithHelp("G", "toggle gridlines"),
 		),
 	}
 }

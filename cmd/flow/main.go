@@ -12,11 +12,14 @@ import (
 
 	"github.com/programmersd21/flow/internal/collector"
 	"github.com/programmersd21/flow/internal/config"
+	"github.com/programmersd21/flow/internal/format"
+	"github.com/programmersd21/flow/internal/history"
 	"github.com/programmersd21/flow/internal/sampler"
+	"github.com/programmersd21/flow/internal/theme"
 	"github.com/programmersd21/flow/internal/ui"
 )
 
-var version = "0.3.1"
+var version = "0.3.2"
 
 func main() {
 	flagTiny := flag.Bool("tiny", false, "single-line mode for tmux/status bars")
@@ -29,7 +32,14 @@ func main() {
 	flagRefresh := flag.Duration("refresh", 0, "sampling interval (e.g. 250ms)")
 	flagNoColor := flag.Bool("no-color", false, "disable ANSI color output")
 	flagBits := flag.Bool("bits", false, "display throughput in bits/sec instead of bytes/sec")
+	flagFormat := flag.String("format", "", "template string for custom formatting")
+	flagTheme := flag.String("theme", "", "override active theme")
+	flagNoAnim := flag.Bool("no-anim", false, "disable animations (reduced motion)")
+	flagView := flag.String("view", "", "start view: hero|compact|mini|tiny")
+	flagWindow := flag.String("window", "", "initial time window: 1m|5m|15m|1h|24h")
 	flagPing := flag.String("ping", "", "ping target host (default: 1.1.1.1)")
+	flagWidth := flag.Int("width", 0, "fixed output width for --tiny/--format (status bars)")
+	flagResetHistory := flag.Bool("reset-history", false, "clear persisted history, then exit")
 	flagVersion := flag.Bool("version", false, "print version and exit")
 
 	flag.Usage = func() {
@@ -41,6 +51,15 @@ func main() {
 
 	if *flagVersion {
 		fmt.Println("flow", version)
+		return
+	}
+
+	if *flagResetHistory {
+		if err := history.Reset(); err != nil {
+			fmt.Fprintf(os.Stderr, "flow: reset history: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("flow: history cleared")
 		return
 	}
 
@@ -68,11 +87,24 @@ func main() {
 	if *flagPing != "" {
 		cfg.PingTarget = *flagPing
 	}
+	if *flagNoAnim {
+		cfg.NoAnim = true
+	}
 
 	col := collector.New(cfg.Interface)
 
 	refresh := cfg.RefreshDuration()
 	smp := sampler.New(col, refresh)
+
+	if *flagTheme != "" {
+		cfg.Theme = *flagTheme
+		theme.SetTheme(*flagTheme)
+	}
+
+	if *flagFormat != "" {
+		runFormat(smp, *flagFormat, *flagJSONStream, *flagWidth)
+		return
+	}
 
 	if *flagJSONStream {
 		runJSONStream(smp, refresh, cfg.Bits)
@@ -80,12 +112,18 @@ func main() {
 	}
 
 	if *flagJSON || *flagOnce {
-		runOnce(col, smp, refresh, *flagJSON, cfg.Bits)
+		runOnce(smp, *flagJSON, cfg.Bits)
 		return
 	}
 
 	if *flagTiny {
-		runTiny(col, smp, refresh, cfg.Bits)
+		runTiny(smp, cfg.Bits)
+		return
+	}
+
+	// Non-TTY stdout (pipes, scripts): default to a single tiny line.
+	if !isTTY(os.Stdout) {
+		runTiny(smp, cfg.Bits)
 		return
 	}
 
@@ -106,6 +144,17 @@ func main() {
 	default:
 		forced = ui.ViewHero
 	}
+	switch *flagView {
+	case "hero":
+		forced = ui.ViewHero
+	case "compact":
+		forced = ui.ViewCompact
+	case "mini":
+		forced = ui.ViewMini
+	case "tiny":
+		runTiny(smp, cfg.Bits)
+		return
+	}
 
 	initialIface := cfg.Interface
 	if initialIface == "auto" || initialIface == "" {
@@ -115,6 +164,9 @@ func main() {
 	ui.SetVersion(version)
 
 	model := ui.New(cfg, smp, ifaces, initialIface, cancel, forced)
+	if *flagWindow != "" {
+		model = model.WithWindow(*flagWindow)
+	}
 
 	opts := []tea.ProgramOption{tea.WithAltScreen()}
 	if *flagCompact || *flagMini {
@@ -133,7 +185,7 @@ func main() {
 	}
 }
 
-func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, bits bool) {
+func runTiny(smp *sampler.Sampler, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -157,7 +209,7 @@ func runTiny(col *collector.Collector, smp *sampler.Sampler, refresh time.Durati
 	fmt.Printf("↓ %s · ↑ %s\n", down, up)
 }
 
-func runOnce(col *collector.Collector, smp *sampler.Sampler, refresh time.Duration, asJSON bool, bits bool) {
+func runOnce(smp *sampler.Sampler, asJSON bool, bits bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -230,6 +282,34 @@ func runJSONStream(smp *sampler.Sampler, refresh time.Duration, bits bool) {
 	}
 }
 
+// isTTY reports whether the file is a character device (terminal).
+func isTTY(f *os.File) bool {
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice != 0
+}
+
+// todayTotals loads persisted today totals. Missing file means zeros, never an error.
+func todayTotals() (float64, float64) {
+	tr := history.NewTracker()
+	_ = tr.Load() // fresh day or missing file: zeros are correct
+	return tr.TodayDown, tr.TodayUp
+}
+
+// padOrTruncate makes output exactly width visible chars for status bars.
+func padOrTruncate(s string, width int) string {
+	runes := []rune(s)
+	if len(runes) > width {
+		return string(runes[:width])
+	}
+	for len(runes) < width {
+		runes = append(runes, ' ')
+	}
+	return string(runes)
+}
+
 func autoUnitExt(bps float64, bits bool) string {
 	if bits {
 		bps = bps * 8
@@ -253,5 +333,50 @@ func autoUnitExt(bps float64, bits bool) string {
 		return "KB/s"
 	default:
 		return "B/s"
+	}
+}
+
+func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go smp.Run(ctx)
+
+	s1 := <-smp.Out
+	if s1.Err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
+		os.Exit(1)
+	}
+
+	for s := range smp.Out {
+		if s.Err != nil {
+			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
+			os.Exit(1)
+		}
+		todayDown, todayUp := todayTotals()
+		data := format.Data{
+			Iface:       s.Interface,
+			DownBps:     s.DownBps,
+			UpBps:       s.UpBps,
+			Down:        ui.FormatBpsExt(s.DownBps, ui.UnitAuto, false),
+			Up:          ui.FormatBpsExt(s.UpBps, ui.UnitAuto, false),
+			PeakDownBps: s.DownBps,
+			PeakUpBps:   s.UpBps,
+			TodayDown:   format.Bytes(todayDown),
+			TodayUp:     format.Bytes(todayUp),
+			Time:        s.At.Format(time.RFC3339),
+		}
+		out, err := format.RenderTemplate(tmplStr, data)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "flow: template error: %v\n", err)
+			os.Exit(2)
+		}
+		if width > 0 {
+			out = padOrTruncate(out, width)
+		}
+		fmt.Println(out)
+		if !stream {
+			return
+		}
 	}
 }

@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/programmersd21/flow/internal/animate"
 	"github.com/programmersd21/flow/internal/collector"
@@ -16,6 +19,7 @@ import (
 	"github.com/programmersd21/flow/internal/history"
 	"github.com/programmersd21/flow/internal/ping"
 	"github.com/programmersd21/flow/internal/processes"
+	"github.com/programmersd21/flow/internal/render"
 	"github.com/programmersd21/flow/internal/sampler"
 	"github.com/programmersd21/flow/internal/theme"
 )
@@ -55,7 +59,11 @@ const (
 const (
 	slopeWindow         = 6
 	resetConfirmTimeout = 2 * time.Second
+	crossfadeSeconds    = 0.18
 )
+
+// timeWindows are the graph time windows in seconds, cycled by the w key.
+var timeWindows = []int{60, 300, 900, 3600, 86400}
 
 type ViewMode int
 
@@ -98,6 +106,7 @@ type Model struct {
 
 	paused                 bool
 	showHelp               bool
+	helpScroll             int
 	showProcesses          bool
 	showThemes             bool
 	themeSelectionIdx      int
@@ -121,6 +130,24 @@ type Model struct {
 	resetConfirm    bool
 	resetConfirmAt  time.Time
 	err             error
+
+	// v0.4.0 additions
+	windowSecs   int             // graph time window in seconds (w key cycles)
+	windowIdx    int             // index into timeWindows
+	noAnim       bool            // disable all animation (reduced motion)
+	launchStart  time.Time       // launch animation start time
+	launchDone   bool            // launch animation finished/skipped
+	nowOverride  time.Time       // test hook: fixed clock for deterministic frames
+	rippleDownAt time.Time       // last download burst ripple trigger
+	rippleUpAt   time.Time       // last upload burst ripple trigger
+	toast        string          // transient toast message
+	toastAt      time.Time       // when the toast was shown
+	scaleMode    int             // S: 0 = auto (gentle curve), 1 = linear, 2 = sqrt
+	showGrid     bool            // G: toggle 25/50/75% gridlines
+	glyphSet     render.GlyphSet // waveform glyphs from ui.glyphs
+	colorCap     render.ColorCap // terminal color capability
+	themeFadeAt  time.Time       // when a theme crossfade started
+	themeFading  bool            // crossfade in progress
 }
 
 func New(
@@ -134,6 +161,11 @@ func New(
 	histCap := cfg.History * 4
 	if histCap < 60 {
 		histCap = 60
+	}
+	// Ensure the ring can hold the longest practical window at 100ms refresh
+	// (1h = 36000 samples = ~576 KB for two rings). 24h windows show available data.
+	if histCap < 36000 {
+		histCap = 36000
 	}
 
 	var unitMode UnitMode
@@ -150,8 +182,18 @@ func New(
 
 	theme.SetTheme(cfg.Theme)
 
+	noAnim := !cfg.AnimationsEnabled() || os.Getenv("FLOW_REDUCE_MOTION") == "1"
+
+	glyphSet := render.ParseGlyphSet(cfg.UI.Glyphs)
+	if os.Getenv("FLOW_GLYPHS") != "" {
+		glyphSet = render.ParseGlyphSet(os.Getenv("FLOW_GLYPHS"))
+	}
+	colorCap := render.DetectColorCap(cfg.NoColor)
+
 	return Model{
 		keys:            DefaultKeyMap(),
+		glyphSet:        glyphSet,
+		colorCap:        colorCap,
 		cfg:             cfg,
 		smp:             smp,
 		samplerCtx:      cancelFn,
@@ -166,6 +208,11 @@ func New(
 		refreshInterval: cfg.RefreshDuration(),
 		lastSampleTime:  time.Now(),
 		samplePulse:     1.0,
+		windowSecs:      cfg.WindowSeconds(),
+		showGrid:        cfg.GridlinesEnabled(),
+		noAnim:          noAnim,
+		launchStart:     time.Now(),
+		launchDone:      noAnim || !cfg.LaunchAnimationEnabled(),
 	}
 }
 
@@ -207,6 +254,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.resetConfirm && time.Since(m.resetConfirmAt) > resetConfirmTimeout {
 			m.resetConfirm = false
 		}
+		if !m.launchDone && time.Since(m.launchStart) > 700*time.Millisecond {
+			m.launchDone = true
+		}
+		if m.themeFading && time.Since(m.themeFadeAt) > 180*time.Millisecond {
+			m.themeFading = false
+			theme.SetCrossfade(false)
+		}
+		if m.toast != "" && time.Since(m.toastAt) > 1500*time.Millisecond {
+			m.toast = ""
+		}
 		return m, tick()
 
 	case ifaceDetailMsg:
@@ -241,6 +298,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.upPulse = 1.0
 			}
 
+			// Burst detection: sample > 3x trailing median and above 50 KB/s floor.
+			if !m.noAnim {
+				const burstFloor = 50 * 1000
+				if msg.DownBps > burstFloor && msg.DownBps > 3*trailingMedian(m.downHist) &&
+					time.Since(m.rippleDownAt) > 500*time.Millisecond {
+					m.rippleDownAt = time.Now()
+				}
+				if msg.UpBps > burstFloor && msg.UpBps > 3*trailingMedian(m.upHist) &&
+					time.Since(m.rippleUpAt) > 500*time.Millisecond {
+					m.rippleUpAt = time.Now()
+				}
+			}
+
 			m.dispDown = msg.DownBps
 			m.dispUp = msg.UpBps
 			m.tracker.Record(msg.DownBps, msg.UpBps, m.refreshInterval.Seconds())
@@ -256,6 +326,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Any key skips the launch animation.
+	if !m.launchDone {
+		m.launchDone = true
+	}
+
 	if m.showThemes {
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -282,8 +357,59 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.cfg.Theme = selectedTheme
 			_ = config.Save(m.cfg)
 			m.showThemes = false
+			if !m.noAnim && selectedTheme != m.themeSelectionOriginal {
+				m.themeFading = true
+				m.themeFadeAt = time.Now()
+				theme.SetCrossfade(true)
+			}
 			return m, nil
 		}
+		return m, nil
+	}
+
+	if m.showHelp {
+		switch msg.String() {
+		case "esc", "?", "q":
+			m.showHelp = false
+			m.helpScroll = 0
+			return m, nil
+		case "up", "k":
+			if m.helpScroll > 0 {
+				m.helpScroll--
+			}
+			return m, nil
+		case "down", "j":
+			m.helpScroll++
+			return m, nil
+		case "pgup":
+			m.helpScroll -= 5
+			if m.helpScroll < 0 {
+				m.helpScroll = 0
+			}
+			return m, nil
+		case "pgdown", " ":
+			m.helpScroll += 5
+			return m, nil
+		case "home":
+			m.helpScroll = 0
+			return m, nil
+		case "end":
+			m.helpScroll = 1 << 30 // clamped in render
+			return m, nil
+		}
+		// Swallow all other keys so view-mode / quit / etc. don't fire
+		// behind the overlay. Esc/?/q above are the way out.
+		return m, nil
+	}
+
+	if m.showHelp && msg.String() != "ctrl+c" {
+		switch msg.String() {
+		case "esc", "?", "q":
+			m.showHelp = false
+			return m, nil
+		}
+		// Modal overlay: swallow other keys so view-mode/quit actions
+		// don't fire behind the help screen (ctrl+c still quits below).
 		return m, nil
 	}
 
@@ -315,7 +441,11 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.Help):
 		if !m.showHelp {
 			m.showHelp = true
+			m.helpScroll = 0
 			m.showProcesses = false
+		} else {
+			m.showHelp = false
+			m.helpScroll = 0
 		}
 
 	case key.Matches(msg, m.keys.Mode):
@@ -332,6 +462,10 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.paused = !m.paused
 
 	case key.Matches(msg, m.keys.Reset):
+		if m.toast != "" && time.Since(m.toastAt) > resetConfirmTimeout {
+			// a stale toast must not mask the two-press flow
+			m.toast = ""
+		}
 		if m.resetConfirm {
 			m.tracker.ResetPeaks()
 			m.tracker.TodayDown = 0
@@ -384,6 +518,29 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(msg, m.keys.Display):
 		m.displayFilter = (m.displayFilter + 1) % 3
+
+	case key.Matches(msg, m.keys.Window):
+		m.windowIdx = (m.windowIdx + 1) % len(timeWindows)
+		m.windowSecs = timeWindows[m.windowIdx]
+
+	case key.Matches(msg, m.keys.Snapshot):
+		if path, err := m.exportSnapshot(); err == nil {
+			m.toast = "saved " + path
+			m.toastAt = time.Now()
+		} else {
+			m.toast = "export failed"
+			m.toastAt = time.Now()
+		}
+
+	case key.Matches(msg, m.keys.Scale):
+		m.scaleMode = (m.scaleMode + 1) % 3
+		m.toast = "scale: " + scaleModeName(m.scaleMode)
+		m.toastAt = time.Now()
+
+	case key.Matches(msg, m.keys.Grid):
+		m.showGrid = !m.showGrid
+		m.toast = "gridlines: " + onOff(m.showGrid)
+		m.toastAt = time.Now()
 
 	case key.Matches(msg, m.keys.Faster), msg.String() == "+", msg.String() == "=", msg.String() == "kp+":
 		m.adjustRefreshInterval(true)
@@ -505,7 +662,35 @@ func (m Model) View() string {
 		termH = 24
 	}
 
-	return centerFrame(content, termW, termH)
+	framed := centerFrame(content, termW, termH)
+
+	// Theme crossfade: dip the whole frame to faint and bring it back over
+	// ~180ms so a theme switch reads as a soft dissolve, not a hard cut.
+	// Faint (SGR 2) is used rather than a background wash because it works on
+	// any terminal background, including transparent ones.
+	if m.themeFading && !m.noAnim {
+		elapsed := time.Since(m.themeFadeAt).Seconds()
+		if t := elapsed / crossfadeSeconds; t >= 0 && t < 1 {
+			faint := lipgloss.NewStyle().Faint(t < 1)
+			return faint.Render(framed)
+		}
+	}
+	return framed
+}
+
+// trailingMedian returns the median of the ring's current samples (0 if empty).
+func trailingMedian(r *history.Ring) float64 {
+	if r == nil {
+		return 0
+	}
+	s := r.Slice()
+	if len(s) == 0 {
+		return 0
+	}
+	cp := make([]float64, len(s))
+	copy(cp, s)
+	sort.Float64s(cp)
+	return cp[len(cp)/2]
 }
 
 func (m *Model) updateRollingMax(down, up float64) {
@@ -616,6 +801,43 @@ func (m Model) pingTick() tea.Cmd {
 
 func (m Model) Err() error {
 	return m.err
+}
+
+// windowedSamples returns the ring samples that fit the current time window,
+// downsampled to at most 2*histDisplayCap points for rendering.
+func (m Model) windowedSamples(r *history.Ring) []float64 {
+	if r == nil {
+		return nil
+	}
+	s := r.Slice()
+	if len(s) == 0 {
+		return s
+	}
+	// How many samples fit in the window at the current refresh rate?
+	perSec := float64(time.Second) / float64(m.refreshInterval)
+	if perSec < 1 {
+		perSec = 1
+	}
+	want := int(float64(m.windowSecs) * perSec)
+	if want > 0 && len(s) > want {
+		s = s[len(s)-want:]
+	}
+	return s
+}
+
+// WithWindow sets the initial graph time window from a CLI string like "5m".
+func (m Model) WithWindow(w string) Model {
+	secs := map[string]int{"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "24h": 86400}
+	if s, ok := secs[w]; ok {
+		m.windowSecs = s
+		for i, tw := range timeWindows {
+			if tw == s {
+				m.windowIdx = i
+				break
+			}
+		}
+	}
+	return m
 }
 
 func refreshProcesses() tea.Cmd {

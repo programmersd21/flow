@@ -31,6 +31,18 @@ var statsPath = func() (string, error) {
 	return filepath.Join(dir, "stats.json"), nil
 }
 
+// Reset deletes the persisted stats file. Missing file is not an error.
+func Reset() error {
+	path, err := statsPath()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 func (t *Tracker) Save() error {
 	path, err := statsPath()
 	if err != nil {

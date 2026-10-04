@@ -1,3 +1,181 @@
+## [Unreleased] — UX polish
+
+### Fixed
+- **Duplicate ping** — hero status line no longer repeats the latency value
+  already shown in the top-right header (`● wlan0 · 46ms`).
+- **Latency coloring** — ping values now use semantic Good / Warn / Bad hues
+  (green < 60 ms, amber 60–150 ms, red ≥ 150 ms) everywhere: hero header,
+  hero stats row, compact/mini status line. Previously the upload gradient
+  color (yellow/amber) was used unconditionally, which looked confusing on
+  themes where upload is green.
+- **Interface details overlay** — link state "up" uses `GoodStyle` (green),
+  "down" uses `BadStyle` (red), matching the semantic palette instead of the
+  theme accent which could be any hue.
+- **Tiny mode** — respects the `d` display filter: shows only download, only
+  upload, or both, instead of always showing both.
+- **Status line** — non-default refresh rate is now prefixed with `⟳` so
+  `250ms` reads as `⟳ 250ms` and isn't mistaken for a latency value. Grid
+  state (`grid`) is shown when gridlines are on.
+- **Paused indicator** — uses `⏸ paused` with the upload color pill, making
+  it stand out as a state rather than a label.
+
+### Added
+- **Theme picker color swatches** — each theme row now shows two `●` dots
+  (download hue · upload hue) so you can see the palette before switching,
+  without needing to commit. ANSI theme falls back to terminal colors 4 and 2.
+- `theme.GoodStyle()`, `theme.WarnStyle()`, `theme.BadStyle()` — new semantic
+  style helpers backed by the existing `Good/Warn/Bad` tokens on every built-in
+  theme; custom themes inherit sensible defaults automatically.
+- `theme.ThemeSwatches(name)` — returns the mid-stop download/upload hex colors
+  for any theme by name without switching the active theme.
+
+## [0.3.2] - 2026-10-04
+
+### Added
+- **Rewritten home screen**: 5x5 bitmap block digits for download/upload
+  (technique adapted from [timr-tui](https://github.com/sectore/timr-tui),
+  MIT) with a mirrored braille waveform — download above the centre axis,
+  upload below — plus per-half auto-scaling, a dotted centre axis, time
+  labels, and a stats row (`today`, `ping`, top talker).
+- `internal/render`: braille canvas (2x4 dots per cell), solid area-fill
+  renderer with Catmull-Rom smooth edges, per-row gradient band colouring, EMA
+  display smoothing, and blocks/ascii fallback glyphs with
+  truecolor/256/16/NO_COLOR degradation.
+- `internal/format`: `--format` template engine (`rate`, `bytes`, `bits`,
+  `pad`, `color`, `spark`) with fixed-width `--width` output for status bars.
+- **New keys**: `w` cycle time window (1m/5m/15m/1h/24h), `s` export snapshot
+  (`.ansi` + `.txt`), `S` cycle graph scale (auto/linear/sqrt), `G` toggle
+  gridlines. Toasts confirm each one without moving the footer.
+- **New flags**: `--view`, `--window`, `--no-anim`, `--theme`, `--format`,
+  `--width`, `--reset-history`.
+- VU-meter peak-hold line, burst ripple, launch sequence, and idle breathing
+  pulse — all disabled by `--no-anim`, `FLOW_REDUCE_MOTION=1`, or config.
+- Golden-frame tests at 60x20, 80x24, 100x30, and 140x40; footer contract test
+  locks the frozen footer bytes.
+- Semantic theme tokens (`Fg`, `Muted`, `Subtle`, `Down/Up` + `Lo/Hi`
+  gradient endpoints, `Good/Warn/Bad`) with automatic derivation for existing
+  themes, so old custom themes keep working.
+- Config sections (`[ui]`, `[graph]`, `[latency]`, `[storage]`, `[processes]`,
+  `[geoip]`, `[export]`) with validation that clamps bad values and warns
+  instead of crashing. Flat keys keep working. `FLOW_CONFIG` overrides the
+  path; the `[storage]` name avoids colliding with the existing
+  `history = <int>` key.
+- Docs: `docs/themes.md`, `docs/json.md`, `docs/integrations.md`,
+  `docs/architecture.md`.
+
+### Changed
+- Hero numbers are centered as a **single group**: each block gets a fixed
+  width, every row is centered inside its width, and the pair is centered
+  together. An earlier version mixed an absolute axis position with an
+  already-padded row width, subtracting the left block twice and breaking the
+  centering it claimed. Covered by `TestJoinCenteredStableAcrossValues`.
+- Theme picker swatches use the accent tokens the hero digits actually render
+  in, instead of a paler gradient stop. Centering each block inside its own half made two blocks of very
+  different widths sit at two different centers, which read as uneven. Because
+  the group is centered, a block's origin depends only on the terminal width —
+  the numbers no longer drift left or right as the rate changes.
+
+- Theme picker lays names out in one padded column so descriptions form a
+  single straight line.
+- Help overlay packs groups into two columns by rendered height rather than
+  item count, which had left the right column visibly shorter.
+- Hero layout reorganized for clarity:
+  - The header is a single **centered** identity line joined by dots —
+    `flow v0.3.2 · ● wlan0 · 46ms`. It was a left/right spread, which on a
+    wide terminal put the title and the interface at opposite edges with an
+    empty gulf between them.
+  - The arrow and unit moved **off the baseline digit row onto the caption
+    row** (`↓ KB/s · peak 4.5 MB/s`). Sharing the baseline made the last digit
+    row wider than the four above it, so the block stopped being tabular and a
+    fragment of the number read as detached debris — most visible on the
+    upload side, where the block is right-aligned. The digits are now five
+    rows of identical width.
+  - A hairline rule separates the live graph from the readouts, and every
+    summary stat (`today`, `ping`, top talker) sits below it.
+  - The status row now reports only deviations from defaults and disappears
+    when there are none; it previously repeated the interface name that the
+    header already shows.
+- Home screen no longer uses boxed panels; depth comes from gradients,
+  dim/bright tiers, and whitespace.
+- Hero digits use the vivid accent token (`Down`/`Up`) instead of a high
+  gradient intensity. Gradient crests fade toward near-white pastels by
+  design, which read as washed-out beige on 5-row glyphs.
+- Captions (`peak`, `session`) are tinted with their number's hue, the stats
+  row uses dot separators with latency band coloring, the link dot pulses with
+  live traffic, `paused` renders as a pill, and the axis uses the dim tier so
+  everything reads against it.
+- Theme switches crossfade over ~180ms by dipping the frame to faint and back,
+  which works on any terminal background including transparent ones.
+- Hero layout adapts: side-by-side numbers on wide terminals, stacked on
+  narrow (<60 cols); waveform height scales with terminal height.
+- Non-TTY stdout defaults to a single `--tiny`-style line, so pipes and
+  scripts never receive ANSI garbage.
+- Vertical axis uses a gentle compression curve by default so a 70 KB/s idle
+  floor and an 8 MB/s burst are both legible; `S` cycles to linear or sqrt.
+- Waveform values are EMA-smoothed for display only; raw samples still feed
+  peaks, `today` totals, and JSON.
+- Help overlay groups every binding (navigation, display, data, export,
+  links), fits small terminals, and swallows keys while open.
+
+### Removed
+- Cut the command palette, latency/heatmap/particle views, demo mode, and the
+  unused `internal/data` and `internal/motion` packages. `flow` does one
+  thing — show live throughput beautifully — and every remaining key serves
+  that. The ping readout stays in the hero stats row where it belongs.
+- **The peak-hold line.** It drew a rule across the full width at the height
+  of the window's transient max, and it set only the left dot column of every
+  other cell — producing a full-width row of isolated `⠁` glyphs that read as
+  broken ASCII sitting on top of the download waveform. The peak value is
+  already reported numerically in the hero caption (`peak 4.5 MB/s`), so the
+  line carried no information the screen did not already show.
+  `graph.peak_hold` is still accepted so existing configs load unchanged.
+
+### Fixed
+- **ANSI theme rendered the whole graph black.** `ansi` carries terminal
+  palette *indices* and leaves its RGB stops zeroed; `GradientHex` read the
+  zeroed stops, so every waveform cell came out `#000000`. It now returns a
+  palette index for ANSI themes (the render engine already emits both forms),
+  and `DimColor` no longer mis-parses an index like `"8"` as hex into black
+  chrome. Covered by `TestGradientHexRespectsANSIPalette` and
+  `TestAllThemesProduceVisibleWaveform`.
+- **Latency color now follows the theme status tokens.** The hero stats row
+  used ad-hoc hues while the status line used `Good`/`Warn`/`Bad`, so the two
+  ping readouts could disagree. All call sites share one `latencyStyle` helper
+  (good < 60ms, warn < 150ms, bad above).
+- **Theme picker was clipped.** Its row budget ignored the `↑/↓ more`
+  indicators, description widths were measured against the terminal rather
+  than the box (so they wrapped and ate rows), and the hint line itself was
+  wider than narrow boxes. It now fits from 30x10 up, dropping to a borderless
+  list on very short terminals. Covered by `TestThemeMenuNeverOverflows`.
+- **The `d` filter is now visible.** Hiding a direction made half the graph
+  vanish with no explanation near the data; the filter state now sits next to
+  the interface in the header.
+- **Waveform saturation**: the y-axis ceiling was pinned to `peak * 0.6` to
+  "avoid magnifying a lone spike". With steady traffic that ceiling sat below
+  the typical value, so the whole graph clamped to solid blocks and lost all
+  shape. The ceiling now tracks the visible window peak, which never clips.
+  Covered by `TestGraphScaleNeverClipsSteadyTraffic`.
+- **Gridlines defaulted on but were invisible.** Braille color is per-cell
+  (2x4 dots), so a rule cannot cross a filled cell without tinting that cell's
+  other dots. The rule is therefore only visible in empty space — on a busy
+  graph that made the feature look broken. It now defaults to OFF, and `G`
+  turns it on where it is actually useful.
+- Removed a cryptic always-on `grid` chip from the status line; the `G` toast
+  already confirms the toggle.
+- Hero digits: removed a duplicate badge line that printed the unit twice and
+  inflated the block height.
+- Waveform colour striping: cells are coloured in horizontal bands by height
+  instead of per column, which removed vertical artefacts.
+- Upload half idle line now renders on the correct baseline (was drawn at the
+  canvas bottom).
+- Dense isolated "glow" dots beyond the fill edge are gone, so the waveform
+  reads as solid areas.
+- Decimal point in the big-digit font renders as a visible dot on the baseline
+  instead of a 3-column gap.
+- Hero status line keeps the interface name prefix (`iface · refresh · ping`).
+- Double normalization bug that flattened the waveform to the baseline when
+  the render path normalized already-normalized samples.
+
 ## [0.3.1] - 2026-09-24
 
 ### Fixed

@@ -15,7 +15,7 @@ import (
 
 const (
 	graphWindow      = 64
-	heroMaxWidth     = 86
+	heroMaxWidth     = 96
 	compactMaxWidth  = 70
 	miniMaxWidth     = 60
 	HorizontalMargin = 4
@@ -156,10 +156,15 @@ func TitleRow(_ float64) string {
 // renderColoredGraph renders a Braille area graph with a top-to-bottom intensity
 // gradient, brightening toward the top.
 func renderColoredGraph(samples []float64, width, height int, maxVal float64, frac float64, download bool) string {
+	if len(samples) == 0 || width <= 0 || height <= 0 {
+		return ""
+	}
+
 	lines := sparkline.RenderBraille(samples, width, height, maxVal, frac)
 	if len(lines) == 0 {
 		return ""
 	}
+
 	colored := make([]string, len(lines))
 	speedRatio := 0.0
 	if len(samples) > 0 && maxVal > 0 {
@@ -277,9 +282,9 @@ func renderCompactRow(label, value, trend, peak string, peakPulse, ratio float64
 func renderTiny(m Model) string {
 	downRatio := theme.SpeedRatio(m.animDown, m.rollingMaxDown)
 	upRatio := theme.SpeedRatio(m.animUp, m.rollingMaxUp)
-	left := theme.DownloadColor(downRatio).Render("↓") + " " +
+	downStr := theme.DownloadColor(downRatio).Render("↓") + " " +
 		theme.ValuePrimary(downRatio, true).Render(m.FormatBps(m.animDown))
-	right := theme.UploadColor(upRatio).Render("↑") + " " +
+	upStr := theme.UploadColor(upRatio).Render("↑") + " " +
 		theme.ValuePrimary(upRatio, false).Render(m.FormatBps(m.animUp))
 	w, h := m.width, m.height
 	if w <= 0 {
@@ -288,7 +293,16 @@ func renderTiny(m Model) string {
 	if h <= 0 {
 		h = 24
 	}
-	return centerFrame(left+"   "+right, w, h)
+	var out string
+	switch m.displayFilter {
+	case DisplayDownOnly:
+		out = downStr
+	case DisplayUpOnly:
+		out = upStr
+	default:
+		out = downStr + "   " + upStr
+	}
+	return centerFrame(out, w, h)
 }
 
 // ─── stats line (ping) ────────────────────────────────────────────────────────
@@ -298,55 +312,53 @@ func renderStatsLine(m Model) string {
 		return ""
 	}
 	ms := m.pingLatency.Seconds() * 1000
-	style := theme.Soft()
-	if ms >= 100 {
-		style = theme.Accent()
-	}
-	return theme.Dim().Render("ping ") + style.Bold(true).Render(fmt.Sprintf("%.0fms", ms))
+	return theme.Dim().Render("ping ") + latencyStyle(ms).Render(fmt.Sprintf("%.0fms", ms))
 }
 
 // ─── overlays ────────────────────────────────────────────────────────────────
 
 func renderHelp(m Model) string {
 	type item struct{ key, desc string }
-	items := []item{
-		{"q", "quit"},
-		{"m", "cycle view mode"},
-		{"d", "cycle display filter"},
-		{"n", "network processes"},
-		{"t", "choose theme"},
-		{"r", "reset peaks  (press twice)"},
-		{"i", "cycle interface"},
-		{"I", "interface details"},
-		{"c", "cycle unit scale"},
-		{"b", "toggle bits / bytes"},
-		{"+ / -", "adjust refresh rate"},
-		{"p", "pause / resume"},
-		{"g", "open github repo"},
-		{"u", "open issues"},
-		{"x", "open discussions"},
-		{"$ / v", "sponsor / donate"},
-		{"?", "toggle help"},
+	type group struct {
+		title string
+		items []item
 	}
 
-	title := theme.Title().Bold(true).Render("flow") + "  " + theme.Dim().Render("keyboard shortcuts")
-	var rows []string
-	rows = append(rows, "", "  "+title, "")
-	for _, it := range items {
-		k := lipgloss.NewStyle().
-			Foreground(lipgloss.Color(theme.GetAccentColor())).
-			Bold(true).
-			Render(fmt.Sprintf("%-7s", it.key))
-		d := theme.Muted().Render(it.desc)
-		rows = append(rows, "  "+k+"  "+d)
+	groups := []group{
+		{"navigation", []item{
+			{"q", "quit"},
+			{"m", "cycle view mode"},
+			{"esc", "close overlay"},
+			{"?", "toggle help"},
+		}},
+		{"display", []item{
+			{"d", "filter both/down/up"},
+			{"t", "theme picker"},
+			{"S", "scale auto/linear/sqrt"},
+			{"G", "toggle gridlines"},
+			{"c", "cycle unit scale"},
+			{"b", "bits / bytes"},
+		}},
+		{"data", []item{
+			{"i", "cycle interface"},
+			{"I", "interface details"},
+			{"n", "network processes"},
+			{"w", "cycle time window"},
+			{"+ / -", "refresh rate"},
+			{"p", "pause / resume"},
+			{"r", "reset peaks (twice)"},
+		}},
+		{"export", []item{
+			{"s", "snapshot .ansi/.txt"},
+		}},
+		{"links", []item{
+			{"g", "github repo"},
+			{"u", "issues"},
+			{"x", "discussions"},
+			{"$ / v", "sponsor / donate"},
+		}},
 	}
-	rows = append(rows, "", "  "+theme.Dim().Render("esc  close"), "")
 
-	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(theme.GetBorderColor())).
-		Padding(0, 2).
-		Render(strings.Join(rows, "\n"))
 	w, h := m.width, m.height
 	if w <= 0 {
 		w = 80
@@ -354,6 +366,187 @@ func renderHelp(m Model) string {
 	if h <= 0 {
 		h = 24
 	}
+
+	// Box budget: border (2) + horizontal padding (2 each side). The content
+	// area is capped so the box never touches the terminal edges and never
+	// exceeds the terminal width.
+	boxW := w - 4
+	if boxW > 96 {
+		boxW = 96
+	}
+	if boxW < 24 {
+		boxW = w - 2
+		if boxW < 20 {
+			boxW = 20
+		}
+	}
+	contentW := boxW - 2 - 4 // border + padding
+	if contentW < 20 {
+		contentW = 20
+	}
+
+	// Columns: two only when both blocks fit with full descriptions.
+	// One column needs ~34 cells (indent + key + longest desc); two need
+	// ~71 including the gap. Below that a single scrollable column wins
+	// over truncated two-column text.
+	const needTwo = 34*2 + 3
+	cols := 1
+	if contentW >= needTwo {
+		cols = 2
+	}
+	colWidth := contentW
+	if cols == 2 {
+		colWidth = (contentW - 3) / 2
+	}
+
+	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(theme.GetAccentColor())).Bold(true)
+
+	// renderRow builds one binding line, truncating the description (never
+	// the key) so the line is exactly <= colWidth.
+	renderRow := func(key, desc string) string {
+		k := keyStyle.Render(fmt.Sprintf("%-7s", key))
+		// 2 indent + 7 key + 1 space = 10 cells of chrome.
+		avail := colWidth - 10
+		if avail < 6 {
+			avail = 6
+		}
+		d := desc
+		if lipgloss.Width(d) > avail {
+			d = truncate(d, avail)
+		}
+		line := "  " + k + " " + theme.Muted().Render(d)
+		// Hard guarantee: never exceed colWidth even with wide runes.
+		for lipgloss.Width(line) > colWidth && len(d) > 0 {
+			d = truncate(d, len([]rune(d))-1)
+			line = "  " + k + " " + theme.Muted().Render(d)
+		}
+		return line
+	}
+
+	// Build individual group blocks so columns can be perfectly balanced.
+	type block struct {
+		title string
+		lines []string
+	}
+	var blocks []block
+	for _, g := range groups {
+		var blines []string
+		blines = append(blines, theme.Dim().Render(g.title))
+		for _, it := range g.items {
+			blines = append(blines, renderRow(it.key, it.desc))
+		}
+		blocks = append(blocks, block{title: g.title, lines: blines})
+	}
+
+	// Distribute blocks into left and right columns aiming for equal height.
+	var leftBlocks, rightBlocks []block
+	leftLines, rightLines := 0, 0
+	for _, b := range blocks {
+		if leftLines <= rightLines {
+			leftBlocks = append(leftBlocks, b)
+			leftLines += len(b.lines) + 1
+		} else {
+			rightBlocks = append(rightBlocks, b)
+			rightLines += len(b.lines) + 1
+		}
+	}
+
+	flattenBlocks := func(bs []block) []string {
+		var out []string
+		for bi, b := range bs {
+			out = append(out, b.lines...)
+			if bi < len(bs)-1 {
+				out = append(out, "")
+			}
+		}
+		return out
+	}
+
+	left := flattenBlocks(leftBlocks)
+	var right []string
+	if cols == 2 {
+		right = flattenBlocks(rightBlocks)
+	}
+
+	// Zip columns into full-width body lines with equal height.
+	var body []string
+	if cols == 1 {
+		body = left
+	} else {
+		n := max(len(left), len(right))
+		for i := 0; i < n; i++ {
+			l, r := "", ""
+			if i < len(left) {
+				l = left[i]
+			}
+			if i < len(right) {
+				r = right[i]
+			}
+			if r == "" {
+				body = append(body, l)
+				continue
+			}
+			pad := colWidth - lipgloss.Width(l)
+			if pad < 3 {
+				pad = 3
+			}
+			body = append(body, l+strings.Repeat(" ", pad)+r)
+		}
+	}
+
+	title := theme.Title().Bold(true).Render("flow") + "  " + theme.Dim().Render("keyboard shortcuts")
+
+	// Scroll window: title(1) + blank(1) + body + blank(1) + footer(1)
+	// inside a bordered box => chrome ≈ 2 border + 4 inner = 6.
+	visible := h - 6 - 4
+	if visible < 3 {
+		visible = 3
+	}
+	if visible > len(body) {
+		visible = len(body)
+	}
+	start := m.helpScroll
+	if start < 0 {
+		start = 0
+	}
+	maxStart := len(body) - visible
+	if maxStart < 0 {
+		maxStart = 0
+	}
+	if start > maxStart {
+		start = maxStart
+	}
+	window := body
+	if len(body) > visible {
+		window = body[start : start+visible]
+	}
+
+	moreUp := start > 0
+	moreDown := start+visible < len(body)
+
+	footer := "  " + theme.Dim().Render("j/k scroll · esc close")
+	if moreUp && moreDown {
+		footer = "  " + theme.Dim().Render("↑ more · ↓ more · j/k scroll · esc close")
+	} else if moreUp {
+		footer = "  " + theme.Dim().Render("↑ more · j/k scroll · esc close")
+	} else if moreDown {
+		footer = "  " + theme.Dim().Render("↓ more · j/k scroll · esc close")
+	}
+	if w < 52 {
+		footer = "  " + theme.Dim().Render("j/k · esc")
+	}
+
+	rows := make([]string, 0, visible+5)
+	rows = append(rows, "  "+title, "")
+	rows = append(rows, window...)
+	rows = append(rows, "", footer)
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(theme.GetBorderColor())).
+		Padding(0, 3).
+		MaxWidth(boxW).
+		Render(strings.Join(rows, "\n"))
 	return centerFrame(box, w, h)
 }
 
@@ -372,13 +565,14 @@ func renderIfaceDetails(m Model) string {
 	for _, addr := range d.Addrs {
 		rows = append(rows, "  "+theme.Dim().Render("addr ")+theme.Soft().Render(addr))
 	}
-	linkStyle := theme.Soft()
+	// Semantic Good/Bad for link state
+	linkStyle := theme.GoodStyle()
 	linkText := "up"
 	if !d.IsUp {
-		linkStyle = theme.Accent()
+		linkStyle = theme.BadStyle()
 		linkText = "down"
 	}
-	rows = append(rows, "  "+theme.Dim().Render("link ")+linkStyle.Bold(true).Render(linkText))
+	rows = append(rows, "  "+theme.Dim().Render("link ")+linkStyle.Render(linkText))
 	if d.Mtu > 0 {
 		rows = append(rows, "  "+theme.Dim().Render("mtu  ")+theme.Soft().Render(fmt.Sprintf("%d", d.Mtu)))
 	}
@@ -475,14 +669,27 @@ func renderThemes(m Model) string {
 	title := theme.Title().Bold(true).Render("themes") + "  " + theme.Dim().Render("pick a palette")
 	themes := theme.ListThemes()
 
-	// Scrollable window
-	visibleCount := h - 10
-	if visibleCount < 3 {
-		visibleCount = 3
+	// The box is what constrains a line, not the terminal: box = border(2) +
+	// padding(6), and it is capped at 80 columns.
+	boxW := min(w-4, 80)
+	if boxW < 24 {
+		boxW = max(w-2, 24)
 	}
-	if visibleCount > len(themes) {
-		visibleCount = len(themes)
+	innerW := boxW - 8
+
+	// Row budget inside the bordered box:
+	//   2 border + 2 title block + 2 footer block + 2 indicators = 8 rows of chrome.
+	const chromeRows = 9
+	budget := h - chromeRows
+	if budget < 3 {
+		budget = 3
 	}
+	visibleCount := min(budget, len(themes))
+	if visibleCount < 1 {
+		visibleCount = 1
+	}
+
+	showIndicators := h >= chromeRows+visibleCount
 	startIdx := m.themeSelectionIdx - visibleCount/2
 	if startIdx < 0 {
 		startIdx = 0
@@ -490,43 +697,96 @@ func renderThemes(m Model) string {
 	if startIdx+visibleCount > len(themes) {
 		startIdx = len(themes) - visibleCount
 	}
+	if startIdx < 0 {
+		startIdx = 0
+	}
 	endIdx := startIdx + visibleCount
 
+	accentColor := lipgloss.Color(theme.GetAccentColor())
+
+	// One common name column width for the whole list, so descriptions form a
+	// single straight column.
+	nameColW := 0
+	for _, t := range themes {
+		if w := lipgloss.Width(t.Name); w > nameColW {
+			nameColW = w
+		}
+	}
+	if nameColW > 14 {
+		nameColW = 14
+	}
+
 	var rows []string
-	rows = append(rows, "", "  "+title, "")
-	if startIdx > 0 {
+	rows = append(rows, "  "+title, "")
+	if showIndicators && startIdx > 0 {
 		rows = append(rows, "  "+theme.Dim().Render("↑ more"))
 	}
 	for i := startIdx; i < endIdx; i++ {
 		t := themes[i]
-		cursor := "  "
-		nameStyle := theme.Muted()
-		descStyle := theme.Dim()
-		if i == m.themeSelectionIdx {
-			cursor = lipgloss.NewStyle().
-				Foreground(lipgloss.Color(theme.GetAccentColor())).
-				Bold(true).
-				Render("› ")
-			nameStyle = theme.Soft().Bold(true)
-			descStyle = theme.Muted()
+		selected := i == m.themeSelectionIdx
+
+		// Color swatches: two ● dots showing the theme's download + upload hues.
+		downHex, upHex := theme.ThemeSwatches(t.Name)
+		var swatch string
+		if downHex != "" && upHex != "" {
+			dotDown := lipgloss.NewStyle().Foreground(lipgloss.Color(downHex)).Render("●")
+			dotUp := lipgloss.NewStyle().Foreground(lipgloss.Color(upHex)).Render("●")
+			swatch = dotDown + " " + dotUp
+		} else {
+			// Fallback for missing swatch info
+			swatch = "   "
 		}
-		line := "  " + cursor + nameStyle.Render(t.Name)
+
+		var cursor, nameStr string
+		if selected {
+			cursor = lipgloss.NewStyle().Foreground(accentColor).Bold(true).Render("›")
+			nameStr = theme.Soft().Bold(true).Render(fmt.Sprintf("%-*s", nameColW, t.Name))
+		} else {
+			cursor = " "
+			nameStr = theme.Muted().Render(fmt.Sprintf("%-*s", nameColW, t.Name))
+		}
+
+		// Layout: "  cursor swatch  name"
+		line := "  " + cursor + " " + swatch + "  " + nameStr
+		// Only append the description when it provably fits.
 		if t.Description != "" {
-			line += "  " + descStyle.Render(t.Description)
+			prefixW := 2 + 1 + 1 + 3 + 2 + nameColW + 2
+			if avail := innerW - prefixW; avail >= 10 {
+				desc := t.Description
+				if lipgloss.Width(desc) > avail {
+					desc = truncate(desc, avail)
+				}
+				line += "  " + descStyleFor(t, selected).Render(desc)
+			}
 		}
 		rows = append(rows, line)
 	}
-	if endIdx < len(themes) {
+	if showIndicators && endIdx < len(themes) {
 		rows = append(rows, "  "+theme.Dim().Render("↓ more"))
 	}
-	rows = append(rows, "", "  "+theme.Dim().Render("j/k  navigate   enter  confirm   esc  cancel"), "")
+	// The hint must fit the box on its own line.
+	hint := "j/k  navigate   enter  apply   esc  cancel"
+	if innerW < lipgloss.Width(hint)+2 {
+		hint = "esc  cancel"
+	}
+	rows = append(rows, "", "  "+theme.Dim().Render(hint))
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color(theme.GetBorderColor())).
-		Padding(0, 2).
+		Padding(0, 3).
+		MaxWidth(boxW).
 		Render(strings.Join(rows, "\n"))
 	return centerFrame(box, w, h)
+}
+
+// descStyleFor picks the description style for a theme row: dim normally,
+// mid when selected.
+func descStyleFor(_ theme.ThemeInfo, selected bool) lipgloss.Style {
+	if selected {
+		return theme.Muted()
+	}
+	return theme.Dim()
 }
 
 // ─── main dashboard content ───────────────────────────────────────────────────
@@ -583,6 +843,11 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 	}
 	if contentW < 40 {
 		contentW = max(termW-2, 40)
+	}
+
+	// Hero mode uses the v0.4.0 layout: big digits + mirrored waveform.
+	if mode == ViewHero {
+		return heroContentLines(m, contentW, termW, termH)
 	}
 
 	// Graph inner width (panel border + padding eats 4 chars)

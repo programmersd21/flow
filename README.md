@@ -38,13 +38,19 @@ or download a binary from [releases](https://github.com/programmersd21/flow/rele
 ## usage
 
 ```sh
-flow
-flow --tiny
-flow --mini
-flow --compact
-flow --json
-flow --json-stream
+flow                              # hero view (default)
+flow --tiny                       # single line, for status bars
+flow --mini                       # graphs only
+flow --compact                    # condensed numbers
+flow --json                       # one JSON snapshot, then exit
+flow --json-stream                # newline-delimited JSON, continuous
+flow --theme nord --window 5m     # override theme and time window
+flow --no-anim                    # disable animations (reduced motion)
+flow --format '↓ {{.Down}} ↑ {{.Up}}'   # templated text output
 ```
+
+When stdout is not a TTY (a pipe, a script, a status bar) `flow` prints a
+single plain line instead of starting the TUI, so it is safe to pipe.
 
 ### tmux
 
@@ -52,16 +58,23 @@ flow --json-stream
 set -g status-right "#(flow --tiny --no-color)"
 ```
 
+### waybar / polybar / sketchybar / i3blocks
+
+All of them can consume `flow --json-stream` or a fixed-width `--format` line.
+See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
+
 ## features
 
-* **Silky 20 FPS Animations**: Sub-pixel smooth graph updates driven by spring dynamics
-* **Airy Unixporn Aesthetic**: Open, spacious typography with clean left-stripe accent indicators
+* **Mirrored Braille Waveform**: Download above the axis, upload below, rendered on a 2x4-dot braille canvas with a smooth interpolated crest
+* **Big Block Digits**: 5x5 bitmap hero numbers (timr-tui technique) — chunky enough to read at a glance, tabular so they never jitter
+* **Calm Motion**: Spring-driven value easing, an idle breathing pulse, a burst ripple, a pulsing link dot, a 180ms theme crossfade, and a skippable launch sequence — all disabled by `--no-anim`
+* **Time Windows**: `w` cycles 1m / 5m / 15m / 1h / 24h
+* **Scale Modes**: `S` cycles auto / linear / sqrt; `G` toggles the midpoint gridline (off by default — see below)
+* **Snapshot Export**: `s` writes the current frame as `.ansi` and `.txt`
 * **11 Built-in Themes**: `default`, `nord`, `dracula`, `gruvbox`, `forest`, `monochrome`, `catppuccin`, `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`
-* **Custom TOML Themes**: Load custom color schemes from your config directory
-* **Network Processes**: Active connection viewer by PID and process name (`n`)
-* **Interface Inspector**: Real-time IP address, MAC, MTU, and link state viewer (`I`)
-* **Responsive Layouts**: Auto-adapts between Hero, Compact, Mini, and Tiny modes
-* **Zero Overhead**: Minimal CPU and memory usage (written in Go with Bubble Tea)
+* **Custom TOML Themes**: Load custom color schemes from your config directory (see [docs/themes.md](docs/themes.md))
+* **Text Streams First**: `--json`, `--json-stream`, and `--format` (see [docs/json.md](docs/json.md))
+* **Zero Overhead**: No telemetry, no network calls except the ping target, no cgo in the core path
 * **Cross-Platform**: Linux, macOS, and Windows support
 
 ## keys
@@ -75,7 +88,7 @@ set -g status-right "#(flow --tiny --no-color)"
 | `n` | network processes inspector |
 | `i` | cycle network interface |
 | `I` | interface details |
-| `c` | cycle unit scale (auto / B/s / KB/s / MB/s) |
+| `c` | cycle unit scale (auto / KB/s / MB/s / GB/s) |
 | `b` | toggle bits/sec vs bytes/sec |
 | `+` / `-` | adjust sampling interval |
 | `p` | pause / resume sampling |
@@ -85,6 +98,10 @@ set -g status-right "#(flow --tiny --no-color)"
 | `x` | open GitHub discussions in browser |
 | `$` / `v` | sponsor / donate on GitHub |
 | `?` | help menu |
+| `w` | cycle time window (1m / 5m / 15m / 1h / 24h) |
+| `s` | export snapshot (`.ansi` + `.txt`) |
+| `S` | cycle graph scale (auto / linear / sqrt) |
+| `G` | toggle gridlines |
 
 ## configuration
 
@@ -97,13 +114,18 @@ Windows  %APPDATA%\flow\config.toml
 ```
 
 ```toml
-refresh = "100ms"
-theme = "default"
-unit = "auto"
-interface = "auto"
-bits = false
+refresh     = "100ms"
+theme       = "default"
+unit        = "auto"
+interface   = "auto"
+bits        = false
 ping_target = "1.1.1.1"
+no_anim     = false   # disable animations
 ```
+
+Environment variables: `NO_COLOR`, `FLOW_REDUCE_MOTION=1` (reduced motion),
+`FLOW_CONFIG` (override the config file path), `FLOW_GLYPHS` (force
+`braille` / `blocks` / `ascii` waveform glyphs).
 
 ## development
 
