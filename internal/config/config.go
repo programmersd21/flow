@@ -101,7 +101,6 @@ type Config struct {
 
 func Defaults() Config {
 	yes := true
-	no := false
 	return Config{
 		Refresh:    duration{100 * time.Millisecond},
 		History:    60,
@@ -124,9 +123,9 @@ func Defaults() Config {
 			Window:   "60s",
 			Scale:    "auto",
 			FixedMax: "100MB/s",
-			// A gridline is only visible where the waveform has no fill, so
-			// it reads as a dead/broken rule on busy graphs. Off by default.
-			Gridlines: &no,
+			// A faint midpoint rule, visible only where the waveform has no
+			// fill. This matches the reference demo.png look.
+			Gridlines: &yes,
 			Smoothing: 0.35,
 			PeakHold:  &yes,
 			Floor:     "10KB/s",

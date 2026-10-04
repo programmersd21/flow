@@ -57,7 +57,7 @@ func render(c Config) string {
 	p(`shared_scale  = %s    # true scales both halves together`, boolStr(c.Graph.SharedScale))
 	p(`smoothing     = %.2f    # display EMA 0..1; raw data still feeds peaks/JSON`, c.Graph.Smoothing)
 	p(`peak_hold     = %s    # accepted for compatibility; the peak value is shown in the hero caption`, boolPtrStr(c.Graph.PeakHold, true))
-	p(`gridlines     = %s    # midpoint rule, visible only in empty space (G key)`, boolPtrStr(c.Graph.Gridlines, false))
+	p(`gridlines     = %s    # faint midpoint rule, visible where the wave has no fill (G key)`, boolPtrStr(c.Graph.Gridlines, true))
 	p(`floor         = %q   # minimum y-max so noise does not fill the screen`, c.Graph.Floor)
 
 	b.WriteString(`

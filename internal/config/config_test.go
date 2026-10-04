@@ -35,10 +35,8 @@ func TestDefaultsAreValid(t *testing.T) {
 	if !c.GradientEnabled() || !c.MirroredEnabled() {
 		t.Error("gradient and mirrored should default to enabled")
 	}
-	// Gridlines default OFF: the rule is only visible where the waveform has
-	// no fill, so on by default it reads as a dead line.
-	if c.GridlinesEnabled() {
-		t.Error("gridlines should default to disabled")
+	if !c.GridlinesEnabled() {
+		t.Error("gridlines should default to enabled (reference demo look)")
 	}
 	if c.WindowSeconds() != 60 {
 		t.Errorf("default window = %d, want 60", c.WindowSeconds())

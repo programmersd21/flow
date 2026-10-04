@@ -141,16 +141,19 @@ func TestGraphScaleFloorForIdle(t *testing.T) {
 	}
 }
 
-// The centering contract: each hero block has a fixed width, every row is
-// centered inside that width, and the two blocks are centered as one group.
-// So changing the value (0 vs 248000 vs 2410000) must not move anything.
+// The centering contract, in two halves:
+//
+//  1. joinCentered returns rows that are ALL the same width (a rigid unit),
+//     so the downstream centerFrame treats the pair as one block. Pre-padding
+//     here would be centered a second time and shift the pair right.
+//  2. The full View() output centers that unit in the terminal.
+//
+// Same-unit values must produce byte-identical row widths: nothing moves while
+// the value stays in its unit. Crossing a unit boundary (B/s -> KB/s)
+// legitimately changes the caption width.
 func TestJoinCenteredStableAcrossValues(t *testing.T) {
 	theme.SetTheme("default")
 	width := 96
-	// Vary only the download side (upload fixed at 197 B/s): same-unit values
-	// must produce byte-identical row widths. Crossing a unit boundary
-	// (B/s -> KB/s) legitimately changes the caption width, so each case is
-	// compared against the first value in its own unit group.
 	groups := [][]float64{{0, 4, 9}, {9_880, 11_200, 40_000}, {248_000, 500_000}, {2_410_000, 5_000_000}}
 	for _, group := range groups {
 		var baseline []int
@@ -173,36 +176,52 @@ func TestJoinCenteredStableAcrossValues(t *testing.T) {
 				baseline = widths
 				continue
 			}
-			// Every row must be the same width for every value: nothing moves.
 			for i := range widths {
 				if widths[i] != baseline[i] {
 					t.Errorf("value %v row %d: width %d, want %d (layout moved)",
 						pair, i, widths[i], baseline[i])
 				}
 			}
-			// The pair must also sit centered, not pinned left: the first
-			// content column has to be well clear of column 0. (A past
-			// regression dropped the group offset and every row started
-			// at the left edge.)
-			runes := []rune(stripANSI(rows[0]))
-			lm := 0
-			for lm < len(runes) && runes[lm] == ' ' {
-				lm++
-			}
-			if lm < 4 {
-				t.Errorf("value %v: group starts at col %d, expected centered (lm>=4)",
-					pair, lm)
-			}
-			// Centering itself is centerInline's job downstream; what this
-			// unit must guarantee is that every row has the same width so
-			// the block centers as one rigid unit instead of drifting.
-			first := widths[0]
-			for i, w := range widths[1:] {
-				if w != first {
-					t.Errorf("value %v row %d: width %d != first row %d (block not rigid)",
-						pair, i+1, w, first)
+			// Rigid unit: every row identical width, so centering moves them together.
+			for i := 1; i < len(widths); i++ {
+				if widths[i] != widths[0] {
+					t.Errorf("value %v: row %d width %d != row 0 width %d (unit not rigid)",
+						pair, i, widths[i], widths[0])
 				}
 			}
+		}
+	}
+}
+
+// TestHeroPairCenteredOnScreen: through the full View(), the digit pair sits
+// centered in the terminal.
+func TestHeroPairCenteredOnScreen(t *testing.T) {
+	theme.SetTheme("default")
+	for _, w := range []int{80, 96, 120} {
+		m := goldenModel(w, 30)
+		m.animDown, m.animUp = 248_000, 197
+		out := stripANSI(m.View())
+		var first string
+		for _, line := range strings.Split(out, "\n") {
+			if strings.Contains(line, "█████") {
+				first = line
+				break
+			}
+		}
+		if first == "" {
+			t.Fatalf("w=%d: no digit row found", w)
+		}
+		runes := []rune(first)
+		lm := 0
+		for lm < len(runes) && runes[lm] == ' ' {
+			lm++
+		}
+		rm := len(runes)
+		for rm > 0 && runes[rm-1] == ' ' {
+			rm--
+		}
+		if d := lm - (w - rm); d < -2 || d > 2 {
+			t.Errorf("w=%d: digit pair not centered (margins %d/%d)", w, lm, w-rm)
 		}
 	}
 }

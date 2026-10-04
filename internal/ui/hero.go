@@ -91,6 +91,11 @@ func renderHeroCaption(bps float64, bits bool, download bool, stat string) strin
 // joinCentered places the two hero blocks side by side with a gap.
 // Centering across the terminal width is handled by centerFrame/centerInline,
 // so this function only formats the two blocks as a pair without pre-padding.
+//
+// The invariant: each hero block has a fixed width, every row is centered
+// inside that width, and all rows come out the same width — so the downstream
+// centering treats the pair as one rigid unit. Pre-padding here would be
+// centered a second time downstream and shift the pair right.
 func joinCentered(left, right []string, totalWidth int) []string {
 	n := max(len(left), len(right))
 	for len(left) < n {
@@ -109,12 +114,6 @@ func joinCentered(left, right []string, totalWidth int) []string {
 		gap = max(2, totalWidth-leftW-rightW)
 	}
 
-	// Center the pair as one group. Without this offset the two blocks start
-	// at column 0 and the numbers sit left-of-center no matter what the
-	// per-row centering above does.
-	groupW := leftW + gap + rightW
-	groupStart := max(0, (totalWidth-groupW)/2)
-
 	out := make([]string, n)
 
 	for i := range out {
@@ -128,10 +127,7 @@ func joinCentered(left, right []string, totalWidth int) []string {
 			Align(lipgloss.Center).
 			Render(right[i])
 
-		out[i] = strings.Repeat(" ", groupStart) +
-			l +
-			strings.Repeat(" ", gap) +
-			r
+		out[i] = l + strings.Repeat(" ", gap) + r
 	}
 
 	return out
