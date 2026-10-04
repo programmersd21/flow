@@ -105,7 +105,7 @@ func joinCentered(left, right []string, totalWidth int) []string {
 		right = append(right, "")
 	}
 
-	const gap = 1
+	const gap = 8
 
 	half := (totalWidth - gap) / 2
 	if half < 1 {
@@ -675,7 +675,10 @@ func renderHeroHeader(m Model, width int) string {
 		parts = parts[:len(parts)-1]
 		line = strings.Join(parts, sep)
 	}
-	return centerInline(line, width)
+	// No pre-padding here: centerFrame centers every content line once,
+	// downstream. Padding here as well would center twice and shift the
+	// header right of true center.
+	return line
 }
 
 // miniContentLines builds the mini view: the same mirrored waveform and accent

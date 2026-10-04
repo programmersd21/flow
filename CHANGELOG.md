@@ -50,6 +50,9 @@
   single straight line.
 - Help overlay packs groups into two columns by rendered height rather than
   item count, which had left the right column visibly shorter.
+- Hero header is centered by the frame, not by itself. Pre-padding the
+  header and then centering the frame shifted it right of true center —
+  the same double-centering bug the digit blocks had.
 - Hero layout reorganized for clarity:
   - The header is a single **centered** identity line joined by dots —
     `flow v0.3.2 · ● wlan0 · 46ms`. It was a left/right spread, which on a
