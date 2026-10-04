@@ -85,11 +85,11 @@ Two rules keep the block visually stable:
   block stopped being tabular and part of the number read as detached debris.
 - **Trailing zeros are stripped.** `4` B/s must render as `4`, not `4.00`;
   otherwise a one-digit value silently costs four glyphs.
-- **The pair is centered as a group.** Each hero block has a fixed width
-  (its widest row), every row is centered inside that width with
-  `lipgloss.Width/Align(Center)`, and the two blocks plus a fixed gap are
-  centered together. A block's width therefore depends only on the value's
-  magnitude class, so nothing moves while the value stays in its unit.
+- **The pair is two equal columns.** Each hero block gets half the content
+  width minus the gap — a width derived from the layout, never measured from
+  the content. Every row is centered inside its column and the pair is
+  centered together. Rule of thumb for this UI: content changes, geometry
+  doesn't.
 
 ### vertical scaling
 

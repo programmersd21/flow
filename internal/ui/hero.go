@@ -88,14 +88,14 @@ func renderHeroCaption(bps float64, bits bool, download bool, stat string) strin
 	return head + theme.TextDim().Render(" · ") + stat
 }
 
-// joinCentered places the two hero blocks side by side with a gap.
-// Centering across the terminal width is handled by centerFrame/centerInline,
-// so this function only formats the two blocks as a pair without pre-padding.
+// joinCentered renders the hero blocks into two equal-width columns.
+// Each row is centered inside its column, and the resulting line is exactly
+// totalWidth wide. The caller is responsible for centering the frame.
 //
-// The invariant: each hero block has a fixed width, every row is centered
-// inside that width, and all rows come out the same width — so the downstream
-// centering treats the pair as one rigid unit. Pre-padding here would be
-// centered a second time downstream and shift the pair right.
+// Both columns share one width derived from the layout — never from the
+// content. Sizing columns from content (widest row, per-block axes) let a
+// changing caption move the numbers, which is what made the pair drift and
+// read as broken. Content changes; geometry doesn't.
 func joinCentered(left, right []string, totalWidth int) []string {
 	n := max(len(left), len(right))
 	for len(left) < n {
@@ -105,25 +105,23 @@ func joinCentered(left, right []string, totalWidth int) []string {
 		right = append(right, "")
 	}
 
-	gap := 8
+	const gap = 1
 
-	leftW := widestRow(left)
-	rightW := widestRow(right)
-
-	if leftW+gap+rightW > totalWidth {
-		gap = max(2, totalWidth-leftW-rightW)
+	half := (totalWidth - gap) / 2
+	if half < 1 {
+		half = 1
 	}
 
 	out := make([]string, n)
 
 	for i := range out {
 		l := lipgloss.NewStyle().
-			Width(leftW).
+			Width(half).
 			Align(lipgloss.Center).
 			Render(left[i])
 
 		r := lipgloss.NewStyle().
-			Width(rightW).
+			Width(half).
 			Align(lipgloss.Center).
 			Render(right[i])
 
@@ -131,17 +129,6 @@ func joinCentered(left, right []string, totalWidth int) []string {
 	}
 
 	return out
-}
-
-// widestRow is the render width of the widest row in a block.
-func widestRow(rows []string) int {
-	w := 0
-	for _, r := range rows {
-		if rw := lipgloss.Width(r); rw > w {
-			w = rw
-		}
-	}
-	return w
 }
 
 // ─── vertical scaling ───────────────────────────────────────────────────────
