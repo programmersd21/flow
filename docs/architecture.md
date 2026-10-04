@@ -67,8 +67,9 @@ view keeps the waveform area clean.
 ### hero digits
 
 Hero numbers are a 5x5 bitmap font (one full block per "on" pixel, technique
-adapted from timr-tui). Two-pixel-thick strokes are what make them legible at a
-glance; the earlier 3-row zigzag font blurred into itself at large sizes. Glyphs
+adapted from timr-tui) with single-pixel strokes. Double-thick strokes read as
+heavy shouting blocks at hero scale; single strokes keep the 5-row presence
+while staying light. The earlier 3-row zigzag font blurred into itself. Glyphs
 are tabular (5 columns + 1 column of spacing) so a changing value never shifts
 the layout, and the decimal point is a narrow 2-wide block on the baseline.
 

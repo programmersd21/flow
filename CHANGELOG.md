@@ -34,7 +34,8 @@
 ### Added
 - **Rewritten home screen**: 5x5 bitmap block digits for download/upload
   (technique adapted from [timr-tui](https://github.com/sectore/timr-tui),
-  MIT) with a mirrored braille waveform — download above the centre axis,
+  MIT) with single-pixel strokes for a light, refined read, plus a mirrored
+  braille waveform — download above the centre axis,
   upload below — plus per-half auto-scaling, a dotted centre axis, time
   labels, and a stats row (`today`, `ping`, top talker).
 - `internal/render`: braille canvas (2x4 dots per cell), solid area-fill

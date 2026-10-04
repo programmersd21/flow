@@ -105,9 +105,9 @@ func TestRenderBigDigitsShape(t *testing.T) {
 			t.Errorf("row %d width = %d, want %d (tabular)", i, len([]rune(r)), w)
 		}
 	}
-	// '0' has a hole in the middle row: two filled columns, gap, two more.
-	if !strings.Contains(rows[2], "██ ██") {
-		t.Errorf("row 2 of '0' should have a centre hole, got %q", rows[2])
+	// '0' has a hole in the middle row: one filled column each side.
+	if rows[2] != "█   █" {
+		t.Errorf("row 2 of '0' should be hollow, got %q", rows[2])
 	}
 }
 
