@@ -66,7 +66,7 @@ See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
 ## features
 
 * **Mirrored Braille Waveform**: Download above the axis, upload below, rendered on a 2x4-dot braille canvas with a smooth interpolated crest
-* **Big Block Digits**: 5x5 bitmap hero numbers (timr-tui technique) — single-stroke, tabular, never jitter
+* **Big Block Digits**: 5x5 bitmap hero numbers (timr-tui technique) — chunky enough to read at a glance, tabular so they never jitter
 * **Calm Motion**: Spring-driven value easing, an idle breathing pulse, a burst ripple, a pulsing link dot, a 180ms theme crossfade, and a skippable launch sequence — all disabled by `--no-anim`
 * **Time Windows**: `w` cycles 1m / 5m / 15m / 1h / 24h
 * **Scale Modes**: `S` cycles auto / linear / sqrt; `G` toggles the midpoint gridline (off by default — see below)
