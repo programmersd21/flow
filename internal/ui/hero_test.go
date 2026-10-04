@@ -180,6 +180,19 @@ func TestJoinCenteredStableAcrossValues(t *testing.T) {
 						pair, i, widths[i], baseline[i])
 				}
 			}
+			// The pair must also sit centered, not pinned left: the first
+			// content column has to be well clear of column 0. (A past
+			// regression dropped the group offset and every row started
+			// at the left edge.)
+			runes := []rune(stripANSI(rows[0]))
+			lm := 0
+			for lm < len(runes) && runes[lm] == ' ' {
+				lm++
+			}
+			if lm < 4 {
+				t.Errorf("value %v: group starts at col %d, expected centered (lm>=4)",
+					pair, lm)
+			}
 			// Centering itself is centerInline's job downstream; what this
 			// unit must guarantee is that every row has the same width so
 			// the block centers as one rigid unit instead of drifting.

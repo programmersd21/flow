@@ -34,8 +34,10 @@
 
 ### Changed
 - Hero numbers are centered as a **single group**: each block gets a fixed
-  width, every row is centered inside its width, and the pair is centered
-  together. An earlier version mixed an absolute axis position with an
+  width, every row is centered inside its width, and a group offset centers
+  the pair in the content width (dropping that offset pinned everything to
+  the left edge — covered by the centering assertion in
+  `TestJoinCenteredStableAcrossValues`). An earlier version mixed an absolute axis position with an
   already-padded row width, subtracting the left block twice and breaking the
   centering it claimed. Covered by `TestJoinCenteredStableAcrossValues`.
 - Theme picker swatches use the accent tokens the hero digits actually render

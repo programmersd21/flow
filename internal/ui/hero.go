@@ -109,6 +109,12 @@ func joinCentered(left, right []string, totalWidth int) []string {
 		gap = max(2, totalWidth-leftW-rightW)
 	}
 
+	// Center the pair as one group. Without this offset the two blocks start
+	// at column 0 and the numbers sit left-of-center no matter what the
+	// per-row centering above does.
+	groupW := leftW + gap + rightW
+	groupStart := max(0, (totalWidth-groupW)/2)
+
 	out := make([]string, n)
 
 	for i := range out {
@@ -122,7 +128,10 @@ func joinCentered(left, right []string, totalWidth int) []string {
 			Align(lipgloss.Center).
 			Render(right[i])
 
-		out[i] = l + strings.Repeat(" ", gap) + r
+		out[i] = strings.Repeat(" ", groupStart) +
+			l +
+			strings.Repeat(" ", gap) +
+			r
 	}
 
 	return out
