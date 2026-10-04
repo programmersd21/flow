@@ -88,15 +88,9 @@ func renderHeroCaption(bps float64, bits bool, download bool, stat string) strin
 	return head + theme.TextDim().Render(" · ") + stat
 }
 
-// joinCentered places the two hero blocks side by side and centers the pair.
-//
-// The invariant, stated plainly: each hero block has a fixed width, every row
-// is centered inside that width, and the two blocks are centered as one group.
-//
-// An earlier version computed a pixel axis per block and then positioned each
-// row with `rpad - lipgloss.Width(row)`, mixing an absolute terminal position
-// with an already-padded row width — subtracting the left block twice and
-// breaking the centering it claimed to maintain.
+// joinCentered places the two hero blocks side by side with a gap.
+// Centering across the terminal width is handled by centerFrame/centerInline,
+// so this function only formats the two blocks as a pair without pre-padding.
 func joinCentered(left, right []string, totalWidth int) []string {
 	n := max(len(left), len(right))
 	for len(left) < n {
@@ -112,11 +106,8 @@ func joinCentered(left, right []string, totalWidth int) []string {
 	rightW := widestRow(right)
 
 	if leftW+gap+rightW > totalWidth {
-		gap = max(1, totalWidth-leftW-rightW)
+		gap = max(2, totalWidth-leftW-rightW)
 	}
-
-	groupW := leftW + gap + rightW
-	groupStart := max(0, (totalWidth-groupW)/2)
 
 	out := make([]string, n)
 
@@ -131,10 +122,7 @@ func joinCentered(left, right []string, totalWidth int) []string {
 			Align(lipgloss.Center).
 			Render(right[i])
 
-		out[i] = strings.Repeat(" ", groupStart) +
-			l +
-			strings.Repeat(" ", gap) +
-			r
+		out[i] = l + strings.Repeat(" ", gap) + r
 	}
 
 	return out
@@ -690,11 +678,73 @@ func renderHeroHeader(m Model, width int) string {
 
 	line := strings.Join(parts, sep)
 
-	// Center it, dropping the trailing part if the terminal is too narrow.
-	if lipgloss.Width(line) > width {
-		line = strings.Join(parts[:len(parts)-1], sep)
+	// Drop the trailing part if the terminal is too narrow.
+	for lipgloss.Width(line) > width && len(parts) > 1 {
+		parts = parts[:len(parts)-1]
+		line = strings.Join(parts, sep)
 	}
 	return centerInline(line, width)
+}
+
+// miniContentLines builds the mini view: the same mirrored waveform and accent
+// colors as the hero, but with one-line numbers instead of big digits and no
+// footer. Mini previously used boxed panels with a different graph renderer,
+// which made it look like a different app; unifying on one renderer keeps
+// every mode in the same visual language.
+func miniContentLines(m Model, contentW, termH int) []string {
+	// Budget: header(1) + gap(1) + numbers(1) + gap(1) + wave(2*halfH+1)
+	//       + labels(1). Shrink the wave to fit; never below 1 row per half.
+	halfH := 3
+	for termH-5-2*halfH < 0 && halfH > 1 {
+		halfH--
+	}
+
+	lines := make([]string, 0, termH)
+	lines = append(lines, renderHeroHeader(m, contentW))
+	lines = append(lines, GapRow)
+
+	downNum := theme.DownStyle().Render("↓ " + m.FormatBps(m.animDown))
+	upNum := theme.UpStyle().Render("↑ " + m.FormatBps(m.animUp))
+	showDown := m.displayFilter != DisplayUpOnly
+	showUp := m.displayFilter != DisplayDownOnly
+	var numLine string
+	switch {
+	case showDown && showUp:
+		numLine = spread(downNum, upNum, contentW)
+	case showDown:
+		numLine = downNum
+	default:
+		numLine = upNum
+	}
+	lines = append(lines, numLine)
+	lines = append(lines, GapRow)
+
+	downSamples := render.Smooth(m.windowedSamples(m.downHist), m.cfg.Graph.Smoothing)
+	upSamples := render.Smooth(m.windowedSamples(m.upHist), m.cfg.Graph.Smoothing)
+	downCeil := graphScale(downSamples, maxf(m.rollingMaxDown, m.animDown))
+	upCeil := graphScale(upSamples, maxf(m.rollingMaxUp, m.animUp))
+	expo := scaleExponent(m.scaleMode)
+	now := time.Now()
+	if !m.nowOverride.IsZero() {
+		now = m.nowOverride
+	}
+	lines = append(lines, renderMirroredWave(
+		normalizeSamples(downSamples, downCeil, expo),
+		normalizeSamples(upSamples, upCeil, expo),
+		contentW, halfH,
+		renderOpts{
+			now: now, filter: m.displayFilter,
+			rippleDown: m.rippleDownAt, rippleUp: m.rippleUpAt, noAnim: m.noAnim,
+			scaleMode: m.scaleMode, grid: m.showGrid && m.cfg.GridlinesEnabled(),
+			glyphs: m.glyphSet, colorCap: m.colorCap, gradient: m.cfg.GradientEnabled(),
+		},
+	)...)
+	windowSecs := m.windowSecs
+	if windowSecs <= 0 {
+		windowSecs = 60
+	}
+	lines = append(lines, renderTimeLabels(contentW, windowSecs))
+	return lines
 }
 
 // heroContentLines builds the full hero view content.

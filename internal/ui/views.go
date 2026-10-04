@@ -845,9 +845,14 @@ func dashboardContentLines(m Model, mode ViewMode) []string {
 		contentW = max(termW-2, 40)
 	}
 
-	// Hero mode uses the v0.4.0 layout: big digits + mirrored waveform.
+	// Hero uses big digits + mirrored waveform; mini uses the same mirrored
+	// waveform with one-line numbers. Both share one renderer so the modes
+	// read as one app instead of two designs.
 	if mode == ViewHero {
 		return heroContentLines(m, contentW, termW, termH)
+	}
+	if mode == ViewMini {
+		return miniContentLines(m, contentW, termH)
 	}
 
 	// Graph inner width (panel border + padding eats 4 chars)

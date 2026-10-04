@@ -180,21 +180,15 @@ func TestJoinCenteredStableAcrossValues(t *testing.T) {
 						pair, i, widths[i], baseline[i])
 				}
 			}
-			// The group itself must be centered in the content width.
-			// Measure the caption row: it is the widest row of each block,
-			// so it defines the group's bounding box. Narrower digit rows
-			// are centered inside that box by construction.
-			clean := stripANSI(rows[len(rows)-1])
-			runes := []rune(clean)
-			l, r := 0, len(runes)
-			for l < len(runes) && runes[l] == ' ' {
-				l++
-			}
-			for r > 0 && runes[r-1] == ' ' {
-				r--
-			}
-			if d := l - (width - r); d < -2 || d > 2 {
-				t.Errorf("value %v: group not centered (margins %d/%d)", pair, l, width-r)
+			// Centering itself is centerInline's job downstream; what this
+			// unit must guarantee is that every row has the same width so
+			// the block centers as one rigid unit instead of drifting.
+			first := widths[0]
+			for i, w := range widths[1:] {
+				if w != first {
+					t.Errorf("value %v row %d: width %d != first row %d (block not rigid)",
+						pair, i+1, w, first)
+				}
 			}
 		}
 	}

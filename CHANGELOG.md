@@ -1,34 +1,3 @@
-## [Unreleased] — UX polish
-
-### Fixed
-- **Duplicate ping** — hero status line no longer repeats the latency value
-  already shown in the top-right header (`● wlan0 · 46ms`).
-- **Latency coloring** — ping values now use semantic Good / Warn / Bad hues
-  (green < 60 ms, amber 60–150 ms, red ≥ 150 ms) everywhere: hero header,
-  hero stats row, compact/mini status line. Previously the upload gradient
-  color (yellow/amber) was used unconditionally, which looked confusing on
-  themes where upload is green.
-- **Interface details overlay** — link state "up" uses `GoodStyle` (green),
-  "down" uses `BadStyle` (red), matching the semantic palette instead of the
-  theme accent which could be any hue.
-- **Tiny mode** — respects the `d` display filter: shows only download, only
-  upload, or both, instead of always showing both.
-- **Status line** — non-default refresh rate is now prefixed with `⟳` so
-  `250ms` reads as `⟳ 250ms` and isn't mistaken for a latency value. Grid
-  state (`grid`) is shown when gridlines are on.
-- **Paused indicator** — uses `⏸ paused` with the upload color pill, making
-  it stand out as a state rather than a label.
-
-### Added
-- **Theme picker color swatches** — each theme row now shows two `●` dots
-  (download hue · upload hue) so you can see the palette before switching,
-  without needing to commit. ANSI theme falls back to terminal colors 4 and 2.
-- `theme.GoodStyle()`, `theme.WarnStyle()`, `theme.BadStyle()` — new semantic
-  style helpers backed by the existing `Good/Warn/Bad` tokens on every built-in
-  theme; custom themes inherit sensible defaults automatically.
-- `theme.ThemeSwatches(name)` — returns the mid-stop download/upload hex colors
-  for any theme by name without switching the active theme.
-
 ## [0.3.2] - 2026-10-04
 
 ### Added
@@ -175,6 +144,35 @@
 - Hero status line keeps the interface name prefix (`iface · refresh · ping`).
 - Double normalization bug that flattened the waveform to the baseline when
   the render path normalized already-normalized samples.
+
+### Fixed (merged from UX polish pass)
+- **Duplicate ping** — the hero status line no longer repeats the latency value
+  already shown in the centered header (`flow v0.3.2 · ● wlan0 · 46ms`).
+- **Latency coloring** — ping values now use semantic Good / Warn / Bad hues
+  (green < 60 ms, amber 60–150 ms, red ≥ 150 ms) everywhere: hero header,
+  hero stats row, compact/mini status line. Previously the upload gradient
+  color (yellow/amber) was used unconditionally, which looked confusing on
+  themes where upload is green.
+- **Interface details overlay** — link state "up" uses `GoodStyle` (green),
+  "down" uses `BadStyle` (red), matching the semantic palette instead of the
+  theme accent which could be any hue.
+- **Tiny mode** — respects the `d` display filter: shows only download, only
+  upload, or both, instead of always showing both.
+- **Status line** — non-default refresh rate is prefixed with `⟳` so
+  `250ms` reads as `⟳ 250ms` and isn't mistaken for a latency value.
+- **Paused indicator** — uses a `▮ paused` pill in the upload hue, making
+  it stand out as a state rather than a label.
+
+### Added
+- **Theme picker color swatches** — each theme row now shows two `●` dots
+  (download hue · upload hue) so you can see the palette before switching,
+  without needing to commit. ANSI theme falls back to terminal colors 4 and 2.
+- `theme.GoodStyle()`, `theme.WarnStyle()`, `theme.BadStyle()` — new semantic
+  style helpers backed by the existing `Good/Warn/Bad` tokens on every built-in
+  theme; custom themes inherit sensible defaults automatically.
+- `theme.ThemeSwatches(name)` — returns the accent download/upload colors for
+  any theme by name without switching the active theme, matching what the hero
+  digits actually render in.
 
 ## [0.3.1] - 2026-09-24
 
