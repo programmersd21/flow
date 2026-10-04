@@ -29,9 +29,24 @@ $(BUILDDIR):
 build: $(BUILDDIR)
 	go build $(GOFLAGS) $(LDFLAGS) -o $(BUILDDIR)$(SEP)$(BINARY) $(CMD)
 
-## install: install to $$GOPATH/bin (or ~/go/bin)
+## install: build and install to $GOBIN (or $GOPATH/bin)
 install:
 	go install $(GOFLAGS) $(LDFLAGS) $(CMD)
+	@BIN="$$(go env GOBIN)"; \
+	if [ -z "$$BIN" ]; then BIN="$$(go env GOPATH)/bin"; fi; \
+	echo "installed: $$BIN/$(BINARY)"; \
+	"$$BIN/$(BINARY)" --version; \
+	case ":$$PATH:" in \
+	  *"$$BIN"*) ;; \
+	  *) echo "WARNING: $$BIN is not on your PATH, so '$(BINARY)' will not be found."; \
+	     echo "  Add this to ~/.bashrc or ~/.zshrc, then restart your shell:"; \
+	     echo "    export PATH=\"\$$PATH:$$BIN\""; ;; \
+	esac; \
+	FOUND="$$(command -v $(BINARY) 2>/dev/null || true)"; \
+	if [ -n "$$FOUND" ] && [ "$$FOUND" != "$$BIN/$(BINARY)" ]; then \
+	  echo "WARNING: '$$FOUND' shadows the new binary (shell picks the first match on PATH)."; \
+	  echo "  Remove it or put $$BIN earlier on PATH to use the new build."; \
+	fi
 
 ## run: build and run
 run: build

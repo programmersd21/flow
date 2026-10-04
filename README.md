@@ -33,6 +33,10 @@ brew install programmersd21/flow/flow
 go install github.com/programmersd21/flow/cmd/flow@latest
 ```
 
+Make sure `$(go env GOPATH)/bin` is on your `PATH`, otherwise your shell
+won't find the new binary (and a stale copy elsewhere can shadow it —
+`make install` warns about both).
+
 or download a binary from [releases](https://github.com/programmersd21/flow/releases).
 
 ## usage
