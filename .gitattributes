@@ -18,6 +18,11 @@
 *.md    text eol=lf
 *.txt   text eol=lf
 
+# Golden test fixtures — always LF.
+# Without this, Windows checkouts convert them to CRLF and every line differs
+# from the generated frame by a trailing carriage return.
+*.golden  text eol=lf
+
 # Shell scripts — always LF (they break on CRLF)
 *.sh    text eol=lf
 

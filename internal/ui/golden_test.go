@@ -105,10 +105,78 @@ func TestGoldenHeroFrames(t *testing.T) {
 		if err != nil {
 			t.Fatalf("missing golden %s (run with -update-golden): %v", name, err)
 		}
-		if frame != string(want) {
-			t.Errorf("golden mismatch at %dx%d\n--- got ---\n%s\n--- want ---\n%s", w, h, frame, want)
+		if diff := compareFrames(frame, normalizeEOL(string(want))); diff != "" {
+			t.Errorf("golden mismatch at %dx%d: %s\n--- got ---\n%s\n--- want ---\n%s",
+				w, h, diff, frame, want)
 		}
 	}
+}
+
+// normalizeEOL strips carriage returns from a golden file.
+//
+// .gitattributes pins *.golden to LF, but a checkout with a different
+// core.autocrlf setting, or an editor that rewrote the file, still delivers
+// CRLF. That made every line differ from the generated frame by a trailing
+// carriage return, which is why the golden test failed only on Windows.
+// Normalising here keeps the comparison about content.
+func normalizeEOL(s string) string {
+	if !strings.ContainsRune(s, '\r') {
+		return s
+	}
+	return strings.ReplaceAll(s, "\r\n", "\n")
+}
+
+// maxBrailleDiffs is the tolerance budget for braille-cell differences per
+// frame.
+//
+// Go's math package explicitly does not guarantee bit-identical results across
+// architectures, and the waveform ends in math.Pow. A single-ulp difference in
+// a normalized value can flip one dot where a fill boundary lands on a
+// threshold, so two correct renders of identical data can differ in a handful
+// of cells depending on CPU and Go version.
+//
+// The budget is small on purpose. A real regression - changed layout, font,
+// scale, or colors - alters hundreds of cells. Every non-braille rune is still
+// compared exactly, so a regression in digits, labels, axes, or the frozen
+// footer fails hard.
+const maxBrailleDiffs = 12
+
+// isBrailleCell reports whether r is a braille pattern dot character.
+func isBrailleCell(r rune) bool {
+	return r >= 0x2800 && r <= 0x28FF
+}
+
+// compareFrames reports why two frames differ, or "" when they match within
+// tolerance. Line and rune counts must be identical; differing braille cells
+// are counted against maxBrailleDiffs.
+func compareFrames(got, want string) string {
+	gLines := strings.Split(got, "\n")
+	wLines := strings.Split(want, "\n")
+	if len(gLines) != len(wLines) {
+		return "line count differs"
+	}
+	diffs := 0
+	for i := range gLines {
+		gRunes := []rune(gLines[i])
+		wRunes := []rune(wLines[i])
+		if len(gRunes) != len(wRunes) {
+			return "line width differs"
+		}
+		for j := range gRunes {
+			if gRunes[j] == wRunes[j] {
+				continue
+			}
+			if isBrailleCell(gRunes[j]) || isBrailleCell(wRunes[j]) {
+				diffs++
+				continue
+			}
+			return "non-braille content differs"
+		}
+	}
+	if diffs > maxBrailleDiffs {
+		return "too many braille cells differ"
+	}
+	return ""
 }
 
 func goldenName(w, h int) string {
