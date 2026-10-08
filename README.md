@@ -2,7 +2,7 @@
 
 # flow
 
-**Real-time network throughput in your terminal.**
+**real-time network throughput in your terminal.**
 
 <img src="./assets/demo.png" alt="flow demo" width="100%">
 
@@ -33,8 +33,8 @@ brew install programmersd21/flow/flow
 go install github.com/programmersd21/flow/cmd/flow@latest
 ```
 
-Make sure `$(go env GOPATH)/bin` is on your `PATH`, otherwise your shell
-won't find the new binary (and a stale copy elsewhere can shadow it —
+make sure `$(go env gopath)/bin` is on your `path`, otherwise your shell
+won't find the new binary (and a stale copy elsewhere can shadow it ,
 `make install` warns about both).
 
 `--version` reports the real release for every install method: builds carry an
@@ -57,8 +57,8 @@ flow --no-anim                    # disable animations (reduced motion)
 flow --format '↓ {{.Down}} ↑ {{.Up}}'   # templated text output
 ```
 
-When stdout is not a TTY (a pipe, a script, a status bar) `flow` prints a
-single plain line instead of starting the TUI, so it is safe to pipe.
+when stdout is not a tty (a pipe, a script, a status bar) `flow` prints a
+single plain line instead of starting the tui, so it is safe to pipe.
 
 ### tmux
 
@@ -68,23 +68,23 @@ set -g status-right "#(flow --tiny --no-color)"
 
 ### waybar / polybar / sketchybar / i3blocks
 
-All of them can consume `flow --json-stream` or a fixed-width `--format` line.
-See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
+all of them can consume `flow --json-stream` or a fixed-width `--format` line.
+see [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
 
 ## features
 
-* **Mirrored Braille Waveform**: Download above the axis, upload below, rendered on a 2x4-dot braille canvas with a smooth interpolated crest
-* **Big Block Digits**: 5x5 bitmap hero numbers (timr-tui technique) — chunky enough to read at a glance, tabular so they never jitter
-* **Calm Motion**: Spring-driven value easing, an idle breathing pulse, a burst ripple, a pulsing link dot, a 180ms theme crossfade, and a skippable launch sequence — all disabled by `--no-anim`
-* **Time Windows**: `w` cycles 1m / 5m / 15m / 1h / 24h
-* **Scale Modes**: `S` cycles auto / linear / sqrt; `G` toggles the faint midpoint gridline
-* **Snapshot Export**: `s` writes the current frame as `.ansi` and `.txt`
-* **11 Built-in Themes**: `default`, `nord`, `dracula`, `gruvbox`, `forest`, `monochrome`, `catppuccin`, `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`
-* **Custom TOML Themes**: Load custom color schemes from your config directory (see [docs/themes.md](docs/themes.md))
-* **Text Streams First**: `--json`, `--json-stream`, and `--format` (see [docs/json.md](docs/json.md))
-* **No telemetry**: The only network call flow makes is a latency probe to your configured ping target
-* **Cross-Platform**: Linux, macOS, and Windows, on amd64 and arm64, built without cgo
-* **Pipes cleanly**: Not a TTY means a single plain line, so status bars never receive escape codes
+* **mirrored braille waveform**: download above the axis, upload below, rendered on a 2x4-dot braille canvas with a smooth interpolated crest
+* **big block digits**: 5x5 bitmap hero numbers (timr-tui technique), chunky enough to read at a glance, tabular so they never jitter
+* **calm motion**: spring-driven value easing, an idle breathing pulse, a burst ripple, a pulsing link dot, a 180ms theme crossfade, and a skippable launch sequence, all disabled by `--no-anim`
+* **time windows**: `w` cycles 1m / 5m / 15m / 1h / 24h
+* **scale modes**: `s` cycles auto / linear / sqrt; `g` toggles the faint midpoint gridline
+* **snapshot export**: `s` writes the current frame as `.ansi` and `.txt`
+* **11 built-in themes**: `default`, `nord`, `dracula`, `gruvbox`, `forest`, `monochrome`, `catppuccin`, `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`
+* **custom toml themes**: load custom color schemes from your config directory (see [docs/themes.md](docs/themes.md))
+* **text streams first**: `--json`, `--json-stream`, and `--format` (see [docs/json.md](docs/json.md))
+* **no telemetry**: the only network call flow makes is a latency probe to your configured ping target
+* **cross-platform**: linux, macos, and windows, on amd64 and arm64, built without cgo
+* **pipes cleanly**: not a tty means a single plain line, so status bars never receive escape codes
 
 ## keys
 
@@ -96,25 +96,25 @@ See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
 | `t` | theme selector |
 | `n` | network processes inspector |
 | `i` | cycle network interface |
-| `I` | interface details |
-| `c` | cycle unit scale (auto / KB/s / MB/s / GB/s) |
+| `i` | interface details |
+| `c` | cycle unit scale (auto / kb/s / mb/s / gb/s) |
 | `b` | toggle bits/sec vs bytes/sec |
 | `+` / `-` | adjust sampling interval |
 | `p` | pause / resume sampling |
 | `r` | reset peak counters (press twice) |
-| `g` | open GitHub repository in browser |
-| `u` | open GitHub issues in browser |
-| `x` | open GitHub discussions in browser |
-| `$` / `v` | sponsor / donate on GitHub |
+| `g` | open github repository in browser |
+| `u` | open github issues in browser |
+| `x` | open github discussions in browser |
+| `$` / `v` | sponsor / donate on github |
 | `?` | help menu |
 | `w` | cycle time window (1m / 5m / 15m / 1h / 24h) |
 | `s` | export snapshot (`.ansi` + `.txt`) |
-| `S` | cycle graph scale (auto / linear / sqrt) |
-| `G` | toggle gridlines |
+| `s` | cycle graph scale (auto / linear / sqrt) |
+| `g` | toggle gridlines |
 
 ## configuration
 
-Created automatically on first run:
+created automatically on first run:
 
 ```text
 Linux    ~/.config/flow/config.toml
@@ -132,15 +132,15 @@ ping_target = "1.1.1.1"
 no_anim     = false   # disable animations
 ```
 
-### Environment variables
+### environment variables
 
 | variable | effect |
 | -------- | ------ |
-| `NO_COLOR` | disable all ANSI color |
-| `FLOW_REDUCE_MOTION=1` | reduced motion, same as `--no-anim` |
-| `FLOW_CONFIG` | config file path (default: XDG config dir) |
-| `FLOW_DATA` | directory for persisted daily totals (default: XDG config dir) |
-| `FLOW_GLYPHS` | force `braille`, `blocks`, or `ascii` waveform glyphs |
+| `no_color` | disable all ansi color |
+| `flow_reduce_motion=1` | reduced motion, same as `--no-anim` |
+| `flow_config` | config file path (default: xdg config dir) |
+| `flow_data` | directory for persisted daily totals (default: xdg config dir) |
+| `flow_glyphs` | force `braille`, `blocks`, or `ascii` waveform glyphs |
 
 ## development
 
@@ -152,4 +152,4 @@ make build
 
 ## license
 
-MIT
+mit
