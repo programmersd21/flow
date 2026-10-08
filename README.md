@@ -37,6 +37,10 @@ Make sure `$(go env GOPATH)/bin` is on your `PATH`, otherwise your shell
 won't find the new binary (and a stale copy elsewhere can shadow it —
 `make install` warns about both).
 
+`--version` reports the real release for every install method: builds carry an
+injected version, and `go install` falls back to the module version recorded in
+the binary.
+
 or download a binary from [releases](https://github.com/programmersd21/flow/releases).
 
 ## usage
@@ -78,8 +82,9 @@ See [docs/integrations.md](docs/integrations.md) for copy-paste snippets.
 * **11 Built-in Themes**: `default`, `nord`, `dracula`, `gruvbox`, `forest`, `monochrome`, `catppuccin`, `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`
 * **Custom TOML Themes**: Load custom color schemes from your config directory (see [docs/themes.md](docs/themes.md))
 * **Text Streams First**: `--json`, `--json-stream`, and `--format` (see [docs/json.md](docs/json.md))
-* **Zero Overhead**: No telemetry, no network calls except the ping target, no cgo in the core path
-* **Cross-Platform**: Linux, macOS, and Windows support
+* **No telemetry**: The only network call flow makes is a latency probe to your configured ping target
+* **Cross-Platform**: Linux, macOS, and Windows, on amd64 and arm64, built without cgo
+* **Pipes cleanly**: Not a TTY means a single plain line, so status bars never receive escape codes
 
 ## keys
 
@@ -127,9 +132,15 @@ ping_target = "1.1.1.1"
 no_anim     = false   # disable animations
 ```
 
-Environment variables: `NO_COLOR`, `FLOW_REDUCE_MOTION=1` (reduced motion),
-`FLOW_CONFIG` (override the config file path), `FLOW_GLYPHS` (force
-`braille` / `blocks` / `ascii` waveform glyphs).
+### Environment variables
+
+| variable | effect |
+| -------- | ------ |
+| `NO_COLOR` | disable all ANSI color |
+| `FLOW_REDUCE_MOTION=1` | reduced motion, same as `--no-anim` |
+| `FLOW_CONFIG` | config file path (default: XDG config dir) |
+| `FLOW_DATA` | directory for persisted daily totals (default: XDG config dir) |
+| `FLOW_GLYPHS` | force `braille`, `blocks`, or `ascii` waveform glyphs |
 
 ## development
 

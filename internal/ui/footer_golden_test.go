@@ -24,9 +24,9 @@ func TestFooterGoldenContract(t *testing.T) {
 		downHist:        history.New(60),
 		upHist:          history.New(60),
 		refreshInterval: 100 * time.Millisecond,
-		lastSampleTime:  time.Now(),
+		rates:           rateState{lastSample: time.Now()},
 		viewMode:        ViewHero,
-		ifaceName:       "wlan0",
+		iface:           ifaceState{name: "wlan0"},
 	}
 
 	lines := dashboardContentLines(m, ViewHero)
@@ -56,8 +56,7 @@ func TestTinyModeGoldenContract(t *testing.T) {
 		width:    80,
 		height:   24,
 		viewMode: ViewTiny,
-		animDown: 2048, // 2 KB/s
-		animUp:   1024, // 1 KB/s
+		rates:    rateState{animDown: 2048, animUp: 1024}, // 2 KB/s down, 1 KB/s up
 	}
 	out := renderTiny(m)
 	clean := stripANSI(out)

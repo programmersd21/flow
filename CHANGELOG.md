@@ -1,3 +1,69 @@
+## [0.3.3] - 2026-10-04
+
+Quality and reliability release. No new user-facing features.
+
+### Fixed
+- **Auto interface selection followed lifetime byte totals.** With the default
+  `interface = "auto"`, flow ranked interfaces by cumulative bytes since boot. On
+  a machine with a long-lived high-traffic NIC that later sits idle, flow
+  watched the wrong interface and reported its background traffic, so a
+  throughput test on another interface appeared to read a few KB/s. Selection is
+  now based on current rate, with hysteresis (a challenger must be 3x busier and
+  above an 8 KiB/s floor) so the display does not flicker between interfaces.
+- **`truncate` panicked on a non-positive width.** Any caller that computed a
+  narrow column budget could crash the UI with a slice-bounds error.
+- **`renderHelp` could loop forever on a narrow terminal.** Row shrinking
+  delegated to `truncate`, which floors at one rune, so a terminal too narrow to
+  hold the key column never terminated the loop.
+- **Overlays drew wider than the terminal.** The help, processes, interface and
+  theme overlays forced a minimum box width, so opening one on a narrow terminal
+  wrapped and corrupted the display. All overlays now share a width- and
+  height-clamped box helper.
+- **Content wider than the terminal was not clipped.** `centerInline` returned
+  overflowing lines untouched instead of clipping them.
+- **Absurdly large rates produced a ten-character number**, breaking the four
+  character budget the hero layout is built around. Units now extend to PB/s and
+  the value saturates.
+- **`--interface` with an unknown name** now reports the available interfaces
+  instead of a bare "not found".
+- **`FLOW_DATA`** relocates the persisted daily totals, matching `FLOW_CONFIG`,
+  so tests and sandboxed setups no longer touch real user data.
+
+### Changed
+- `ui.Model` no longer carries 65 independent fields. Sampling values, spring
+  animation, scaling ceilings and pulses are grouped into `rateState`; overlay
+  visibility into `overlayState`; interface tracking into `ifaceState`. `Model`
+  coordinates them rather than owning each concern directly.
+- `sampler.Sampler` depends on a `collector.Reader` interface rather than a
+  concrete collector, which is what makes counter behaviour testable.
+- `make check` is now a single gate: gofmt check, go vet, golangci-lint, tests,
+  the race detector, and a build. `make fuzz` runs the fuzz targets.
+- Golden frames tolerate a small number of braille-cell differences. Go's `math`
+  package does not guarantee bit-identical results across architectures, and the
+  waveform ends in `math.Pow`; a single-ulp difference can flip one dot. Every
+  non-braille rune is still compared exactly, so a real regression fails hard.
+
+### Added
+- CLI contract tests that build the binary and exercise every flag, the invalid
+  input paths, and the exit codes, with stdout and stderr assertions.
+- Sampler tests covering rate arithmetic, idle links, counter resets, uint64
+  wraparound, read errors, context cancellation, and that a stalled consumer
+  cannot block the sampler.
+- Collector tests for the rate-based selection policy, hysteresis, vanished
+  interfaces, and virtual-interface exclusion.
+- Fuzz targets for hero layout, number formatting, byte formatting, and
+  truncation.
+- Terminal robustness tests across 13 widths by 10 heights for every mode, plus
+  hostile state (NaN, infinities, huge and tiny rates, long and Unicode names).
+- Overlay tests asserting no overlay exceeds its terminal.
+- History tests for the `FLOW_DATA` override.
+
+### Versioning
+- `--version` no longer depends on a hardcoded string. It uses the injected
+  build value, falling back to the module version recorded in the binary, so
+  `go install` (which applies no ldflags) reports the real version instead of a
+  stale one.
+
 ## [0.3.2] - 2026-10-04
 
 ### Added

@@ -83,71 +83,100 @@ const (
 	UnitGB
 )
 
+// rateState is the pipeline that turns raw samples into what the screen shows:
+// the sampled value, its spring animation, a decaying ceiling for scaling, and
+// the short-lived pulses used for emphasis. Keeping it together makes the value
+// pipeline legible in one place.
+type rateState struct {
+	// disp is the latest sampled rate.
+	dispDown, dispUp float64
+	// anim is the spring-animated value actually rendered.
+	animDown, animUp float64
+	// spring velocity, carried between ticks.
+	velDown, velUp float64
+	// rollingMax decays so the graph ceiling follows recent peaks rather than
+	// a single spike seen hours ago.
+	rollingMaxDown, rollingMaxUp float64
+	// pulses decay after a peak and are used for emphasis.
+	samplePulse, downPulse, upPulse float64
+	// lastSample is when the newest sample arrived, for scroll and staleness.
+	lastSample  time.Time
+	pingLatency time.Duration
+}
+
+// overlayState is whatever is drawn on top of the dashboard. It answers exactly
+// one question — what does the user see right now — and nothing else.
+type overlayState struct {
+	help        bool
+	helpScroll  int
+	processes   bool
+	themes      bool
+	themeIndex  int
+	themeBefore string
+	iface       bool
+	ifaceDetail *collector.InterfaceDetail
+	toast       string
+	toastAt     time.Time
+}
+
+// ifaceState tracks which interface is being displayed and what else exists.
+type ifaceState struct {
+	all  []string
+	idx  int
+	name string
+}
+
+// Model is the dashboard state and the single owner of UI state. It receives
+// samples and key presses from Bubble Tea and renders a view; it owns no
+// sampling of its own — the sampler goroutine owns cadence and the collector
+// owns OS access.
 type Model struct {
 	keys KeyMap
 	cfg  config.Config
 
+	// sampling: the sampler goroutine produces into smp.Out.
 	smp        *sampler.Sampler
 	samplerCtx context.CancelFunc
 
-	ifaces    []string
-	ifaceIdx  int
-	ifaceName string
-
-	dispDown, dispUp       float64
-	animDown, animUp       float64
-	animDownVel, animUpVel float64
-
-	rollingMaxDown, rollingMaxUp float64
+	rates rateState
+	over  overlayState
+	iface ifaceState
 
 	downHist *history.Ring
 	upHist   *history.Ring
 	tracker  *history.Tracker
+	procs    []processes.Info
 
-	paused                 bool
-	showHelp               bool
-	helpScroll             int
-	showProcesses          bool
-	showThemes             bool
-	themeSelectionIdx      int
-	themeSelectionOriginal string
-	unitMode               UnitMode
-	viewMode               ViewMode
-	bitsMode               bool
-	displayFilter          DisplayFilter
-	procs                  []processes.Info
+	viewMode      ViewMode
+	unitMode      UnitMode
+	displayFilter DisplayFilter
+	bitsMode      bool
+	paused        bool
 
 	width, height   int
 	refreshInterval time.Duration
-	lastSampleTime  time.Time
 
-	samplePulse     float64
-	downPulse       float64
-	upPulse         float64
-	pingLatency     time.Duration
-	ifaceDetails    *collector.InterfaceDetail
-	showIfaceDetail bool
-	resetConfirm    bool
-	resetConfirmAt  time.Time
-	err             error
+	resetConfirm   bool
+	resetConfirmAt time.Time
+	err            error
 
-	// v0.4.0 additions
-	windowSecs   int             // graph time window in seconds (w key cycles)
-	windowIdx    int             // index into timeWindows
-	noAnim       bool            // disable all animation (reduced motion)
-	launchStart  time.Time       // launch animation start time
-	launchDone   bool            // launch animation finished/skipped
-	nowOverride  time.Time       // test hook: fixed clock for deterministic frames
-	rippleDownAt time.Time       // last download burst ripple trigger
-	rippleUpAt   time.Time       // last upload burst ripple trigger
-	toast        string          // transient toast message
-	toastAt      time.Time       // when the toast was shown
-	scaleMode    int             // S: 0 = auto (gentle curve), 1 = linear, 2 = sqrt
-	showGrid     bool            // G: toggle 25/50/75% gridlines
-	glyphSet     render.GlyphSet // waveform glyphs from ui.glyphs
-	colorCap     render.ColorCap // terminal color capability
-	themeFadeAt  time.Time       // when a theme crossfade started
-	themeFading  bool            // crossfade in progress
+	// graph presentation
+	windowSecs  int
+	windowIdx   int
+	scaleMode   int
+	showGrid    bool
+	noAnim      bool
+	glyphSet    render.GlyphSet
+	colorCap    render.ColorCap
+	launchStart time.Time
+	launchDone  bool
+	themeFadeAt time.Time
+	themeFading bool
+
+	// rippleDownAt and rippleUpAt mark the last burst on each direction.
+	rippleDownAt, rippleUpAt time.Time
+	// nowOverride fixes the clock in tests so frames are deterministic.
+	nowOverride time.Time
 }
 
 func New(
@@ -190,6 +219,7 @@ func New(
 	}
 	colorCap := render.DetectColorCap(cfg.NoColor)
 
+	now := time.Now()
 	return Model{
 		keys:            DefaultKeyMap(),
 		glyphSet:        glyphSet,
@@ -197,8 +227,7 @@ func New(
 		cfg:             cfg,
 		smp:             smp,
 		samplerCtx:      cancelFn,
-		ifaces:          ifaces,
-		ifaceName:       initialIface,
+		iface:           ifaceState{all: ifaces, name: initialIface},
 		downHist:        history.New(histCap),
 		upHist:          history.New(histCap),
 		tracker:         loadTracker(),
@@ -206,12 +235,11 @@ func New(
 		viewMode:        forced,
 		bitsMode:        cfg.Bits,
 		refreshInterval: cfg.RefreshDuration(),
-		lastSampleTime:  time.Now(),
-		samplePulse:     1.0,
+		rates:           rateState{lastSample: now, samplePulse: 1.0},
 		windowSecs:      cfg.WindowSeconds(),
 		showGrid:        cfg.GridlinesEnabled(),
 		noAnim:          noAnim,
-		launchStart:     time.Now(),
+		launchStart:     now,
 		launchDone:      noAnim || !cfg.LaunchAnimationEnabled(),
 	}
 }
@@ -246,11 +274,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
-		m.samplePulse = math.Max(0, m.samplePulse-0.15)
-		m.downPulse = math.Max(0, m.downPulse-0.1)
-		m.upPulse = math.Max(0, m.upPulse-0.1)
-		m.animDown = animate.Spring(m.animDown, m.dispDown, &m.animDownVel, 0.13)
-		m.animUp = animate.Spring(m.animUp, m.dispUp, &m.animUpVel, 0.13)
+		m.rates.samplePulse = math.Max(0, m.rates.samplePulse-0.15)
+		m.rates.downPulse = math.Max(0, m.rates.downPulse-0.1)
+		m.rates.upPulse = math.Max(0, m.rates.upPulse-0.1)
+		m.rates.animDown = animate.Spring(m.rates.animDown, m.rates.dispDown, &m.rates.velDown, 0.13)
+		m.rates.animUp = animate.Spring(m.rates.animUp, m.rates.dispUp, &m.rates.velUp, 0.13)
 		if m.resetConfirm && time.Since(m.resetConfirmAt) > resetConfirmTimeout {
 			m.resetConfirm = false
 		}
@@ -261,16 +289,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.themeFading = false
 			theme.SetCrossfade(false)
 		}
-		if m.toast != "" && time.Since(m.toastAt) > 1500*time.Millisecond {
-			m.toast = ""
+		if m.over.toast != "" && time.Since(m.over.toastAt) > 1500*time.Millisecond {
+			m.over.toast = ""
 		}
 		return m, tick()
 
 	case ifaceDetailMsg:
 		if msg.err != nil {
-			m.showIfaceDetail = false
+			m.over.iface = false
 		} else {
-			m.ifaceDetails = msg.detail
+			m.over.ifaceDetail = msg.detail
 		}
 		return m, nil
 
@@ -279,7 +307,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case pingMsg:
-		m.pingLatency = time.Duration(msg)
+		m.rates.pingLatency = time.Duration(msg)
 		return m, m.pingTick()
 
 	case sampleMsg:
@@ -289,13 +317,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if !m.paused {
-			m.samplePulse = 1.0
-			m.lastSampleTime = time.Now()
+			m.rates.samplePulse = 1.0
+			m.rates.lastSample = time.Now()
 			if msg.DownBps > m.tracker.PeakDown && m.tracker.PeakDown > 0 {
-				m.downPulse = 1.0
+				m.rates.downPulse = 1.0
 			}
 			if msg.UpBps > m.tracker.PeakUp && m.tracker.PeakUp > 0 {
-				m.upPulse = 1.0
+				m.rates.upPulse = 1.0
 			}
 
 			// Burst detection: sample > 3x trailing median and above 50 KB/s floor.
@@ -311,13 +339,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			m.dispDown = msg.DownBps
-			m.dispUp = msg.UpBps
+			m.rates.dispDown = msg.DownBps
+			m.rates.dispUp = msg.UpBps
 			m.tracker.Record(msg.DownBps, msg.UpBps, m.refreshInterval.Seconds())
 			m.downHist.Push(msg.DownBps)
 			m.upHist.Push(msg.UpBps)
 			m.updateRollingMax(msg.DownBps, msg.UpBps)
-			m.ifaceName = msg.Interface
+			m.iface.name = msg.Interface
 		}
 		return m, waitForSample(m.smp.Out)
 	}
@@ -331,33 +359,33 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.launchDone = true
 	}
 
-	if m.showThemes {
+	if m.over.themes {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			m.samplerCtx()
 			_ = m.tracker.Save()
 			return m, tea.Quit
 		case "esc":
-			theme.SetTheme(m.themeSelectionOriginal)
-			m.showThemes = false
+			theme.SetTheme(m.over.themeBefore)
+			m.over.themes = false
 			return m, nil
 		case "up", "k":
 			themes := theme.ListThemes()
-			m.themeSelectionIdx = (m.themeSelectionIdx - 1 + len(themes)) % len(themes)
-			theme.SetTheme(themes[m.themeSelectionIdx].Name)
+			m.over.themeIndex = (m.over.themeIndex - 1 + len(themes)) % len(themes)
+			theme.SetTheme(themes[m.over.themeIndex].Name)
 			return m, nil
 		case "down", "j":
 			themes := theme.ListThemes()
-			m.themeSelectionIdx = (m.themeSelectionIdx + 1) % len(themes)
-			theme.SetTheme(themes[m.themeSelectionIdx].Name)
+			m.over.themeIndex = (m.over.themeIndex + 1) % len(themes)
+			theme.SetTheme(themes[m.over.themeIndex].Name)
 			return m, nil
 		case "enter":
 			themes := theme.ListThemes()
-			selectedTheme := themes[m.themeSelectionIdx].Name
+			selectedTheme := themes[m.over.themeIndex].Name
 			m.cfg.Theme = selectedTheme
 			_ = config.Save(m.cfg)
-			m.showThemes = false
-			if !m.noAnim && selectedTheme != m.themeSelectionOriginal {
+			m.over.themes = false
+			if !m.noAnim && selectedTheme != m.over.themeBefore {
 				m.themeFading = true
 				m.themeFadeAt = time.Now()
 				theme.SetCrossfade(true)
@@ -367,34 +395,34 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if m.showHelp {
+	if m.over.help {
 		switch msg.String() {
 		case "esc", "?", "q":
-			m.showHelp = false
-			m.helpScroll = 0
+			m.over.help = false
+			m.over.helpScroll = 0
 			return m, nil
 		case "up", "k":
-			if m.helpScroll > 0 {
-				m.helpScroll--
+			if m.over.helpScroll > 0 {
+				m.over.helpScroll--
 			}
 			return m, nil
 		case "down", "j":
-			m.helpScroll++
+			m.over.helpScroll++
 			return m, nil
 		case "pgup":
-			m.helpScroll -= 5
-			if m.helpScroll < 0 {
-				m.helpScroll = 0
+			m.over.helpScroll -= 5
+			if m.over.helpScroll < 0 {
+				m.over.helpScroll = 0
 			}
 			return m, nil
 		case "pgdown", " ":
-			m.helpScroll += 5
+			m.over.helpScroll += 5
 			return m, nil
 		case "home":
-			m.helpScroll = 0
+			m.over.helpScroll = 0
 			return m, nil
 		case "end":
-			m.helpScroll = 1 << 30 // clamped in render
+			m.over.helpScroll = 1 << 30 // clamped in render
 			return m, nil
 		}
 		// Swallow all other keys so view-mode / quit / etc. don't fire
@@ -402,10 +430,10 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if m.showHelp && msg.String() != "ctrl+c" {
+	if m.over.help && msg.String() != "ctrl+c" {
 		switch msg.String() {
 		case "esc", "?", "q":
-			m.showHelp = false
+			m.over.help = false
 			return m, nil
 		}
 		// Modal overlay: swallow other keys so view-mode/quit actions
@@ -414,16 +442,16 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	if key.Matches(msg, m.keys.Esc) {
-		if m.showIfaceDetail {
-			m.showIfaceDetail = false
+		if m.over.iface {
+			m.over.iface = false
 			return m, nil
 		}
-		if m.showHelp {
-			m.showHelp = false
+		if m.over.help {
+			m.over.help = false
 			return m, nil
 		}
-		if m.showProcesses {
-			m.showProcesses = false
+		if m.over.processes {
+			m.over.processes = false
 			return m, nil
 		}
 		if m.resetConfirm {
@@ -439,22 +467,22 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case key.Matches(msg, m.keys.Help):
-		if !m.showHelp {
-			m.showHelp = true
-			m.helpScroll = 0
-			m.showProcesses = false
+		if !m.over.help {
+			m.over.help = true
+			m.over.helpScroll = 0
+			m.over.processes = false
 		} else {
-			m.showHelp = false
-			m.helpScroll = 0
+			m.over.help = false
+			m.over.helpScroll = 0
 		}
 
 	case key.Matches(msg, m.keys.Mode):
 		m.viewMode = (m.viewMode + 1) % 4
 
 	case key.Matches(msg, m.keys.Processes):
-		if !m.showProcesses {
-			m.showProcesses = true
-			m.showHelp = false
+		if !m.over.processes {
+			m.over.processes = true
+			m.over.help = false
 			return m, refreshProcesses()
 		}
 
@@ -462,22 +490,22 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.paused = !m.paused
 
 	case key.Matches(msg, m.keys.Reset):
-		if m.toast != "" && time.Since(m.toastAt) > resetConfirmTimeout {
+		if m.over.toast != "" && time.Since(m.over.toastAt) > resetConfirmTimeout {
 			// a stale toast must not mask the two-press flow
-			m.toast = ""
+			m.over.toast = ""
 		}
 		if m.resetConfirm {
 			m.tracker.ResetPeaks()
 			m.tracker.TodayDown = 0
 			m.tracker.TodayUp = 0
-			m.rollingMaxDown = 0
-			m.rollingMaxUp = 0
-			m.dispDown = 0
-			m.dispUp = 0
+			m.rates.rollingMaxDown = 0
+			m.rates.rollingMaxUp = 0
+			m.rates.dispDown = 0
+			m.rates.dispUp = 0
 			m.downHist.Reset()
 			m.upHist.Reset()
-			m.downPulse = 0
-			m.upPulse = 0
+			m.rates.downPulse = 0
+			m.rates.upPulse = 0
 			m.resetConfirm = false
 		} else {
 			m.resetConfirm = true
@@ -488,21 +516,21 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.unitMode = (m.unitMode + 1) % 4
 
 	case key.Matches(msg, m.keys.InterfaceInfo):
-		m.showIfaceDetail = true
-		return m, refreshIfaceDetails(m.ifaceName)
+		m.over.iface = true
+		return m, refreshIfaceDetails(m.iface.name)
 
 	case key.Matches(msg, m.keys.Interface):
-		if len(m.ifaces) <= 1 {
-			m.showIfaceDetail = true
-			return m, refreshIfaceDetails(m.ifaceName)
+		if len(m.iface.all) <= 1 {
+			m.over.iface = true
+			return m, refreshIfaceDetails(m.iface.name)
 		}
-		m.ifaceIdx = (m.ifaceIdx + 1) % len(m.ifaces)
-		newIface := m.ifaces[m.ifaceIdx]
-		m.ifaceName = newIface
-		m.dispDown = 0
-		m.dispUp = 0
-		m.rollingMaxDown = 0
-		m.rollingMaxUp = 0
+		m.iface.idx = (m.iface.idx + 1) % len(m.iface.all)
+		newIface := m.iface.all[m.iface.idx]
+		m.iface.name = newIface
+		m.rates.dispDown = 0
+		m.rates.dispUp = 0
+		m.rates.rollingMaxDown = 0
+		m.rates.rollingMaxUp = 0
 		m.downHist = history.New(m.downHist.Cap())
 		m.upHist = history.New(m.upHist.Cap())
 		m.samplerCtx()
@@ -525,22 +553,22 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(msg, m.keys.Snapshot):
 		if path, err := m.exportSnapshot(); err == nil {
-			m.toast = "saved " + path
-			m.toastAt = time.Now()
+			m.over.toast = "saved " + path
+			m.over.toastAt = time.Now()
 		} else {
-			m.toast = "export failed"
-			m.toastAt = time.Now()
+			m.over.toast = "export failed"
+			m.over.toastAt = time.Now()
 		}
 
 	case key.Matches(msg, m.keys.Scale):
 		m.scaleMode = (m.scaleMode + 1) % 3
-		m.toast = "scale: " + scaleModeName(m.scaleMode)
-		m.toastAt = time.Now()
+		m.over.toast = "scale: " + scaleModeName(m.scaleMode)
+		m.over.toastAt = time.Now()
 
 	case key.Matches(msg, m.keys.Grid):
 		m.showGrid = !m.showGrid
-		m.toast = "gridlines: " + onOff(m.showGrid)
-		m.toastAt = time.Now()
+		m.over.toast = "gridlines: " + onOff(m.showGrid)
+		m.over.toastAt = time.Now()
 
 	case key.Matches(msg, m.keys.Faster), msg.String() == "+", msg.String() == "=", msg.String() == "kp+":
 		m.adjustRefreshInterval(true)
@@ -551,13 +579,13 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, waitForSample(m.smp.Out)
 
 	case key.Matches(msg, m.keys.Themes):
-		m.showThemes = true
-		m.themeSelectionOriginal = m.cfg.Theme
+		m.over.themes = true
+		m.over.themeBefore = m.cfg.Theme
 		themes := theme.ListThemes()
-		m.themeSelectionIdx = 0
+		m.over.themeIndex = 0
 		for i, t := range themes {
 			if t.Name == m.cfg.Theme {
-				m.themeSelectionIdx = i
+				m.over.themeIndex = i
 				break
 			}
 		}
@@ -624,7 +652,7 @@ func (m *Model) adjustRefreshInterval(faster bool) {
 		m.samplerCtx()
 		ctx, cancel := context.WithCancel(context.Background())
 		m.samplerCtx = cancel
-		col := collector.New(m.ifaceName)
+		col := collector.New(m.iface.name)
 		m.smp = sampler.New(col, m.refreshInterval)
 		go m.smp.Run(ctx)
 	}
@@ -632,16 +660,16 @@ func (m *Model) adjustRefreshInterval(faster bool) {
 
 func (m Model) View() string {
 	// Overlays take precedence
-	if m.showThemes {
+	if m.over.themes {
 		return renderThemes(m)
 	}
-	if m.showHelp {
+	if m.over.help {
 		return renderHelp(m)
 	}
-	if m.showProcesses {
+	if m.over.processes {
 		return renderProcesses(m)
 	}
-	if m.showIfaceDetail {
+	if m.over.iface {
 		return renderIfaceDetails(m)
 	}
 
@@ -695,13 +723,13 @@ func trailingMedian(r *history.Ring) float64 {
 
 func (m *Model) updateRollingMax(down, up float64) {
 	const decay = 0.995
-	m.rollingMaxDown *= decay
-	m.rollingMaxUp *= decay
-	if down > m.rollingMaxDown {
-		m.rollingMaxDown = down
+	m.rates.rollingMaxDown *= decay
+	m.rates.rollingMaxUp *= decay
+	if down > m.rates.rollingMaxDown {
+		m.rates.rollingMaxDown = down
 	}
-	if up > m.rollingMaxUp {
-		m.rollingMaxUp = up
+	if up > m.rates.rollingMaxUp {
+		m.rates.rollingMaxUp = up
 	}
 }
 

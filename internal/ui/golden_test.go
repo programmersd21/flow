@@ -58,25 +58,29 @@ func goldenModel(w, h int) Model {
 	tr.TodayDown = 16_900_000
 	tr.TodayUp = 70_300_000
 	return Model{
-		width:           w,
-		height:          h,
-		animDown:        lastDown,
-		animUp:          lastUp,
-		rollingMaxDown:  peakDown,
-		rollingMaxUp:    peakUp,
+		width:  w,
+		height: h,
+		rates: rateState{
+			lastSample:     time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC),
+			pingLatency:    46 * time.Millisecond,
+			animDown:       lastDown,
+			animUp:         lastUp,
+			rollingMaxDown: peakDown,
+			rollingMaxUp:   peakUp,
+		},
 		downHist:        dh,
 		upHist:          uh,
 		tracker:         tr,
 		refreshInterval: 100 * time.Millisecond,
-		lastSampleTime:  time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC),
-		nowOverride:     time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC),
-		viewMode:        ViewHero,
-		ifaceName:       "wlan0",
-		pingLatency:     46 * time.Millisecond,
-		windowSecs:      60,
-		showGrid:        true,
-		noAnim:          true, // static frames for goldens
-		launchDone:      true,
+
+		nowOverride: time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC),
+		viewMode:    ViewHero,
+		iface:       ifaceState{name: "wlan0"},
+
+		windowSecs: 60,
+		showGrid:   true,
+		noAnim:     true, // static frames for goldens
+		launchDone: true,
 	}
 }
 

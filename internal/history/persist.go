@@ -15,17 +15,27 @@ type statsData struct {
 	Day       int     `json:"day"`
 }
 
-var statsPath = func() (string, error) {
-	base, err := os.UserConfigDir()
-	if err != nil {
-		home, err2 := os.UserHomeDir()
-		if err2 != nil {
-			return "", err2
+// statsPath returns the file used to persist daily totals.
+//
+// FLOW_DATA overrides the location. Without it the path follows the platform
+// convention under the user config dir. The override exists for the same reason
+// as FLOW_CONFIG: so tests, and anyone who wants flow's data kept apart from
+// its config, can point it somewhere else.
+func statsPath() (string, error) {
+	base := os.Getenv("FLOW_DATA")
+	if base == "" {
+		var err error
+		base, err = os.UserConfigDir()
+		if err != nil {
+			home, err2 := os.UserHomeDir()
+			if err2 != nil {
+				return "", err2
+			}
+			base = filepath.Join(home, ".config")
 		}
-		base = filepath.Join(home, ".config")
 	}
 	dir := filepath.Join(base, "flow")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, "stats.json"), nil

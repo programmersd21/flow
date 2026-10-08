@@ -25,7 +25,7 @@ type entry struct {
 const windowSlots = 4
 
 type Sampler struct {
-	col      *collector.Collector
+	col      collector.Reader
 	interval time.Duration
 	Out      chan Sample
 
@@ -37,7 +37,9 @@ type Sampler struct {
 	dtSum float64
 }
 
-func New(col *collector.Collector, interval time.Duration) *Sampler {
+// New returns a sampler reading counters from col. Sampling cadence is set by
+// interval; Out carries every computed Sample.
+func New(col collector.Reader, interval time.Duration) *Sampler {
 	return &Sampler{
 		col:      col,
 		interval: interval,

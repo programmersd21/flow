@@ -127,7 +127,7 @@ func TestDrawPeakHoldLeftColumnOnlyIsGone(t *testing.T) {
 }
 
 func TestRenderWaveformMirroredSymmetry(t *testing.T) {
-	m := baseModel(96, 40)
+	m := baseModel(t, 96, 40)
 	for i := 0; i < 200; i++ {
 		m.downHist.Push(float64(5000 + i*10))
 		m.upHist.Push(float64(3000 + i*5))

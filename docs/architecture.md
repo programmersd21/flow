@@ -122,3 +122,35 @@ Contracts enforced by tests and should not be broken:
 - **`TestFooterGoldenContract`** locks the exact footer bytes of the home screen.
 - **`TestGoldenHeroFrames`** snapshots the hero view at 60x20, 80x24, 100x30,
   and 140x40 from deterministic synthetic data.
+
+## UI state
+
+`ui.Model` coordinates application state rather than owning each concern
+directly. Three small state groups keep the value pipeline and the overlay
+model legible in one place:
+
+| group | holds |
+| ----- | ----- |
+| `rateState` | sampled values, spring animation, decaying scale ceiling, emphasis pulses, ping |
+| `overlayState` | which modal is visible, its scroll/theme cursor, and the toast |
+| `ifaceState` | the interface list, the selected index, and its name |
+
+`Model` keeps presentation knobs (window, scale mode, glyph set, colour
+capability) directly, since only the view reads them.
+
+## Concurrency and ownership
+
+```
+collector goroutine (sampler)  owns OS counter access and sampling cadence
+    └── reads interface counters, emits Sample on a buffered channel
+Bubble Tea loop (UI)           owns all UI state, renders, handles keys
+    └── commands run on Bubble Tea's own goroutines and return messages
+```
+
+There is no shared mutable state: the sampler writes only to its own channel,
+and the UI reads from it. Every UI mutation happens on the Bubble Tea loop, so
+the `go test -race` suite runs without suppressions.
+
+`sampler.New` takes a `collector.Reader` interface, so counter behaviour —
+idle links, resets, `uint64` wraparound — is tested against scripted readings
+rather than a live interface.

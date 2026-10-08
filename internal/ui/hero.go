@@ -607,8 +607,8 @@ func renderHeroStats(m Model, width int) string {
 	}
 	line := theme.TextDim().Render("today") + sep + strings.Join(parts, sep)
 
-	if m.pingLatency > 0 {
-		ms := m.pingLatency.Seconds() * 1000
+	if m.rates.pingLatency > 0 {
+		ms := m.rates.pingLatency.Seconds() * 1000
 		line += sep + theme.TextDim().Render("ping") + " " +
 			latencyStyle(ms).Render(fmt.Sprintf("%.0fms", ms))
 	}
@@ -638,14 +638,14 @@ func renderHeroStats(m Model, width int) string {
 func renderHeroHeader(m Model, width int) string {
 	sep := theme.TextDim().Render(" · ")
 
-	parts := []string{TitleRow(m.samplePulse)}
+	parts := []string{TitleRow(m.rates.samplePulse)}
 
 	// Link dot pulses with live traffic: dim at idle, accent when moving.
 	dotStyle := theme.TextDim()
-	if m.animDown > 1000 || m.animUp > 1000 {
-		dotStyle = theme.DownloadColor(0.5 + 0.5*m.samplePulse)
+	if m.rates.animDown > 1000 || m.rates.animUp > 1000 {
+		dotStyle = theme.DownloadColor(0.5 + 0.5*m.rates.samplePulse)
 	}
-	parts = append(parts, dotStyle.Render("●")+theme.TextDim().Render(" ")+theme.Muted().Render(m.ifaceName))
+	parts = append(parts, dotStyle.Render("●")+theme.TextDim().Render(" ")+theme.Muted().Render(m.iface.name))
 
 	// Surface the display filter next to the interface. Without this, hiding a
 	// direction (the `d` key) made half the graph vanish with no explanation
@@ -663,8 +663,8 @@ func renderHeroHeader(m Model, width int) string {
 			theme.UploadColor(0.45).Render("paused"))
 	}
 
-	if m.pingLatency > 0 {
-		ms := m.pingLatency.Seconds() * 1000
+	if m.rates.pingLatency > 0 {
+		ms := m.rates.pingLatency.Seconds() * 1000
 		parts = append(parts, latencyStyle(ms).Render(fmt.Sprintf("%.0fms", ms)))
 	}
 
@@ -698,8 +698,8 @@ func miniContentLines(m Model, contentW, termH int) []string {
 	lines = append(lines, renderHeroHeader(m, contentW))
 	lines = append(lines, GapRow)
 
-	downNum := theme.DownStyle().Render("↓ " + m.FormatBps(m.animDown))
-	upNum := theme.UpStyle().Render("↑ " + m.FormatBps(m.animUp))
+	downNum := theme.DownStyle().Render("↓ " + m.FormatBps(m.rates.animDown))
+	upNum := theme.UpStyle().Render("↑ " + m.FormatBps(m.rates.animUp))
 	showDown := m.displayFilter != DisplayUpOnly
 	showUp := m.displayFilter != DisplayDownOnly
 	var numLine string
@@ -716,8 +716,8 @@ func miniContentLines(m Model, contentW, termH int) []string {
 
 	downSamples := render.Smooth(m.windowedSamples(m.downHist), m.cfg.Graph.Smoothing)
 	upSamples := render.Smooth(m.windowedSamples(m.upHist), m.cfg.Graph.Smoothing)
-	downCeil := graphScale(downSamples, maxf(m.rollingMaxDown, m.animDown))
-	upCeil := graphScale(upSamples, maxf(m.rollingMaxUp, m.animUp))
+	downCeil := graphScale(downSamples, maxf(m.rates.rollingMaxDown, m.rates.animDown))
+	upCeil := graphScale(upSamples, maxf(m.rates.rollingMaxUp, m.rates.animUp))
 	expo := scaleExponent(m.scaleMode)
 	now := time.Now()
 	if !m.nowOverride.IsZero() {
@@ -775,16 +775,16 @@ func heroContentLines(m Model, contentW, termW, termH int) []string {
 	// number and caption ties them together and adds the color the screen
 	// needs; leaving the caption grey made it read as unrelated chrome.
 	downCap := theme.DownloadColor(0.45).Render("peak ") +
-		theme.DownloadColor(0.7).Bold(true).Render(m.FormatBps(maxf(m.tracker.PeakDown, m.animDown)))
+		theme.DownloadColor(0.7).Bold(true).Render(m.FormatBps(maxf(m.tracker.PeakDown, m.rates.animDown)))
 	upCap := theme.UploadColor(0.45).Render("session ") +
 		theme.UploadColor(0.7).Bold(true).Render(formatBytes(m.tracker.TodayUp))
 
-	downBlock := renderHeroDigits(m.animDown*launchT, m.bitsMode, true)
-	upBlock := renderHeroDigits(m.animUp*launchT, m.bitsMode, false)
+	downBlock := renderHeroDigits(m.rates.animDown*launchT, m.bitsMode, true)
+	upBlock := renderHeroDigits(m.rates.animUp*launchT, m.bitsMode, false)
 	// The unit + arrow live on the caption row, so every digit row keeps the
 	// same width and the two blocks stay aligned.
-	downBlock = append(downBlock, renderHeroCaption(m.animDown*launchT, m.bitsMode, true, downCap))
-	upBlock = append(upBlock, renderHeroCaption(m.animUp*launchT, m.bitsMode, false, upCap))
+	downBlock = append(downBlock, renderHeroCaption(m.rates.animDown*launchT, m.bitsMode, true, downCap))
+	upBlock = append(upBlock, renderHeroCaption(m.rates.animUp*launchT, m.bitsMode, false, upCap))
 
 	showDown := m.displayFilter != DisplayUpOnly
 	showUp := m.displayFilter != DisplayDownOnly
@@ -809,8 +809,8 @@ func heroContentLines(m Model, contentW, termW, termH int) []string {
 	// Display-side EMA smoothing (raw samples stay raw for peaks/JSON/totals).
 	downSamples = render.Smooth(downSamples, m.cfg.Graph.Smoothing)
 	upSamples = render.Smooth(upSamples, m.cfg.Graph.Smoothing)
-	downCeil := graphScale(downSamples, maxf(m.rollingMaxDown, m.animDown))
-	upCeil := graphScale(upSamples, maxf(m.rollingMaxUp, m.animUp))
+	downCeil := graphScale(downSamples, maxf(m.rates.rollingMaxDown, m.rates.animDown))
+	upCeil := graphScale(upSamples, maxf(m.rates.rollingMaxUp, m.rates.animUp))
 	expo := scaleExponent(m.scaleMode)
 	if launchT < 1.0 {
 		downSamples = scaleSamples(downSamples, launchT)
@@ -873,9 +873,9 @@ func heroContentLines(m Model, contentW, termW, termH int) []string {
 	if m.scaleMode != 0 {
 		statusParts = append(statusParts, theme.TextDim().Render(scaleModeName(m.scaleMode)))
 	}
-	if m.toast != "" {
+	if m.over.toast != "" {
 		// A transient toast borrows this row so the footer never moves.
-		statusParts = []string{theme.Soft().Render(m.toast)}
+		statusParts = []string{theme.Soft().Render(m.over.toast)}
 	}
 	if len(statusParts) > 0 {
 		footerStyle := lipgloss.NewStyle().Width(contentW).Align(lipgloss.Center)

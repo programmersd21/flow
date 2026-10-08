@@ -6,6 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
+	"runtime/debug"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,7 +22,34 @@ import (
 	"github.com/programmersd21/flow/internal/ui"
 )
 
-var version = "0.3.2"
+// version is injected at build time with
+//
+//	-ldflags "-X main.version=$(cat VERSION)"
+//
+// which is what Makefile and GoReleaser do. Other builds (notably
+// "go install ...@latest", which applies no ldflags) fall back to the module
+// version recorded in the binary, so --version cannot silently report a stale
+// number that was hardcoded here.
+var version = "dev"
+
+// cleanSemver matches plain release versions, not pseudo-versions.
+var cleanSemver = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
+
+// buildVersion returns the version to display: the injected value when present,
+// otherwise the module version from build info, otherwise "dev".
+func buildVersion() string {
+	if v := strings.TrimSpace(version); v != "" && v != "dev" {
+		return v
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		// Only a real release tag is meaningful. Pseudo-versions from a local
+		// build (v0.3.3-0.2026...+dirty) would be noise in a status bar.
+		if v := strings.TrimPrefix(info.Main.Version, "v"); cleanSemver.MatchString(v) {
+			return v
+		}
+	}
+	return "dev"
+}
 
 func main() {
 	flagTiny := flag.Bool("tiny", false, "single-line mode for tmux/status bars")
@@ -50,7 +80,7 @@ func main() {
 	flag.Parse()
 
 	if *flagVersion {
-		fmt.Println("flow", version)
+		fmt.Println("flow", buildVersion())
 		return
 	}
 

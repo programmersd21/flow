@@ -113,15 +113,22 @@ func splitHeroNumber(val float64, bits bool) (string, string) {
 		val *= 8
 	}
 
-	units := []string{"B/s", "KB/s", "MB/s", "GB/s"}
+	units := []string{"B/s", "KB/s", "MB/s", "GB/s", "TB/s", "PB/s"}
 	if bits {
-		units = []string{"b/s", "Kb/s", "Mb/s", "Gb/s"}
+		units = []string{"b/s", "Kb/s", "Mb/s", "Gb/s", "Tb/s", "Pb/s"}
 	}
 
 	ui := 0
 	for val >= 1000 && ui < len(units)-1 {
 		val /= 1000
 		ui++
+	}
+	// Saturate at the largest unit. Without this, an implausibly large rate
+	// (or a fuzzed one) produced a ten-character number that broke the four
+	// character budget the hero layout is built around, pushing the digits out
+	// of their column.
+	if val > 9999 {
+		val = 9999
 	}
 
 	// Precision follows magnitude, then trailing zeros are stripped. Without

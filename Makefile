@@ -52,19 +52,7 @@ install:
 run: build
 	$(BUILDDIR)$(SEP)$(BINARY)
 
-## test: run the test suite
-test:
-	go test ./...
-
-## vet: run go vet
-vet:
-	go vet ./...
-
-## lint: run golangci-lint (must be installed separately)
-lint:
-	golangci-lint run ./...
-
-## tidy: tidy and vendor dependencies
+## tidy: tidy dependencies
 tidy:
 	go mod tidy
 
@@ -84,11 +72,54 @@ demo: build
 	fi
 
 ## check: format, vet, lint, and test
-check:
+## check: the one command that says whether a change is safe.
+## Runs formatting, vet, lint, tests, and the race detector.
+check: fmt-check vet lint test race build
+
+## fmt: rewrite sources with gofmt
+fmt:
 	go fmt ./...
+
+## fmt-check: fail if anything is unformatted (no writes)
+fmt-check:
+	@out=$$(gofmt -l . 2>/dev/null); \
+	if [ -n "$$out" ]; then \
+		echo "not gofmt'd:"; echo "$$out"; exit 1; \
+	fi
+
+## vet: run go vet
+vet:
 	go vet ./...
-	golangci-lint run ./...
+
+## lint: run golangci-lint if it is installed, otherwise say so and continue
+lint:
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run ./...; \
+	else \
+		echo "golangci-lint not installed; skipping (go install honnef.co/go/tools/cmd/staticcheck@latest)"; \
+	fi
+
+## vuln: check dependencies for known vulnerabilities, when the tool is present
+vuln:
+	@if command -v govulncheck >/dev/null 2>&1; then \
+		govulncheck ./...; \
+	else \
+		echo "govulncheck not installed; skipping"; \
+	fi
+
+## test: run the test suite
+test:
 	go test ./...
+
+## race: run the test suite under the race detector
+race:
+	go test -race ./...
+
+## fuzz: short fuzz run over the fuzz targets
+fuzz:
+	go test ./internal/ui -run '^$$' -fuzz FuzzHeroLayout -fuzztime 15s
+	go test ./internal/ui -run '^$$' -fuzz FuzzSplitHeroNumber -fuzztime 15s
+	go test ./internal/ui -run '^$$' -fuzz FuzzTruncate -fuzztime 15s
 
 ## help: print this message
 help:

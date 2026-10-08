@@ -3,41 +3,23 @@ package ui
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/programmersd21/flow/internal/history"
 	"github.com/programmersd21/flow/internal/theme"
 )
 
-func baseModel(w, h int) Model {
-	theme.SetTheme("default")
-	tr := history.NewTracker()
-	tr.PeakDown = 4_000_000
-	tr.PeakUp = 900_000
-	tr.TodayDown = 16_900_000
-	tr.TodayUp = 70_300_000
-	return Model{
-		width:           w,
-		height:          h,
-		animDown:        2_000_000,
-		animUp:          195_000,
-		rollingMaxDown:  4_000_000,
-		rollingMaxUp:    900_000,
-		downHist:        history.New(60),
-		upHist:          history.New(60),
-		tracker:         tr,
-		refreshInterval: 100 * time.Millisecond,
-		lastSampleTime:  time.Now(),
-		ifaceName:       "wlan0",
-		windowSecs:      60,
-		noAnim:          true,
-		launchDone:      true,
-	}
+// baseModel returns a ready-to-render model for view tests.
+func baseModel(t testing.TB, w, h int) Model {
+	t.Helper()
+	m := newTestModel(t, w, h)
+	m.rates.animDown = 2_000_000
+	m.rates.animUp = 195_000
+	return m
 }
 
 func TestWindowCycling(t *testing.T) {
-	m := baseModel(80, 24)
+	m := baseModel(t, 80, 24)
 	if m.windowSecs != 60 {
 		t.Fatalf("default window should be 60s, got %d", m.windowSecs)
 	}
@@ -57,7 +39,7 @@ func TestWindowCycling(t *testing.T) {
 }
 
 func TestHeroNarrowStacksDigits(t *testing.T) {
-	m := baseModel(60, 24)
+	m := baseModel(t, 60, 24)
 	lines := dashboardContentLines(m, ViewHero)
 	content := stripANSI(strings.Join(lines, "\n"))
 	if !strings.Contains(content, "peak") || !strings.Contains(content, "session") {
@@ -66,7 +48,7 @@ func TestHeroNarrowStacksDigits(t *testing.T) {
 }
 
 func TestWindowedSamples(t *testing.T) {
-	m := baseModel(80, 24)
+	m := baseModel(t, 80, 24)
 	r := history.New(1000)
 	for i := 0; i < 500; i++ {
 		r.Push(float64(i))
@@ -84,7 +66,7 @@ func TestWindowedSamples(t *testing.T) {
 }
 
 func TestScaleCycling(t *testing.T) {
-	m := baseModel(80, 24)
+	m := baseModel(t, 80, 24)
 	if scaleModeName(m.scaleMode) != "auto" {
 		t.Errorf("default scale = %q, want auto", scaleModeName(m.scaleMode))
 	}
@@ -199,7 +181,7 @@ func TestHeroPairCenteredOnScreen(t *testing.T) {
 	theme.SetTheme("default")
 	for _, w := range []int{80, 96, 120} {
 		m := goldenModel(w, 30)
-		m.animDown, m.animUp = 248_000, 197
+		m.rates.animDown, m.rates.animUp = 248_000, 197
 		out := stripANSI(m.View())
 		var first string
 		for _, line := range strings.Split(out, "\n") {

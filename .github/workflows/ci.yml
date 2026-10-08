@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -47,11 +50,10 @@ jobs:
       - name: go test
         run: go test ./... -race -count=1
 
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+  # Cross-compilation is checked explicitly: the README promises no cgo in the
+  # core path and release artifacts are built CGO-free for six targets.
+  cross-build:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -60,10 +62,11 @@ jobs:
           go-version: "1.24"
           cache: true
 
-      - name: build
-        run: go build -o flow ./cmd/flow
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: flow-${{ matrix.os }}
-          path: flow*
+      - name: cross-compile release targets
+        run: |
+          set -e
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os="${target%/*}"; arch="${target#*/}"
+            echo "building $target"
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -o /dev/null ./cmd/flow
+          done

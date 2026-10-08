@@ -14,21 +14,13 @@ func TestCompactViewRendersMinimalRows(t *testing.T) {
 	tracker := history.NewTracker()
 	tracker.PeakDown = 7 * 1024
 	tracker.PeakUp = 9 * 1024
-	m := Model{
-		width:           80,
-		height:          24,
-		animDown:        3 * 1024,
-		animUp:          5 * 1024,
-		rollingMaxDown:  3 * 1024,
-		rollingMaxUp:    5 * 1024,
-		downHist:        history.New(60),
-		upHist:          history.New(60),
-		tracker:         tracker,
-		refreshInterval: time.Second,
-		lastSampleTime:  time.Now(),
-		viewMode:        ViewCompact,
-		displayFilter:   DisplayBoth,
-	}
+	m := baseModel(t, 80, 24)
+	m.viewMode = ViewCompact
+	m.displayFilter = DisplayBoth
+	m.rates.animDown, m.rates.animUp = 3*1024, 5*1024
+	m.rates.rollingMaxDown, m.rates.rollingMaxUp = 3*1024, 5*1024
+	m.refreshInterval = time.Second
+	m.tracker = tracker
 
 	content := strings.Join(dashboardContentLines(m, ViewCompact), "\n")
 	for _, text := range []string{"download", "upload", "3 KB/s", "5 KB/s", "7 KB/s", "9 KB/s"} {
@@ -51,15 +43,8 @@ func TestViewNeverExceedsTerminalHeight(t *testing.T) {
 
 	for _, w := range widths {
 		for _, h := range heights {
-			m := Model{
-				width:           w,
-				height:          h,
-				tracker:         history.NewTracker(),
-				downHist:        history.New(60),
-				upHist:          history.New(60),
-				refreshInterval: time.Second,
-				lastSampleTime:  time.Now(),
-			}
+			m := baseModel(t, w, h)
+			m.refreshInterval = time.Second
 
 			mode, lines := pickViewModeAndContent(m)
 			if mode == ViewTiny {
@@ -84,7 +69,8 @@ func TestHelpOverlayFitsTerminal(t *testing.T) {
 	}
 	for _, sz := range sizes {
 		w, h := sz[0], sz[1]
-		m := Model{width: w, height: h, showHelp: true}
+		m := baseModel(t, w, h)
+		m.over.help = true
 		out := renderHelp(m)
 		lines := strings.Split(out, "\n")
 		if len(lines) > h {
@@ -111,15 +97,8 @@ func TestEffectiveViewModeFitsBeforeClamping(t *testing.T) {
 
 	for _, w := range widths {
 		for _, h := range heights {
-			m := Model{
-				width:           w,
-				height:          h,
-				tracker:         history.NewTracker(),
-				downHist:        history.New(60),
-				upHist:          history.New(60),
-				refreshInterval: time.Second,
-				lastSampleTime:  time.Now(),
-			}
+			m := baseModel(t, w, h)
+			m.refreshInterval = time.Second
 
 			mode, lines := pickViewModeAndContent(m)
 			if mode == ViewTiny {
@@ -147,15 +126,9 @@ func TestThemeMenuNeverOverflows(t *testing.T) {
 	for _, sz := range sizes {
 		w, h := sz[0], sz[1]
 		for _, sel := range []int{0, 3, 7, 10} {
-			m := Model{
-				width: w, height: h,
-				tracker:           history.NewTracker(),
-				downHist:          history.New(60),
-				upHist:            history.New(60),
-				showThemes:        true,
-				themeSelectionIdx: sel,
-				launchDone:        true,
-			}
+			m := baseModel(t, w, h)
+			m.over.themes = true
+			m.over.themeIndex = sel
 			out := renderThemes(m)
 			lines := strings.Split(out, "\n")
 			if len(lines) > h {
