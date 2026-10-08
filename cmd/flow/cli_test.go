@@ -216,15 +216,33 @@ func TestCLITiny(t *testing.T) {
 func TestCLINonTTYDefaultsToTiny(t *testing.T) {
 	// No TTY and no output flag: must not block on the TUI.
 	got := runCLI(t, 20*time.Second)
+
 	if got.exitCode != 0 {
-		t.Fatalf("exit = %d, stderr: %s", got.exitCode, got.stderr)
+		// A sandboxed runner may have no usable interface, in which case a
+		// clean non-zero exit with a diagnostic is the correct behaviour.
+		// Require that diagnostic to name the problem, so a crash or garbage
+		// output still fails rather than hiding behind the skip.
+		msg := strings.TrimSpace(got.stderr)
+		switch {
+		case msg == "":
+			t.Fatalf("exit = %d with empty stderr, want a diagnostic", got.exitCode)
+		case !strings.Contains(msg, "interface") && !strings.Contains(msg, "collector"):
+			t.Fatalf("exit = %d with unexpected stderr %q, want a collector diagnostic",
+				got.exitCode, msg)
+		}
+		t.Skipf("no usable interface here: %s", msg)
 	}
+
 	line := strings.TrimSpace(got.stdout)
 	if !strings.Contains(line, "↓") {
-		t.Errorf("non-TTY run should print the single-line form, got %q", line)
+		t.Errorf("non-TTY run should print the single-line form, got %q (stderr %q)",
+			line, got.stderr)
 	}
-	if strings.Count(line, "\n") > 0 {
+	if strings.Contains(line, "\n") {
 		t.Errorf("non-TTY output should be a single line, got %q", line)
+	}
+	if strings.Contains(line, "\x1b[") {
+		t.Error("non-TTY output must not contain escape codes")
 	}
 }
 

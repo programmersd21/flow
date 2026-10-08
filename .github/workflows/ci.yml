@@ -33,6 +33,9 @@ jobs:
 
   test:
     strategy:
+      # Run every platform even if one fails: on a cross-platform TUI, a
+      # fail-fast matrix hides the platform that actually broke.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
