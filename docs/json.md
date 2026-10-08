@@ -27,14 +27,14 @@ Emits a single JSON object on stdout, then exits.
 | field | type | units | notes |
 | ----- | ---- | ----- | ----- |
 | `status` | string | — | `"ok"` on success |
-| `timestamp` | string | RFC 3339, UTC | when the sample was taken |
+| `timestamp` | string | RFC 3339Nano, UTC (`Z` suffix) | when the sample was taken |
 | `interface` | string | — | interface the rates were read from; empty only if unavailable |
 | `download_bps` | number | **bytes per second** | never negative |
 | `upload_bps` | number | **bytes per second** | never negative |
 | `download_human` | string | — | preformatted for display, with `--bits` applied |
 | `upload_human` | string | — | preformatted for display |
-| `peak_down_bps` | number | bytes per second | session peak |
-| `peak_up_bps` | number | bytes per second | session peak |
+| `peak_down_bps` | number | bytes per second | highest rate observed since this process started |
+| `peak_up_bps` | number | bytes per second | highest rate observed since this process started |
 | `unit_display` | string | — | unit of `download_human`/`upload_human` |
 
 **Rates are always bytes per second** unless `--bits` is passed, in which case
@@ -58,7 +58,10 @@ Emits one JSON object per line (JSON Lines), continuously, until interrupted.
 {"status":"ok","timestamp":"...","interface":"wlan0","download_bps":2388000, ...}
 ```
 
-Each line is a complete JSON object with the same schema as `--once --json`.
+Each line is a complete JSON object with exactly the same schema as
+`--once --json` (all ten fields, same types). For a one-shot mode like
+`--once`, the peak values cover the two startup samples the process actually
+took; for `--json-stream` they are the running peak across the stream.
 Lines are written as samples arrive, so `--json-stream` is meant to be piped;
 it does not exit on its own. Use `--once --json` for a snapshot.
 

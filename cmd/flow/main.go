@@ -132,7 +132,7 @@ func main() {
 	}
 
 	if *flagFormat != "" {
-		runFormat(smp, *flagFormat, *flagJSONStream, *flagWidth)
+		runFormat(smp, *flagFormat, *flagJSONStream, *flagWidth, refresh)
 		return
 	}
 
@@ -142,7 +142,7 @@ func main() {
 	}
 
 	if *flagJSON || *flagOnce {
-		runOnce(smp, *flagJSON, cfg.Bits)
+		runOnce(smp, *flagJSON, cfg.Bits, refresh)
 		return
 	}
 
@@ -239,7 +239,7 @@ func runTiny(smp *sampler.Sampler, bits bool) {
 	fmt.Printf("↓ %s · ↑ %s\n", down, up)
 }
 
-func runOnce(smp *sampler.Sampler, asJSON bool, bits bool) {
+func runOnce(smp *sampler.Sampler, asJSON bool, bits bool, refresh time.Duration) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -257,19 +257,24 @@ func runOnce(smp *sampler.Sampler, asJSON bool, bits bool) {
 	}
 	cancel()
 
+	// Peaks are tracked over the samples this process actually observed.
+	tr := history.NewTracker()
+	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
+	tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
+
 	if asJSON {
 		down := ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits)
 		up := ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits)
 		out := map[string]interface{}{
 			"status":         "ok",
-			"timestamp":      time.Now().Format(time.RFC3339),
+			"timestamp":      s.At.UTC().Format(time.RFC3339Nano),
 			"interface":      s.Interface,
 			"download_bps":   s.DownBps,
 			"upload_bps":     s.UpBps,
 			"download_human": down,
 			"upload_human":   up,
-			"peak_down_bps":  s.DownBps,
-			"peak_up_bps":    s.UpBps,
+			"peak_down_bps":  tr.PeakDown,
+			"peak_up_bps":    tr.PeakUp,
 			"unit_display":   autoUnitExt(s.DownBps, bits),
 		}
 		enc := json.NewEncoder(os.Stdout)
@@ -296,18 +301,26 @@ func runJSONStream(smp *sampler.Sampler, refresh time.Duration, bits bool) {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
 		os.Exit(1)
 	}
+	// Peaks are the highest rates observed since the stream started.
+	tr := history.NewTracker()
+	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
 	for s := range smp.Out {
 		if s.Err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
 			os.Exit(1)
 		}
+		tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
 		_ = enc.Encode(map[string]interface{}{
+			"status":         "ok",
+			"timestamp":      s.At.UTC().Format(time.RFC3339Nano),
 			"interface":      s.Interface,
 			"download_bps":   s.DownBps,
 			"upload_bps":     s.UpBps,
 			"download_human": ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits),
 			"upload_human":   ui.FormatBpsExt(s.UpBps, ui.UnitAuto, bits),
-			"timestamp":      s.At.Format(time.RFC3339Nano),
+			"peak_down_bps":  tr.PeakDown,
+			"peak_up_bps":    tr.PeakUp,
+			"unit_display":   autoUnitExt(s.DownBps, bits),
 		})
 	}
 }
@@ -366,7 +379,7 @@ func autoUnitExt(bps float64, bits bool) string {
 	}
 }
 
-func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int) {
+func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int, refresh time.Duration) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -377,12 +390,15 @@ func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int) {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", s1.Err)
 		os.Exit(1)
 	}
+	tr := history.NewTracker()
+	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
 
 	for s := range smp.Out {
 		if s.Err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
 			os.Exit(1)
 		}
+		tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
 		todayDown, todayUp := todayTotals()
 		data := format.Data{
 			Iface:       s.Interface,
@@ -390,11 +406,11 @@ func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int) {
 			UpBps:       s.UpBps,
 			Down:        ui.FormatBpsExt(s.DownBps, ui.UnitAuto, false),
 			Up:          ui.FormatBpsExt(s.UpBps, ui.UnitAuto, false),
-			PeakDownBps: s.DownBps,
-			PeakUpBps:   s.UpBps,
+			PeakDownBps: tr.PeakDown,
+			PeakUpBps:   tr.PeakUp,
 			TodayDown:   format.Bytes(todayDown),
 			TodayUp:     format.Bytes(todayUp),
-			Time:        s.At.Format(time.RFC3339),
+			Time:        s.At.UTC().Format(time.RFC3339Nano),
 		}
 		out, err := format.RenderTemplate(tmplStr, data)
 		if err != nil {

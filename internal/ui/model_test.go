@@ -4,6 +4,8 @@ import (
 	"math"
 	"strings"
 	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestFormatBpsExt(t *testing.T) {
@@ -102,5 +104,57 @@ func TestFormatBps_Precision(t *testing.T) {
 	got := FormatBps(bps, UnitGB)
 	if !strings.Contains(got, "1.500") {
 		t.Errorf("FormatBps(1.5GB, GB) = %q; expected 1.500 GB/s", got)
+	}
+}
+
+func TestHelpOverlayKeyFlow(t *testing.T) {
+	m := newTestModel(t, 80, 24)
+	m.keys = DefaultKeyMap()
+
+	press := func(key string) Model {
+		var msg tea.KeyMsg
+		switch key {
+		case "?":
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}
+		case "q":
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
+		case "m":
+			msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}}
+		case "esc":
+			msg = tea.KeyMsg{Type: tea.KeyEsc}
+		default:
+			t.Fatalf("unknown key %q", key)
+		}
+		nm, _ := m.Update(msg)
+		return nm.(Model)
+	}
+
+	m = press("?")
+	if !m.over.help {
+		t.Fatal("? should open the help overlay")
+	}
+	m = press("m")
+	if m.viewMode != ViewHero {
+		t.Errorf("help overlay must swallow 'm'; viewMode = %v", m.viewMode)
+	}
+	if !m.over.help {
+		t.Error("'m' should not close the help overlay")
+	}
+	m = press("q")
+	if m.over.help {
+		t.Error("'q' should close the help overlay, not quit")
+	}
+	m = press("?")
+	m = press("esc")
+	if m.over.help {
+		t.Error("esc should close the help overlay")
+	}
+	m = press("?")
+	if !m.over.help {
+		t.Fatal("? should reopen the help overlay")
+	}
+	m = press("?")
+	if m.over.help {
+		t.Error("? should toggle the help overlay closed")
 	}
 }

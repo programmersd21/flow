@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -369,9 +370,21 @@ func TestCLIOnceJSON(t *testing.T) {
 	if _, err := time.Parse(time.RFC3339, ts); err != nil {
 		t.Errorf("timestamp %q is not RFC3339: %v", ts, err)
 	}
+	if pt, err := time.Parse(time.RFC3339Nano, ts); err != nil {
+		t.Errorf("timestamp %q is not RFC3339Nano: %v", ts, err)
+	} else if pt.Location() != time.UTC {
+		t.Errorf("timestamp %q is not UTC", ts)
+	}
 	iface, _ := doc["interface"].(string)
 	if iface == "" {
 		t.Error("interface should name the interface that was sampled")
+	}
+	// Peaks must cover the current sample, never fall below it.
+	if p, d := doc["peak_down_bps"].(float64), doc["download_bps"].(float64); p < d {
+		t.Errorf("peak_down_bps %v < download_bps %v", p, d)
+	}
+	if p, u := doc["peak_up_bps"].(float64), doc["upload_bps"].(float64); p < u {
+		t.Errorf("peak_up_bps %v < upload_bps %v", p, u)
 	}
 }
 
@@ -412,6 +425,72 @@ func TestCLIJSONStreamRepeatsValidRecords(t *testing.T) {
 	}
 	if n < 2 {
 		t.Errorf("expected repeated records from --json-stream, got %d", n)
+	}
+}
+
+// The stream schema is the same schema as --once --json, per docs/json.md.
+func TestCLIJSONStreamSchemaMatchesOnceJSON(t *testing.T) {
+	once := runCLI(t, 20*time.Second, "--once", "--json")
+	if once.exitCode != 0 {
+		t.Fatalf("--once --json exit = %d, stderr: %s", once.exitCode, once.stderr)
+	}
+	var onceDoc map[string]any
+	if err := json.Unmarshal([]byte(once.stdout), &onceDoc); err != nil {
+		t.Fatalf("--once --json is not valid JSON: %v", err)
+	}
+
+	stream := runCLI(t, 1500*time.Millisecond, "--json-stream", "--refresh", "100ms")
+	sc := bufio.NewScanner(strings.NewReader(stream.stdout))
+	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
+	n := 0
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" {
+			continue
+		}
+		var doc map[string]any
+		if err := json.Unmarshal([]byte(line), &doc); err != nil {
+			t.Fatalf("stream line %d is not valid JSON: %v\n%s", n+1, err, line)
+		}
+		n++
+		if len(doc) != len(onceDoc) {
+			t.Errorf("line %d: %d fields, want %d (same set as --once --json)", n, len(doc), len(onceDoc))
+		}
+		for k, v := range onceDoc {
+			got, ok := doc[k]
+			if !ok {
+				t.Errorf("line %d: missing field %q", n, k)
+				continue
+			}
+			if fmt.Sprintf("%T", got) != fmt.Sprintf("%T", v) {
+				t.Errorf("line %d: field %q is %T, want %T", n, k, got, v)
+			}
+		}
+		ts, _ := doc["timestamp"].(string)
+		if pt, err := time.Parse(time.RFC3339Nano, ts); err != nil {
+			t.Errorf("line %d: timestamp %q not RFC3339Nano: %v", n, ts, err)
+		} else if pt.Location() != time.UTC {
+			t.Errorf("line %d: timestamp %q is not UTC", n, ts)
+		}
+		if p, d := doc["peak_down_bps"].(float64), doc["download_bps"].(float64); p < d {
+			t.Errorf("line %d: peak_down_bps %v < download_bps %v", n, p, d)
+		}
+	}
+	if n < 2 {
+		t.Fatalf("expected repeated stream records, got %d", n)
+	}
+}
+
+// One JSON object per line; no human-readable noise mixed in.
+func TestCLIJSONStreamLinesAreClean(t *testing.T) {
+	got := runCLI(t, 1500*time.Millisecond, "--json-stream", "--refresh", "100ms")
+	sc := bufio.NewScanner(strings.NewReader(got.stdout))
+	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
+	for sc.Scan() {
+		line := sc.Text()
+		if !strings.HasPrefix(line, "{") || !strings.HasSuffix(line, "}") {
+			t.Errorf("line is not a single JSON object: %q", line)
+		}
 	}
 }
 

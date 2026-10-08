@@ -3,6 +3,18 @@
 Quality and reliability release. No new user-facing features.
 
 ### Fixed
+- **Peak rates were echoing the current sample.** `--once --json`,
+  `--json-stream`, and the `--format` template fields reported
+  `peak_down_bps`/`peak_up_bps` as the current rate, not a real peak. They
+  now use the session tracker: the highest rate observed since the process
+  started (for `--once`, the two startup samples the process took).
+- **`--once --json` used machine-local time for `timestamp`.** All JSON
+  timestamps are now explicitly UTC, `RFC3339Nano` (`Z` suffix), in both
+  `--once --json` and `--json-stream`.
+- **`--json-stream` had a different, smaller schema than `--once --json`.**
+  It now emits all ten documented fields (`status`, `timestamp`, `interface`,
+  `download_bps`, `upload_bps`, `download_human`, `upload_human`,
+  `peak_down_bps`, `peak_up_bps`, `unit_display`), one JSON object per line.
 - **Auto interface selection followed lifetime byte totals.** With the default
   `interface = "auto"`, flow ranked interfaces by cumulative bytes since boot. On
   a machine with a long-lived high-traffic NIC that later sits idle, flow
@@ -44,6 +56,12 @@ Quality and reliability release. No new user-facing features.
   non-braille rune is still compared exactly, so a real regression fails hard.
 
 ### Added
+- JSON contract tests: the stream schema must match `--once --json` exactly,
+  timestamps must parse as RFC3339Nano UTC, peaks must cover the current
+  sample, and every stream line must be one clean JSON object.
+- Tracker peak tests over increasing/decreasing sample sequences.
+- Help-overlay key-flow test (opens with `?`, closes with `esc`/`?`/`q`,
+  swallows view keys while open).
 - CLI contract tests that build the binary and exercise every flag, the invalid
   input paths, and the exit codes, with stdout and stderr assertions.
 - Sampler tests covering rate arithmetic, idle links, counter resets, uint64

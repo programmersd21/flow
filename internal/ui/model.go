@@ -430,24 +430,9 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if m.over.help && msg.String() != "ctrl+c" {
-		switch msg.String() {
-		case "esc", "?", "q":
-			m.over.help = false
-			return m, nil
-		}
-		// Modal overlay: swallow other keys so view-mode/quit actions
-		// don't fire behind the help screen (ctrl+c still quits below).
-		return m, nil
-	}
-
 	if key.Matches(msg, m.keys.Esc) {
 		if m.over.iface {
 			m.over.iface = false
-			return m, nil
-		}
-		if m.over.help {
-			m.over.help = false
 			return m, nil
 		}
 		if m.over.processes {

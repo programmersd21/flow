@@ -82,3 +82,24 @@ func TestTracker_Record_YearChange(t *testing.T) {
 		t.Errorf("expected TodayUp to reset and be 300, got %f", tracker.TodayUp)
 	}
 }
+
+func TestTrackerPeaksMonotonicOverSequences(t *testing.T) {
+	tr := NewTracker()
+	seqDown := []float64{100, 500, 200, 900, 50, 300}
+	seqUp := []float64{40, 10, 80, 60, 120, 30}
+	for i := range seqDown {
+		tr.Record(seqDown[i], seqUp[i], 1)
+	}
+	if tr.PeakDown != 900 || tr.PeakUp != 120 {
+		t.Errorf("peaks = (%v, %v), want (900, 120)", tr.PeakDown, tr.PeakUp)
+	}
+	// Decreasing traffic must never lower the peaks.
+	tr.Record(1, 1, 1)
+	if tr.PeakDown != 900 || tr.PeakUp != 120 {
+		t.Errorf("peaks after decrease = (%v, %v), want (900, 120)", tr.PeakDown, tr.PeakUp)
+	}
+	tr.ResetPeaks()
+	if tr.PeakDown != 0 || tr.PeakUp != 0 {
+		t.Errorf("after reset peaks = (%v, %v), want (0, 0)", tr.PeakDown, tr.PeakUp)
+	}
+}

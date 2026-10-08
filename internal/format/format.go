@@ -143,7 +143,7 @@ func RenderTemplate(tmplStr string, data Data) (string, error) {
 	return sb.String(), nil
 }
 
-// FormatTime renders t in RFC3339 for JSON and template output.
+// FormatTime renders t in RFC3339Nano, always UTC.
 func FormatTime(t time.Time) string {
-	return t.Format(time.RFC3339)
+	return t.UTC().Format(time.RFC3339Nano)
 }
