@@ -158,3 +158,21 @@ func TestHelpOverlayKeyFlow(t *testing.T) {
 		t.Error("? should toggle the help overlay closed")
 	}
 }
+
+func TestPeakPulseFiresAfterReset(t *testing.T) {
+	m := newTestModel(t, 80, 24)
+	// Reset peaks to 0
+	m.tracker.PeakDown = 0
+	m.tracker.PeakUp = 0
+	m.rates.downPulse = 0
+
+	// Deliver a positive sample; because PeakDown was 0, it must trigger a pulse
+	// (previously the `> 0` guard swallowed it).
+	sm := sampleMsg{DownBps: 5_000_000, UpBps: 1_000_000, Interface: "eth0", Interval: 1.0}
+	nm, _ := m.Update(sm)
+	newModel := nm.(Model)
+
+	if newModel.rates.downPulse <= 0 {
+		t.Errorf("downPulse = %v after peak from zero; want > 0 (pulse triggered)", newModel.rates.downPulse)
+	}
+}

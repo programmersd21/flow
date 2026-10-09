@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/programmersd21/flow/internal/sampler"
 	"testing"
 	"time"
 
@@ -21,7 +22,9 @@ func newTestModel(t testing.TB, w, h int) Model {
 	tr.PeakUp = 900_000
 	tr.TodayDown = 16_900_000
 	tr.TodayUp = 70_300_000
+	smp := sampler.New(nil, 100*time.Millisecond)
 	return Model{
+		smp:             smp,
 		width:           w,
 		height:          h,
 		cfg:             testConfig(),

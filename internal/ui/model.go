@@ -319,10 +319,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.paused {
 			m.rates.samplePulse = 1.0
 			m.rates.lastSample = time.Now()
-			if msg.DownBps > m.tracker.PeakDown && m.tracker.PeakDown > 0 {
+			// Compare against the peaks before recording, so a new peak can
+			// pulse. No "> 0" guard: after `r` resets the peaks to zero, the
+			// first sample is a genuine new peak and must register as one.
+			if msg.DownBps > m.tracker.PeakDown {
 				m.rates.downPulse = 1.0
 			}
-			if msg.UpBps > m.tracker.PeakUp && m.tracker.PeakUp > 0 {
+			if msg.UpBps > m.tracker.PeakUp {
 				m.rates.upPulse = 1.0
 			}
 
@@ -341,7 +344,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.rates.dispDown = msg.DownBps
 			m.rates.dispUp = msg.UpBps
-			m.tracker.Record(msg.DownBps, msg.UpBps, m.refreshInterval.Seconds())
+			// The sampler reports the seconds its rates actually cover; use
+			// that, not the configured refresh, so daily totals stay right when
+			// ticks are late.
+			interval := msg.Interval
+			if interval <= 0 {
+				interval = m.refreshInterval.Seconds()
+			}
+			m.tracker.Record(msg.DownBps, msg.UpBps, interval)
 			m.downHist.Push(msg.DownBps)
 			m.upHist.Push(msg.UpBps)
 			m.updateRollingMax(msg.DownBps, msg.UpBps)

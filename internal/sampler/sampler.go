@@ -11,8 +11,14 @@ type Sample struct {
 	DownBps   float64
 	UpBps     float64
 	Interface string
-	At        time.Time
-	Err       error
+	// At is the tick the sample was computed for.
+	At time.Time
+	// Interval is the seconds of real time this sample's rates cover: the
+	// sliding-window duration, not the configured refresh. Consumers that
+	// accumulate totals must use it, otherwise daily totals drift whenever
+	// ticks lag (loaded machine, suspended laptop, coarse timer).
+	Interval float64
+	Err      error
 }
 
 type entry struct {
@@ -24,6 +30,16 @@ type entry struct {
 // windowSlots: targets ~1 s window. At 250 ms default = 4 slots.
 const windowSlots = 4
 
+// Sampler turns OS counter readings into smoothed rates.
+//
+// Ownership: Run is the only writer, and it runs in the caller's goroutine.
+// Out is read by the consumer (UI or CLI). The send on Out is deliberately
+// non-blocking: a sample that cannot be delivered immediately is dropped.
+// The UI is freshness-oriented — a stale sample is worse than a missing one,
+// because the display would not match the moment it names — and blocking here
+// would let a stalled consumer stop sampling altogether. That lossiness is a
+// decision, not an oversight, and TestSamplerDoesNotBlockOnSlowConsumer locks
+// it in.
 type Sampler struct {
 	col      collector.Reader
 	interval time.Duration
@@ -51,21 +67,24 @@ func (s *Sampler) Run(ctx context.Context) {
 	prev, err := s.col.Read()
 	if err != nil {
 		select {
-		case s.Out <- Sample{Err: err, At: time.Now()}:
+		case s.Out <- Sample{Err: err, At: time.Now().UTC()}:
 		case <-ctx.Done():
 		}
 		return
 	}
 	var prevTime time.Time
 
+	// Prime the window: a single read cannot produce a rate, so take a second
+	// one shortly after the first to establish prevTime.
 	primeTimer := time.NewTimer(10 * time.Millisecond)
+	defer primeTimer.Stop()
 	select {
 	case <-ctx.Done():
 		return
 	case <-primeTimer.C:
 		if snap, err2 := s.col.Read(); err2 != nil {
 			select {
-			case s.Out <- Sample{Err: err2, At: time.Now()}:
+			case s.Out <- Sample{Err: err2, At: time.Now().UTC()}:
 			case <-ctx.Done():
 			}
 			return
@@ -123,6 +142,8 @@ func (s *Sampler) Run(ctx context.Context) {
 				s.full = true
 			}
 
+			// Window seconds this sample's rates are averaged over. Used both as the
+			// divisor and as the reporting interval, so the two can never disagree.
 			windowDt := s.dtSum
 			if windowDt <= 0 {
 				windowDt = float64(windowSlots) * s.interval.Seconds()
@@ -133,6 +154,7 @@ func (s *Sampler) Run(ctx context.Context) {
 				UpBps:     float64(s.txSum) / windowDt,
 				Interface: snap.Interface,
 				At:        t,
+				Interval:  windowDt,
 			}
 
 			select {

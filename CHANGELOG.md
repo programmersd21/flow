@@ -1,3 +1,33 @@
+## [0.3.4] - 2026-10-09
+
+Reliability, hardening, and verification patch.
+
+### Fixed
+- **Daily totals drift when ticks are delayed.** The sampler now attaches
+  the exact sliding-window duration (`Interval`) to each sample. The UI
+  and CLI now accumulate totals using this real duration rather than the
+  nominal refresh cadence, preventing total byte drift under load.
+- **Initial peak pulse ignored after reset.** When reset with `r`, the peak
+  pulse check previously guarded against zero peaks (`> 0`), swallowing the
+  first genuine peak pulse following the reset.
+- **Leaked startup timer on cancellation.** The sampler's initial 10ms priming
+  timer is now explicitly stopped on context cancellation.
+
+### Changed
+- **`make check` is a strict, deterministic quality gate.** Missing
+  `golangci-lint` now fails with an actionable error message rather than
+  silently skipping. A separate `make dev-check` target is provided for
+  fast local cycles without the linter.
+- **CI pinned and synchronised.** CI workflows now synchronise on `go.mod`
+  via `go-version-file`, enforce the pinned `golangci-lint` v2.14.0 release,
+  run `make check`, and exercise a dedicated CLI smoke test.
+
+### Added
+- **Performance benchmarks:** Added benchmarks for sampler throughput and
+  hero/compact UI views (`make bench`).
+- **Regression tests:** Added tests for sampler interval reporting,
+  sample delta accuracy, and peak pulse triggering following reset.
+
 ## [0.3.3] - 2026-10-04
 
 Quality and reliability release. No new user-facing features.

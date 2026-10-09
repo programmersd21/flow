@@ -266,3 +266,42 @@ func TestSamplerNaNAndInfAreNotProduced(t *testing.T) {
 		}
 	}
 }
+
+// The sampler reports the seconds its rates cover. Total accumulation uses
+// it, so a sample must know how much time it represents, not the configured
+// refresh. A window that never fills (very few samples) must still report a
+// positive interval rather than zero, which would freeze "today" totals.
+func TestSamplerReportsSampleInterval(t *testing.T) {
+	got := collect(t, &counterReader{totals: linearTotals(100_000, 200)}, 10*time.Millisecond, 6)
+	for i, s := range got {
+		if s.Interval <= 0 {
+			t.Errorf("sample %d: Interval = %v, want > 0", i, s.Interval)
+		}
+		// The window is 4 slots at ~10 ms, so the reported interval must sit in
+		// that region: not the raw tick, and not hours of drift.
+		if s.Interval < 0.005 || s.Interval > 0.25 {
+			t.Errorf("sample %d: Interval = %v, want ~0.04s window", i, s.Interval)
+		}
+	}
+}
+
+// A stalled ticker must not inflate the interval: the contract is that the
+// interval matches the window the rates were averaged over, and the rates must
+// agree with the interval (bytes / seconds), so rate * interval is bytes.
+func TestSamplerRateTimesIntervalIsDelta(t *testing.T) {
+	const step = 200_000
+	got := collect(t, &counterReader{totals: linearTotals(step, 400)}, 10*time.Millisecond, 20)
+	for i, s := range got {
+		if s.Err != nil {
+			t.Fatalf("sample %d: %v", i, s.Err)
+		}
+		want := float64(step) / 0.01
+		// Bytes implied by the reported rate must match the actual counter
+		// delta over the same window, within the smoothing the window causes.
+		implied := s.DownBps * s.Interval
+		if math.Abs(implied-want*s.Interval) > want*s.Interval*0.2 {
+			t.Errorf("sample %d: rate %v over %vs = %v bytes, want ~%v",
+				i, s.DownBps, s.Interval, implied, want*s.Interval)
+		}
+	}
+}

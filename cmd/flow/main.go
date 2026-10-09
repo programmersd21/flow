@@ -259,8 +259,8 @@ func runOnce(smp *sampler.Sampler, asJSON bool, bits bool, refresh time.Duration
 
 	// Peaks are tracked over the samples this process actually observed.
 	tr := history.NewTracker()
-	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
-	tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
+	tr.Record(s1.DownBps, s1.UpBps, sampleInterval(s1, refresh))
+	tr.Record(s.DownBps, s.UpBps, sampleInterval(s, refresh))
 
 	if asJSON {
 		down := ui.FormatBpsExt(s.DownBps, ui.UnitAuto, bits)
@@ -303,13 +303,13 @@ func runJSONStream(smp *sampler.Sampler, refresh time.Duration, bits bool) {
 	}
 	// Peaks are the highest rates observed since the stream started.
 	tr := history.NewTracker()
-	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
+	tr.Record(s1.DownBps, s1.UpBps, sampleInterval(s1, refresh))
 	for s := range smp.Out {
 		if s.Err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
 			os.Exit(1)
 		}
-		tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
+		tr.Record(s.DownBps, s.UpBps, sampleInterval(s, refresh))
 		_ = enc.Encode(map[string]interface{}{
 			"status":         "ok",
 			"timestamp":      s.At.UTC().Format(time.RFC3339Nano),
@@ -332,6 +332,17 @@ func isTTY(f *os.File) bool {
 		return false
 	}
 	return fi.Mode()&os.ModeCharDevice != 0
+}
+
+// sampleInterval returns the real seconds a sample covers, so accumulated
+// totals match the sampling that actually happened rather than the configured
+// refresh (ticks lag when the machine is loaded or suspended). A sample that
+// carries no interval falls back to the configured refresh.
+func sampleInterval(s sampler.Sample, refresh time.Duration) float64 {
+	if s.Interval > 0 {
+		return s.Interval
+	}
+	return refresh.Seconds()
 }
 
 // todayTotals loads persisted today totals. Missing file means zeros, never an error.
@@ -391,14 +402,14 @@ func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int, ref
 		os.Exit(1)
 	}
 	tr := history.NewTracker()
-	tr.Record(s1.DownBps, s1.UpBps, refresh.Seconds())
+	tr.Record(s1.DownBps, s1.UpBps, sampleInterval(s1, refresh))
 
 	for s := range smp.Out {
 		if s.Err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
 			os.Exit(1)
 		}
-		tr.Record(s.DownBps, s.UpBps, refresh.Seconds())
+		tr.Record(s.DownBps, s.UpBps, sampleInterval(s, refresh))
 		todayDown, todayUp := todayTotals()
 		data := format.Data{
 			Iface:       s.Interface,

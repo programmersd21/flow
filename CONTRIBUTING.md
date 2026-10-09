@@ -15,7 +15,7 @@ reintroduces dashboard clutter.
 
 ## Setup
 
-Requires Go 1.22+ and git.
+Requires Go 1.24+ and git.
 
 ```
 git clone https://github.com/programmersd21/flow
@@ -28,7 +28,7 @@ Install golangci-lint (https://golangci-lint.run/):
 
 ```
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-  | sh -s -- -b $(go env GOPATH)/bin v1.59.1
+  | sh -s -- -b $(go env GOPATH)/bin v2.14.0
 ```
 
 ## Check suite
@@ -39,18 +39,22 @@ Run before every PR:
 make check
 ```
 
-Runs fmt-check, vet, lint, test in sequence. CI runs the same command.
+Runs fmt-check, vet, lint, test, race, and build in sequence. CI runs `make check`.
 
 | Command          | What it does                           |
 |------------------|----------------------------------------|
 | make build       | go build with ldflags from VERSION     |
-| make fmt         | gofmt -l -w .                          |
+| make fmt         | go fmt ./...                           |
 | make vet         | go vet ./...                           |
-| make lint        | golangci-lint run ./...                |
-| make test        | go test ./... -race -cover             |
-| make check       | fmt-check, vet, lint, test in sequence |
+| make lint        | golangci-lint run ./... (pinned v2.14.0)|
+| make test        | go test ./...                          |
+| make race        | go test -race ./...                    |
+| make check       | strict quality gate (fmt, vet, lint, test, race, build) |
+| make dev-check   | fast local check skipping lint         |
+| make bench       | run cpu/alloc benchmarks               |
+| make cross       | CGO-free cross builds                  |
+| make smoke       | run binary smoke tests                 |
 | make clean       | removes bin/ and dist/                 |
-| make release-dry | goreleaser snapshot, no publish        |
 
 ## Commits
 
@@ -66,9 +70,9 @@ refactor: extract formatBytes helper
 
 ## Branch protection
 
-main requires the build-and-test status check before merge. Enable in
+main requires the CI status check before merge. Enable in
 Settings > Branches > Branch protection rules and add the check named
-build-and-test (the job name in ci.yml).
+`check` (the quality gate job in ci.yml).
 
 ## Versioning and releases
 
