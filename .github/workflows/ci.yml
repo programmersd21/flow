@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - name: Install golangci-lint (pinned)
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 
       - name: make check
         run: make check

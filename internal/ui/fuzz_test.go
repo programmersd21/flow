@@ -92,9 +92,6 @@ func FuzzFormatBytes(f *testing.F) {
 		if s == "" {
 			t.Fatal("formatBytes returned an empty string")
 		}
-		if math.IsNaN(b) {
-			return
-		}
 	})
 }
 

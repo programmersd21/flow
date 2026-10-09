@@ -21,7 +21,7 @@ BUILDDIR  := bin
 # The linter must be on PATH for the strict quality gate. The version is
 # pinned so a new golangci-lint release cannot turn a green tree red
 # unexpectedly; override with `make lint GOLANGCI_LINT=...` if needed.
-LINT_VERSION := v2.14.0
+LINT_VERSION := v2.1.6
 GOLANGCI_LINT ?= $(shell command -v golangci-lint 2>/dev/null || echo $(shell go env GOPATH)/bin/golangci-lint)
 
 .PHONY: all build install run test vet lint lint-optional tidy clean demo check dev-check bench cross fuzz smoke help

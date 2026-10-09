@@ -28,7 +28,7 @@ Install golangci-lint (https://golangci-lint.run/):
 
 ```
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-  | sh -s -- -b $(go env GOPATH)/bin v2.14.0
+  | sh -s -- -b $(go env GOPATH)/bin v2.1.6
 ```
 
 ## Check suite
@@ -46,7 +46,7 @@ Runs fmt-check, vet, lint, test, race, and build in sequence. CI runs `make chec
 | make build       | go build with ldflags from VERSION     |
 | make fmt         | go fmt ./...                           |
 | make vet         | go vet ./...                           |
-| make lint        | golangci-lint run ./... (pinned v2.14.0)|
+| make lint        | golangci-lint run ./... (pinned v2.1.6)|
 | make test        | go test ./...                          |
 | make race        | go test -race ./...                    |
 | make check       | strict quality gate (fmt, vet, lint, test, race, build) |
