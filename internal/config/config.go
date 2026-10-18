@@ -9,7 +9,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -168,11 +168,13 @@ func Load() (Config, error) {
 	for _, k := range md.Undecoded() {
 		cfg.warnings = append(cfg.warnings, "unknown config key "+k.String())
 	}
+	// Keep the flat keys and the section keys in sync before validating, so a
+	// flat key (view, window_secs) is checked with the same clamps as its
+	// section form.
+	cfg.syncLegacy()
 	if err := cfg.validate(); err != nil {
 		cfg.warnings = append(cfg.warnings, err.Error())
 	}
-	// Keep the flat keys and the section keys in sync.
-	cfg.syncLegacy()
 	return cfg, nil
 }
 
@@ -203,11 +205,15 @@ var validViews = map[string]bool{"hero": true, "compact": true, "mini": true, "t
 var validUnits = map[string]bool{"auto": true, "kb": true, "mb": true, "gb": true}
 var validGlyphs = map[string]bool{"auto": true, "braille": true, "blocks": true, "ascii": true}
 var validScales = map[string]bool{"auto": true, "log": true, "sqrt": true, "fixed": true}
+
+// validMethods lists accepted [latency].method values. ICMP is accepted for
+// compatibility but measured over TCP; validate warns about that.
 var validMethods = map[string]bool{"auto": true, "icmp": true, "tcp": true}
 
 // validate clamps every invalid value back to its default and reports all
 // problems as a single comma-separated warning. Every value is checked, so one
-// bad key never leaves the rest of the file unclamped.
+// bad key never leaves the rest of the file unclamped. Warnings name the
+// offending value, not the replacement, so they are actionable.
 func (c *Config) validate() error {
 	var problems []string
 	warn := func(format string, args ...any) {
@@ -216,58 +222,69 @@ func (c *Config) validate() error {
 
 	switch {
 	case c.Refresh.Duration <= 0:
+		warn("refresh %s invalid; using 100ms", c.Refresh.Duration)
 		c.Refresh = duration{100 * time.Millisecond}
-		warn("refresh invalid; using 100ms")
 	case c.Refresh.Duration < 10*time.Millisecond:
+		warn("refresh %s too small; using 10ms", c.Refresh.Duration)
 		c.Refresh = duration{10 * time.Millisecond}
-		warn("refresh too small; using 10ms")
 	case c.Refresh.Duration > time.Minute:
+		warn("refresh %s too large; using 1m", c.Refresh.Duration)
 		c.Refresh = duration{time.Minute}
-		warn("refresh too large; using 1m")
 	}
 	if !validUnits[strings.ToLower(c.Unit)] {
-		c.Unit = "auto"
 		warn("unit %q invalid; using auto", c.Unit)
+		c.Unit = "auto"
 	}
 	if !validViews[strings.ToLower(c.UI.View)] {
-		c.UI.View = "hero"
 		warn("ui.view %q invalid; using hero", c.UI.View)
+		c.UI.View = "hero"
 	}
 	if !validGlyphs[strings.ToLower(c.UI.Glyphs)] {
-		c.UI.Glyphs = "auto"
 		warn("ui.glyphs %q invalid; using auto", c.UI.Glyphs)
+		c.UI.Glyphs = "auto"
 	}
 	if !validScales[strings.ToLower(c.Graph.Scale)] {
-		c.Graph.Scale = "auto"
 		warn("graph.scale %q invalid; using auto", c.Graph.Scale)
+		c.Graph.Scale = "auto"
 	}
 	if !validMethods[strings.ToLower(c.Latency.Method)] {
-		c.Latency.Method = "auto"
 		warn("latency.method %q invalid; using auto", c.Latency.Method)
+		c.Latency.Method = "auto"
+	}
+	if strings.EqualFold(c.Latency.Method, "icmp") {
+		// The pinger only speaks TCP; pretending icmp works would be a silent
+		// lie about what the number on screen measures.
+		warn("latency.method \"icmp\" is not implemented; measuring over TCP :443")
 	}
 	if c.UI.FPS < 15 {
-		c.UI.FPS = 15
 		warn("ui.fps %d below 15; using 15", c.UI.FPS)
+		c.UI.FPS = 15
 	}
 	if c.UI.FPS > 120 {
-		c.UI.FPS = 120
 		warn("ui.fps %d above 120; using 120", c.UI.FPS)
+		c.UI.FPS = 120
 	}
 	if c.UI.MaxWidth < 40 {
-		c.UI.MaxWidth = 40
 		warn("ui.max_width %d below 40; using 40", c.UI.MaxWidth)
+		c.UI.MaxWidth = 40
 	}
 	if c.UI.MaxWidth > 200 {
-		c.UI.MaxWidth = 200
 		warn("ui.max_width %d above 200; using 200", c.UI.MaxWidth)
+		c.UI.MaxWidth = 200
 	}
-	if c.Graph.Smoothing < 0 || c.Graph.Smoothing > 1 {
+	// NaN passes both comparisons; without the explicit check a smoothing=nan
+	// file made every sample NaN and rendered an empty graph.
+	if math.IsNaN(c.Graph.Smoothing) || c.Graph.Smoothing < 0 || c.Graph.Smoothing > 1 {
+		warn("graph.smoothing %v outside 0..1; using 0.35", c.Graph.Smoothing)
 		c.Graph.Smoothing = 0.35
-		warn("graph.smoothing outside 0..1; using 0.35")
 	}
 	if c.Storage.RetentionDays < 1 {
-		c.Storage.RetentionDays = 90
 		warn("storage.retention_days %d invalid; using 90", c.Storage.RetentionDays)
+		c.Storage.RetentionDays = 90
+	}
+	if _, ok := parseWindowSeconds(c.Graph.Window); !ok {
+		warn("graph.window %q unrecognized; using 60s", c.Graph.Window)
+		c.Graph.Window = "60s"
 	}
 	if len(c.Latency.Targets) == 0 {
 		c.Latency.Targets = []string{c.PingTarget}
@@ -276,8 +293,8 @@ func (c *Config) validate() error {
 		}
 	}
 	if strings.ToLower(c.Graph.Scale) == "fixed" && strings.TrimSpace(c.Graph.FixedMax) == "" {
-		c.Graph.FixedMax = "100MB/s"
 		warn("graph.fixed_max empty while scale=fixed; using 100MB/s")
+		c.Graph.FixedMax = "100MB/s"
 	}
 
 	if len(problems) == 0 {
@@ -348,24 +365,48 @@ func (c Config) HistoryEnabled() bool {
 }
 
 // WindowSeconds converts graph.window ("60s", "5m", "1h", "24h") to seconds.
+// Unrecognized values fall back to 60; validate warns about them at load.
 func (c Config) WindowSeconds() int {
-	switch strings.ToLower(strings.TrimSpace(c.Graph.Window)) {
-	case "1m":
-		return 60
-	case "5m":
-		return 300
-	case "15m":
-		return 900
-	case "1h":
-		return 3600
-	case "24h":
-		return 86400
-	default:
-		if secs, err := strconv.Atoi(strings.TrimSuffix(c.Graph.Window, "s")); err == nil && secs > 0 {
-			return secs
-		}
-		return 60
+	if secs, ok := parseWindowSeconds(c.Graph.Window); ok {
+		return secs
 	}
+	return 60
+}
+
+// parseWindowSeconds accepts the documented forms (1m, 5m, 15m, 1h, 24h) plus
+// any "<n>s", "<n>m", "<n>h". It reports failure so callers can warn instead
+// of silently substituting 60 seconds.
+func parseWindowSeconds(s string) (int, bool) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	switch s {
+	case "1m":
+		return 60, true
+	case "5m":
+		return 300, true
+	case "15m":
+		return 900, true
+	case "1h":
+		return 3600, true
+	case "24h":
+		return 86400, true
+	}
+	unit := 0
+	var num string
+	switch {
+	case strings.HasSuffix(s, "s"):
+		unit, num = 1, strings.TrimSuffix(s, "s")
+	case strings.HasSuffix(s, "m"):
+		unit, num = 60, strings.TrimSuffix(s, "m")
+	case strings.HasSuffix(s, "h"):
+		unit, num = 3600, strings.TrimSuffix(s, "h")
+	default:
+		return 0, false
+	}
+	n, err := strconv.Atoi(num)
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n * unit, true
 }
 
 // LatencyTargets returns the ping targets, falling back to ping_target.
@@ -437,11 +478,15 @@ func writeFile(path string, cfg Config) error {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp) // do not leave a stale temp file behind
+		return err
+	}
+	return nil
 }
 
-// Reload re-reads the config from disk, returning defaults-with-warnings if
-// the file became unreadable. Used by the hot-reload poller.
+// Reload re-reads the config from disk. Missing keys fall back to the built-in
+// defaults, exactly as they do on first load.
 func (c Config) Reload() (Config, error) {
 	path := c.path
 	if path == "" {
@@ -453,7 +498,9 @@ func (c Config) Reload() (Config, error) {
 	if _, err := os.Stat(path); err != nil {
 		return c, err
 	}
-	var next Config
+	// Decode over Defaults, not over a zero Config: a key deleted from the
+	// file must return to its default, not to the Go zero value.
+	next := Defaults()
 	md, err := toml.DecodeFile(path, &next)
 	if err != nil {
 		return c, fmt.Errorf("config: parse %s: %w", path, err)
@@ -462,22 +509,28 @@ func (c Config) Reload() (Config, error) {
 	for _, k := range md.Undecoded() {
 		next.warnings = append(next.warnings, "unknown config key "+k.String())
 	}
+	next.syncLegacy()
 	if err := next.validate(); err != nil {
 		next.warnings = append(next.warnings, err.Error())
 	}
-	next.syncLegacy()
 	return next, nil
 }
 
 // Watch polls path for modification-time changes. It returns a channel of
 // Config values whenever the file changes. Polling is used instead of fsnotify
 // to avoid a new dependency; the interval is coarse and the cost is one stat.
+//
+// The polling goroutine runs until the process exits; the channel is closed
+// immediately when there is no path to watch, and never otherwise.
 func Watch(cfg Config, interval time.Duration) <-chan Config {
 	out := make(chan Config, 1)
 	path := cfg.path
 	if path == "" {
 		close(out)
 		return out
+	}
+	if interval <= 0 {
+		interval = time.Second // time.NewTicker panics on non-positive input
 	}
 	last := modTime(path)
 	go func() {
@@ -504,11 +557,9 @@ func Watch(cfg Config, interval time.Duration) <-chan Config {
 func modTime(path string) time.Time {
 	fi, err := os.Stat(path)
 	if err != nil {
-		var zero time.Time
-		if errors.Is(err, fs.ErrNotExist) {
-			return zero
-		}
-		return zero
+		// Missing or unreadable both mean "cannot compare": the zero time
+		// differs from any real mtime, so the next successful poll reloads.
+		return time.Time{}
 	}
 	return fi.ModTime()
 }

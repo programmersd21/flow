@@ -24,9 +24,9 @@ type Info struct {
 	Connections int
 }
 
-// List enumerates all active TCP connections, groups them by PID,
-// resolves process names, and returns them sorted by connection count
-// descending.
+// List enumerates TCP endpoints (established connections and listeners),
+// groups them by PID, resolves process names, and returns them sorted by
+// connection count descending.
 func List() ([]Info, error) {
 	conns, err := net.Connections("tcp")
 	if err != nil {

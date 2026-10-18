@@ -1,5 +1,6 @@
 // internal/history/ring.go — fixed-size ring buffer for sparkline data.
-// Pre-allocated; no heap allocations after construction.
+// The backing buffer is allocated once; Push is allocation-free, while Slice
+// allocates a snapshot copy for the caller.
 
 package history
 

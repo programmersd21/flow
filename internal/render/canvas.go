@@ -2,6 +2,8 @@ package render
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 )
 
@@ -131,6 +133,37 @@ func (c *Canvas) RenderPlain() []string {
 
 type colorEmitter func(sb *strings.Builder, col string) bool
 
+// emitPalette16 writes the classic SGR code for a terminal palette index
+// ("0"-"15"). This is the only escape form that is guaranteed to resolve to
+// the user's own palette; 38;5;N enters the 256-color space, which some
+// terminals keep fixed to xterm's defaults instead of the configured colors.
+// Reports false when idx is outside 0-15.
+func emitPalette16(sb *strings.Builder, idx int) bool {
+	switch {
+	case idx >= 0 && idx < 8:
+		fmt.Fprintf(sb, "\x1b[%dm", 30+idx)
+		return true
+	case idx >= 8 && idx < 16:
+		fmt.Fprintf(sb, "\x1b[%dm", 90+idx-8)
+		return true
+	}
+	return false
+}
+
+// emitIndexed handles a bare palette index: 0-15 via real 16-color SGR, and
+// anything above as a 256-color index. Reports false for non-numeric strings.
+func emitIndexed(sb *strings.Builder, col string) bool {
+	n, err := strconv.Atoi(col)
+	if err != nil {
+		return false
+	}
+	if emitPalette16(sb, n) {
+		return true
+	}
+	fmt.Fprintf(sb, "\x1b[38;5;%dm", n)
+	return true
+}
+
 func emitTruecolor(sb *strings.Builder, col string) bool {
 	if col == "" {
 		return false
@@ -141,8 +174,32 @@ func emitTruecolor(sb *strings.Builder, col string) bool {
 		fmt.Fprintf(sb, "\x1b[38;2;%d;%d;%dm", r, g, b)
 		return true
 	}
-	fmt.Fprintf(sb, "\x1b[38;5;%sm", col)
-	return true
+	return emitIndexed(sb, col)
+}
+
+// paletteRGB holds xterm's default values for the 16 ANSI colors. They are
+// only used to pick the nearest index when a truecolor value must be
+// downsampled; the emitted escape references the terminal's palette, not the
+// literal value.
+var paletteRGB = [16][3]uint8{
+	{0, 0, 0}, {205, 0, 0}, {0, 205, 0}, {205, 205, 0},
+	{0, 0, 238}, {205, 0, 205}, {0, 205, 205}, {229, 229, 229},
+	{127, 127, 127}, {255, 0, 0}, {0, 255, 0}, {255, 255, 0},
+	{92, 92, 255}, {255, 0, 255}, {0, 255, 255}, {255, 255, 255},
+}
+
+// quantize16 maps an RGB triplet to the nearest of the 16 ANSI palette colors.
+func quantize16(r, g, b uint8) int {
+	best, bestDist := 0, 1<<62
+	for i, c := range paletteRGB {
+		dr := int(r) - int(c[0])
+		dg := int(g) - int(c[1])
+		db := int(b) - int(c[2])
+		if d := dr*dr + dg*dg + db*db; d < bestDist {
+			best, bestDist = i, d
+		}
+	}
+	return best
 }
 
 // quantize256 maps an RGB triplet to the closest xterm-256 color index.
@@ -154,7 +211,14 @@ func quantize256(r, g, b uint8) int {
 		if r > 238 {
 			return 231
 		}
-		return 232 + int((float64(r)-8)/247*24)
+		// The 24-step gray ramp runs 8,18,...,238 (232-255). Integer division
+		// over a rounded ratio must land on 23 for 238; the previous formula
+		// stopped one short and mapped the brightest gray to a darker step.
+		step := int(math.Round(float64(int(r)-8) / 10.0))
+		if step > 23 {
+			step = 23
+		}
+		return 232 + step
 	}
 	ri := int(float64(r)/255*5 + 0.5)
 	gi := int(float64(g)/255*5 + 0.5)
@@ -179,8 +243,23 @@ func emit256(sb *strings.Builder, col string) bool {
 		fmt.Fprintf(sb, "\x1b[38;5;%dm", quantize256(r, g, b))
 		return true
 	}
-	fmt.Fprintf(sb, "\x1b[38;5;%sm", col)
-	return true
+	return emitIndexed(sb, col)
+}
+
+// emit16 is the 16-color degradation path: truecolor values are snapped to the
+// nearest palette entry and emitted as classic SGR. Emitting 38;5;N here (as
+// this used to) is a 256-color escape on a terminal that cannot show it.
+func emit16(sb *strings.Builder, col string) bool {
+	if col == "" {
+		return false
+	}
+	if strings.HasPrefix(col, "#") && len(col) == 7 {
+		var r, g, b uint8
+		_, _ = fmt.Sscanf(col, "#%02x%02x%02x", &r, &g, &b)
+		emitPalette16(sb, quantize16(r, g, b))
+		return true
+	}
+	return emitIndexed(sb, col)
 }
 
 // RenderLinesCap renders honoring a terminal color capability.
@@ -188,7 +267,9 @@ func (c *Canvas) RenderLinesCap(cap ColorCap) []string {
 	switch cap {
 	case CapNone:
 		return c.RenderPlain()
-	case Cap16, Cap256:
+	case Cap16:
+		return c.renderLines(emit16)
+	case Cap256:
 		return c.renderLines(emit256)
 	default:
 		return c.renderLines(emitTruecolor)

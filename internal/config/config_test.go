@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -261,5 +263,115 @@ func TestRenderedFileContainsEverySection(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("rendered config missing %s", want)
 		}
+	}
+}
+
+// Save is called at runtime (theme picker), so it must round-trip every
+// documented key. `history` used to be dropped, silently deleting the user's
+// setting the first time they picked a theme.
+func TestSaveKeepsLegacyHistoryKey(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "config.toml")
+	t.Setenv("FLOW_CONFIG", p)
+
+	cfg := Defaults()
+	cfg.History = 120
+	if err := Save(cfg); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	body, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), "history") {
+		t.Error("rendered config omits the history key")
+	}
+	loaded, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if loaded.History != 120 {
+		t.Errorf("history lost across Save/Load: %d, want 120", loaded.History)
+	}
+}
+
+// Reload must fall back to defaults for keys absent from the file, not to Go
+// zero values. Decoding over a zero Config returned fps=0, max_width=0, etc.
+func TestReloadFallsBackToDefaults(t *testing.T) {
+	cfg := loadFrom(t, "theme = \"nord\"\n")
+	next, err := cfg.Reload()
+	if err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	if next.Theme != "nord" {
+		t.Errorf("reload lost the theme: %q", next.Theme)
+	}
+	if next.UI.FPS != 60 || next.UI.MaxWidth != 100 {
+		t.Errorf("reload zeroed ui defaults: fps=%d max_width=%d", next.UI.FPS, next.UI.MaxWidth)
+	}
+	if next.Interface != "auto" || next.Graph.Smoothing != 0.35 {
+		t.Errorf("reload zeroed core defaults: iface=%q smoothing=%v",
+			next.Interface, next.Graph.Smoothing)
+	}
+}
+
+// NaN slips past both range comparisons, so it needs an explicit check.
+func TestNaNSmoothingIsClamped(t *testing.T) {
+	cfg := loadFrom(t, "[graph]\nsmoothing = nan\n")
+	if math.IsNaN(cfg.Graph.Smoothing) {
+		t.Fatal("NaN smoothing survived validation")
+	}
+	if cfg.Graph.Smoothing != 0.35 {
+		t.Errorf("smoothing = %v, want 0.35", cfg.Graph.Smoothing)
+	}
+	if len(cfg.Warnings()) == 0 {
+		t.Error("expected a warning for NaN smoothing")
+	}
+}
+
+// The flat `view` key is copied into [ui].view by syncLegacy, which must run
+// before validation so an invalid value is clamped like any other.
+func TestFlatViewKeyIsValidated(t *testing.T) {
+	cfg := loadFrom(t, "view = \"hologram\"\n")
+	if cfg.UI.View != "hero" {
+		t.Errorf("ui.view = %q, want hero", cfg.UI.View)
+	}
+	joined := strings.Join(cfg.Warnings(), ";")
+	if !strings.Contains(joined, "ui.view") {
+		t.Errorf("warnings do not mention ui.view: %v", cfg.Warnings())
+	}
+}
+
+// Warnings must name the offending value, not the replacement: a warning like
+// `unit "auto" invalid; using auto` tells the user nothing to fix.
+func TestWarningsNameTheOffendingValue(t *testing.T) {
+	cfg := loadFrom(t, "unit = \"furlongs\"\n")
+	joined := strings.Join(cfg.Warnings(), ";")
+	if !strings.Contains(joined, "furlongs") {
+		t.Errorf("warning should name the bad value: %v", cfg.Warnings())
+	}
+}
+
+func TestWindowParsing(t *testing.T) {
+	cases := map[string]int{
+		"30s": 30, "10m": 600, "2h": 7200,
+		"60s": 60, "1m": 60, "5m": 300, "15m": 900, "1h": 3600, "24h": 86400,
+	}
+	for in, want := range cases {
+		cfg := loadFrom(t, fmt.Sprintf("[graph]\nwindow = %q\n", in))
+		if got := cfg.WindowSeconds(); got != want {
+			t.Errorf("window %q = %d, want %d", in, got, want)
+		}
+		if len(cfg.Warnings()) != 0 {
+			t.Errorf("window %q produced warnings: %v", in, cfg.Warnings())
+		}
+	}
+
+	bad := loadFrom(t, "[graph]\nwindow = \"banana\"\n")
+	if bad.WindowSeconds() != 60 {
+		t.Errorf("bad window -> %d, want 60", bad.WindowSeconds())
+	}
+	if len(bad.Warnings()) == 0 {
+		t.Error("an unrecognized window should warn, not silently become 60s")
 	}
 }

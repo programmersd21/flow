@@ -21,6 +21,9 @@ type statsData struct {
 // convention under the user config dir. The override exists for the same reason
 // as FLOW_CONFIG: so tests, and anyone who wants flow's data kept apart from
 // its config, can point it somewhere else.
+//
+// The directory is created by Save, not here: Load and Reset must not have the
+// side effect of creating storage just because they asked where it lives.
 func statsPath() (string, error) {
 	base := os.Getenv("FLOW_DATA")
 	if base == "" {
@@ -34,11 +37,7 @@ func statsPath() (string, error) {
 			base = filepath.Join(home, ".config")
 		}
 	}
-	dir := filepath.Join(base, "flow")
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "stats.json"), nil
+	return filepath.Join(base, "flow", "stats.json"), nil
 }
 
 // Reset deletes the persisted stats file. Missing file is not an error.
@@ -53,9 +52,15 @@ func Reset() error {
 	return nil
 }
 
+// Save writes the tracker atomically (temp file + rename) so a crash, a full
+// disk, or a concurrent reader never sees a truncated stats file. The old
+// version truncated in place with os.Create and ignored Close errors.
 func (t *Tracker) Save() error {
 	path, err := statsPath()
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
 	data := statsData{
@@ -65,12 +70,19 @@ func (t *Tracker) Save() error {
 		Month:     int(t.Month),
 		Day:       t.Day,
 	}
-	f, err := os.Create(path)
+	buf, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	defer f.Close() //nolint:errcheck
-	return json.NewEncoder(f).Encode(data)
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, buf, 0o600); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return nil
 }
 
 func (t *Tracker) Load() error {

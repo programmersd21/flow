@@ -9,7 +9,10 @@ directory.
 `tokyo-night`, `rose-pine`, `kanagawa`, `ansi`.
 
 `ansi` steps through terminal palette indexes instead of RGB, so `flow` blends
-into whatever colorscheme your terminal defines. It is the safest choice on
+into whatever colorscheme your terminal defines. Waveform colors are emitted as
+classic 16-color SGR codes (`30-37`/`90-97`), which every terminal resolves
+through its own palette; download runs blue -> cyan, upload runs green ->
+yellow, and both crest toward bright white. It is the safest choice on
 terminals without truecolor.
 
 ## semantic tokens
@@ -84,7 +87,7 @@ tokens are added.
 
 `NO_COLOR` in the environment and `--no-color` on the command line both disable
 color entirely. `COLORTERM=truecolor` and a `TERM` containing `256color` select
-the gradient quality.
+the gradient quality; `TERM=dumb` disables color output.
 
 ## switching
 

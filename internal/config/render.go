@@ -23,6 +23,7 @@ func render(c Config) string {
 `)
 	p(`# ─── core ───────────────────────────────────────────────────────────────`)
 	p(`refresh     = %q      # sampling interval (e.g. "100ms", "250ms", "1s")`, c.Refresh.String())
+	p(`history     = %d      # samples kept per ring (x4); the ring always retains at least 1h`, c.History)
 	p(`theme       = %q      # default | nord | dracula | gruvbox | forest | monochrome |`, c.Theme)
 	p(`                       # catppuccin | tokyo-night | rose-pine | kanagawa | ansi`)
 	p(`unit        = %q      # auto | kb | mb | gb`, c.Unit)

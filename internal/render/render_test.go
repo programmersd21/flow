@@ -99,6 +99,90 @@ func TestGradientLUT(t *testing.T) {
 	}
 }
 
+// A bright-to-dark ramp used to wrap in the uint8 subtraction (end-start) and
+// snap back to bright at the midpoint. The values here are the exact output a
+// correct linear interpolation produces.
+func TestGradientLUTDescendingDoesNotWrap(t *testing.T) {
+	lut := NewGradientLUT(RGB{255, 255, 255}, RGB{0, 0, 0}, 5)
+	want := []RGB{
+		{255, 255, 255}, {191, 191, 191}, {128, 128, 128}, {64, 64, 64}, {0, 0, 0},
+	}
+	for i, w := range want {
+		if got := lut.Steps[i]; got != w {
+			t.Errorf("step %d = %v, want %v", i, got, w)
+		}
+	}
+}
+
+// Palette LUTs carry terminal palette indices all the way to the emitted
+// escape. They must use classic 16-color SGR (30-37/90-97) so the color is the
+// terminal's own, in every color profile.
+func TestPaletteLUTEmitsTrueANSIColors(t *testing.T) {
+	paint := func(palette string) *Canvas {
+		c := NewCanvas(2, 1)
+		DrawAreaFill(c, []float64{1.0}, false)
+		ColorRows(c, &LUT{Palette: []string{palette, palette}}, false)
+		return c
+	}
+	for _, cap := range []ColorCap{CapTrue, Cap256, Cap16} {
+		if got := paint("4").RenderLinesCap(cap)[0]; !strings.Contains(got, "\x1b[34m") {
+			t.Errorf("cap %v: palette 4 = %q, want SGR 34", cap, got)
+		}
+		if got := paint("12").RenderLinesCap(cap)[0]; !strings.Contains(got, "\x1b[94m") {
+			t.Errorf("cap %v: palette 12 = %q, want SGR 94", cap, got)
+		}
+		if got := paint("8").RenderLinesCap(cap)[0]; !strings.Contains(got, "\x1b[90m") {
+			t.Errorf("cap %v: palette 8 = %q, want SGR 90", cap, got)
+		}
+	}
+}
+
+// Under a 16-color cap a truecolor theme must be quantized to a 16-color SGR
+// code, not emitted as a 256-color escape the terminal cannot render.
+func TestCap16QuantizesHexToSixteenColors(t *testing.T) {
+	c := NewCanvas(2, 1)
+	DrawAreaFill(c, []float64{1.0}, false)
+	ColorRows(c, &LUT{Steps: []RGB{{255, 0, 0}, {255, 0, 0}}}, false)
+	if got := c.RenderLinesCap(Cap16)[0]; !strings.Contains(got, "\x1b[91m") {
+		t.Errorf("red under Cap16 = %q, want SGR 91", got)
+	}
+	if got := c.RenderLinesCap(CapTrue)[0]; !strings.Contains(got, "\x1b[38;2;255;0;0m") {
+		t.Errorf("red under CapTrue = %q, want truecolor escape", got)
+	}
+}
+
+func TestQuantize16(t *testing.T) {
+	cases := []struct {
+		r, g, b uint8
+		want    int
+	}{
+		{255, 0, 0, 9}, {0, 0, 0, 0}, {255, 255, 255, 15},
+		{0, 0, 238, 4}, {0, 205, 0, 2}, {229, 229, 229, 7},
+	}
+	for _, tc := range cases {
+		if got := quantize16(tc.r, tc.g, tc.b); got != tc.want {
+			t.Errorf("quantize16(%d,%d,%d) = %d, want %d", tc.r, tc.g, tc.b, got, tc.want)
+		}
+	}
+}
+
+func TestQuantize256GrayRampEndpoints(t *testing.T) {
+	if got := quantize256(8, 8, 8); got != 232 {
+		t.Errorf("gray 8 = %d, want 232", got)
+	}
+	if got := quantize256(238, 238, 238); got != 255 {
+		t.Errorf("gray 238 = %d, want 255", got)
+	}
+}
+
+func TestDetectColorCapDumbTerminal(t *testing.T) {
+	t.Setenv("TERM", "dumb")
+	t.Setenv("COLORTERM", "")
+	if got := DetectColorCap(false); got != CapNone {
+		t.Errorf("TERM=dumb -> %v, want CapNone", got)
+	}
+}
+
 func TestRenderWaveformGlyphs(t *testing.T) {
 	samples := []float64{0.1, 0.5, 0.9, 0.5, 0.1}
 	for _, g := range []GlyphSet{GlyphBraille, GlyphBlocks, GlyphAscii} {

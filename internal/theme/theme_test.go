@@ -101,3 +101,62 @@ func TestAllThemesProduceVisibleWaveform(t *testing.T) {
 		}
 	}
 }
+
+// The ANSI theme's signature accents must be blue (download) and green
+// (upload) like every other theme. The old code sampled the middle of the
+// gradient and painted the hero digits cyan and yellow; the swatches, sunken
+// into the same 0.5 stop, matched the mistake instead of the theme.
+func TestANSIAccentsAreBlueAndGreen(t *testing.T) {
+	SetTheme("ansi")
+	defer SetTheme("default")
+
+	for name, tc := range map[string]struct {
+		style lipgloss.Style
+		want  string
+	}{
+		"down": {DownStyle(), "12"},
+		"up":   {UpStyle(), "10"},
+	} {
+		got, ok := tc.style.GetForeground().(lipgloss.Color)
+		if !ok || string(got) != tc.want {
+			t.Errorf("%s accent = %v, want %q", name, tc.style.GetForeground(), tc.want)
+		}
+	}
+	d, u := ThemeSwatches("ansi")
+	if d != "12" || u != "10" {
+		t.Errorf("ansi swatches = %q/%q, want 12/10", d, u)
+	}
+}
+
+// ANSI gradients must climb to the brightest stop at the crest; ending on a
+// dimmer repeated stop made the top of the waveform look darkened.
+func TestANSIGradientsEndBright(t *testing.T) {
+	SetTheme("ansi")
+	defer SetTheme("default")
+	if got := GradientHex(true, 1); got != "15" {
+		t.Errorf("download crest = %q, want 15", got)
+	}
+	if got := GradientHex(false, 1); got != "15" {
+		t.Errorf("upload crest = %q, want 15", got)
+	}
+}
+
+// Status tokens on the ANSI theme use the bright variants so latency bands
+// stay legible on dark backgrounds.
+func TestANSIStatusTokensUseBrightVariants(t *testing.T) {
+	SetTheme("ansi")
+	defer SetTheme("default")
+	for name, tc := range map[string]struct {
+		style lipgloss.Style
+		want  string
+	}{
+		"good": {GoodStyle(), "10"},
+		"warn": {WarnStyle(), "11"},
+		"bad":  {BadStyle(), "9"},
+	} {
+		got, ok := tc.style.GetForeground().(lipgloss.Color)
+		if !ok || string(got) != tc.want {
+			t.Errorf("%s = %v, want %q", name, tc.style.GetForeground(), tc.want)
+		}
+	}
+}

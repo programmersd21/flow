@@ -344,23 +344,20 @@ var themes = []Theme{
 		TextPure:   "15", // Bright white
 		Border:     "8",  // Bright black border
 		Accent:     "6",  // Cyan accent
-		// Semantic tokens for ANSI theme
+		// Semantic tokens for ANSI theme. Down/Up and the Hi/Lo variants are
+		// derived from the stops below by populateSemanticTokens.
 		Fg:     "15",
 		Muted:  "7",
 		Subtle: "8",
-		Down:   "4",
-		Up:     "2",
-		DownHi: "14",
-		UpHi:   "11",
-		DownLo: "4",
-		UpLo:   "2",
-		Good:   "2",
-		Warn:   "3",
-		Bad:    "1",
-		// Vibrant 16-color palette gradients using blue/cyan for download & green/yellow for upload
-		ANSIDownload: [5]string{"4", "12", "6", "14", "12"}, // Blue -> Bright Blue -> Cyan -> Bright Cyan
-		ANSIUpload:   [5]string{"2", "10", "3", "11", "10"}, // Green -> Bright Green -> Yellow -> Bright Yellow
-		ANSILogo:     [4]string{"5", "13", "4", "6"},        // Magenta -> Bright Magenta -> Blue -> Cyan
+		Good:   "10", // Bright green: readable on dark backgrounds
+		Warn:   "11", // Bright yellow
+		Bad:    "9",  // Bright red
+		// Bright 16-color ramps, ending on the brightest stop so the crest of
+		// the waveform is its highest-contrast point: blue -> cyan -> white
+		// for download, green -> yellow -> white for upload.
+		ANSIDownload: [5]string{"4", "12", "6", "14", "15"},
+		ANSIUpload:   [5]string{"2", "10", "3", "11", "15"},
+		ANSILogo:     [4]string{"5", "13", "12", "14"},
 	},
 	{
 		Name:       "rose-pine",
@@ -448,23 +445,46 @@ func populateSemanticTokens(t *Theme) {
 	if t.Subtle == "" {
 		t.Subtle = t.TextDim
 	}
-	if t.Down == "" {
-		t.Down = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[1][0], t.DownloadStops[1][1], t.DownloadStops[1][2])
-	}
-	if t.Up == "" {
-		t.Up = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[1][0], t.UploadStops[1][1], t.UploadStops[1][2])
-	}
-	if t.DownHi == "" {
-		t.DownHi = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[4][0], t.DownloadStops[4][1], t.DownloadStops[4][2])
-	}
-	if t.UpHi == "" {
-		t.UpHi = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[4][0], t.UploadStops[4][1], t.UploadStops[4][2])
-	}
-	if t.DownLo == "" {
-		t.DownLo = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[0][0], t.DownloadStops[0][1], t.DownloadStops[0][2])
-	}
-	if t.UpLo == "" {
-		t.UpLo = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[0][0], t.UploadStops[0][1], t.UploadStops[0][2])
+	// Accent tiers follow the gradient stops so hero digits, swatches, and
+	// captions all agree. ANSI themes carry palette indices, RGB themes hex.
+	if t.usesANSI() {
+		if t.Down == "" {
+			t.Down = t.ANSIDownload[1]
+		}
+		if t.Up == "" {
+			t.Up = t.ANSIUpload[1]
+		}
+		if t.DownHi == "" {
+			t.DownHi = t.ANSIDownload[4]
+		}
+		if t.UpHi == "" {
+			t.UpHi = t.ANSIUpload[4]
+		}
+		if t.DownLo == "" {
+			t.DownLo = t.ANSIDownload[0]
+		}
+		if t.UpLo == "" {
+			t.UpLo = t.ANSIUpload[0]
+		}
+	} else {
+		if t.Down == "" {
+			t.Down = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[1][0], t.DownloadStops[1][1], t.DownloadStops[1][2])
+		}
+		if t.Up == "" {
+			t.Up = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[1][0], t.UploadStops[1][1], t.UploadStops[1][2])
+		}
+		if t.DownHi == "" {
+			t.DownHi = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[4][0], t.DownloadStops[4][1], t.DownloadStops[4][2])
+		}
+		if t.UpHi == "" {
+			t.UpHi = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[4][0], t.UploadStops[4][1], t.UploadStops[4][2])
+		}
+		if t.DownLo == "" {
+			t.DownLo = fmt.Sprintf("#%02x%02x%02x", t.DownloadStops[0][0], t.DownloadStops[0][1], t.DownloadStops[0][2])
+		}
+		if t.UpLo == "" {
+			t.UpLo = fmt.Sprintf("#%02x%02x%02x", t.UploadStops[0][0], t.UploadStops[0][1], t.UploadStops[0][2])
+		}
 	}
 	if t.Good == "" {
 		t.Good = "#10b981"
@@ -553,13 +573,8 @@ func ThemeSwatches(name string) (downHex, upHex string) {
 	if t == nil {
 		return "", ""
 	}
-	if t.usesANSI() {
-		// ANSI themes: palette indices, matching DownStyle/UpStyle exactly.
-		return string(ansiStop(t.ANSIDownload[:], 0.5)), string(ansiStop(t.ANSIUpload[:], 0.5))
-	}
-	// Use the accent tokens, i.e. the same colors the hero digits render in.
-	// Showing stops[2] (a pale pastel crest) instead made every swatch look
-	// lighter and less saturated than the numbers it is previewing.
+	// The accent tokens are exactly what DownStyle/UpStyle render, so the
+	// swatch always previews the color of the numbers it sits next to.
 	return t.Down, t.Up
 }
 
@@ -629,17 +644,11 @@ func Accent() lipgloss.Style {
 // crests fade toward near-white pastels by design — sampling up there yields
 // washed-out beige, while the accent token holds the theme's signature hue.
 func DownStyle() lipgloss.Style {
-	if activeTheme.usesANSI() {
-		return lipgloss.NewStyle().Foreground(ansiStop(activeTheme.ANSIDownload[:], 0.5)).Bold(true)
-	}
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Down)).Bold(true)
 }
 
 // UpStyle renders in the vivid upload accent hue at full saturation.
 func UpStyle() lipgloss.Style {
-	if activeTheme.usesANSI() {
-		return lipgloss.NewStyle().Foreground(ansiStop(activeTheme.ANSIUpload[:], 0.5)).Bold(true)
-	}
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Up)).Bold(true)
 }
 
@@ -815,35 +824,17 @@ func DirArrow(download bool) string {
 
 // GoodStyle returns a style for "all-clear" values (low latency, link up, etc.).
 func GoodStyle() lipgloss.Style {
-	if activeTheme.usesANSI() {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
-	}
-	if activeTheme.Good != "" {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Good)).Bold(true)
-	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("#10b981")).Bold(true)
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Good)).Bold(true)
 }
 
 // WarnStyle returns a style for elevated-but-not-critical values (medium latency, etc.).
 func WarnStyle() lipgloss.Style {
-	if activeTheme.usesANSI() {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true)
-	}
-	if activeTheme.Warn != "" {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Warn)).Bold(true)
-	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("#f59e0b")).Bold(true)
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Warn)).Bold(true)
 }
 
 // BadStyle returns a style for critical / error values (high latency, link down, etc.).
 func BadStyle() lipgloss.Style {
-	if activeTheme.usesANSI() {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
-	}
-	if activeTheme.Bad != "" {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Bad)).Bold(true)
-	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("#ef4444")).Bold(true)
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(activeTheme.Bad)).Bold(true)
 }
 
 var logoSrc = []string{

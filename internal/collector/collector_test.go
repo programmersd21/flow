@@ -16,6 +16,14 @@ func stat(name string, rx, tx uint64) gnet.IOCountersStat {
 // stats builds a slice of counters rows.
 func stats(rows ...gnet.IOCountersStat) []gnet.IOCountersStat { return rows }
 
+// pickAutoForTest drives auto-selection with a supplied counters set and
+// returns the chosen interface, so the selection policy can be tested against
+// specific traffic shapes without depending on real host interfaces.
+func (c *Collector) pickAutoForTest(s []gnet.IOCountersStat) string {
+	name, _, _ := c.pickAuto(s)
+	return name
+}
+
 func TestIsVirtual(t *testing.T) {
 	virtual := []string{"lo", "lo0", "docker0", "br-1234", "veth123", "virbr0", "vmnet8", "vboxnet0", "tun0", "tap0", "wg0"}
 	for _, n := range virtual {

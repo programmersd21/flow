@@ -25,7 +25,6 @@ type Reader interface {
 
 type counter struct {
 	bytes uint64
-	at    time.Time
 }
 
 // Collector reads interface byte counters.
@@ -80,7 +79,7 @@ func (c *Collector) Read() (Snapshot, error) {
 	if c.iface != "auto" {
 		for _, s := range stats {
 			if s.Name == c.iface {
-				c.prev[s.Name] = counter{bytes: s.BytesRecv + s.BytesSent, at: time.Now()}
+				c.prev[s.Name] = counter{bytes: s.BytesRecv + s.BytesSent}
 				return Snapshot{Interface: s.Name, RxBytes: s.BytesRecv, TxBytes: s.BytesSent}, nil
 			}
 		}
@@ -137,7 +136,7 @@ func (c *Collector) pickAuto(stats []gnet.IOCountersStat) (string, uint64, uint6
 	for i := range candidates {
 		s := candidates[i]
 		seen[s.Name] = true
-		c.prev[s.Name] = counter{bytes: s.BytesRecv + s.BytesSent, at: now}
+		c.prev[s.Name] = counter{bytes: s.BytesRecv + s.BytesSent}
 	}
 	for name := range c.prev {
 		if !seen[name] {
@@ -270,7 +269,7 @@ func InterfaceDetails(name string) (*InterfaceDetail, error) {
 		detail := &InterfaceDetail{
 			Name:         iface.Name,
 			HardwareAddr: iface.HardwareAddr,
-			IsUp:         len(iface.Flags) > 0,
+			IsUp:         false,
 			Mtu:          iface.MTU,
 		}
 		for _, addr := range iface.Addrs {
@@ -333,11 +332,3 @@ func isVirtual(name string) bool {
 }
 
 var virtualPrefixes = []string{"docker", "br-", "veth", "virbr", "vmnet", "vbox", "tun", "tap", "wg", "zt"}
-
-// pickAutoForTest drives auto-selection with a supplied counters set and
-// returns the chosen interface. It exists so the selection policy can be tested
-// against specific traffic shapes without depending on real host interfaces.
-func (c *Collector) pickAutoForTest(s []gnet.IOCountersStat) string {
-	name, _, _ := c.pickAuto(s)
-	return name
-}

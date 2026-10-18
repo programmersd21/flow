@@ -1,3 +1,54 @@
+## [0.3.5] - 2026-10-18
+
+Theme correctness and an audit pass over the sampling, config, and render
+paths. No new features.
+
+### Fixed
+- **The `ansi` theme rendered a black waveform.** Palette indices carried in
+  the gradient LUT were converted to RGB before reaching the canvas, and
+  non-hex strings parsed as `#000000`, so the graph was invisible on that
+  theme. The LUT now carries palette indices end to end, and the canvas emits
+  classic 16-color SGR codes (`30-37`/`90-97`) for them, so the terminal's own
+  palette is used rather than a 256-color approximation.
+- **The `ansi` theme discoloured its accents.** Download digits and swatches
+  were sampled from the middle of the gradient and came out cyan, upload came
+  out yellow. Accents now follow the theme's semantic tokens: bright blue for
+  download, bright green for upload, like every other theme. Status colors
+  moved to the bright variants for legibility on dark backgrounds, and both
+  gradients now climb to a bright crest instead of dimming at the top.
+- **16-color terminals received 256-color escapes.** `Cap16` now quantizes to
+  the 16 palette entries and emits classic SGR; `TERM=dumb` disables escapes
+  entirely. The 256-color gray ramp mapped its brightest gray one step short
+  of white.
+- **A multi-terabyte rate spike when the sampled interface changed.** With
+  `interface = "auto"`, switching NICs subtracted unrelated lifetime counters.
+  The sampler now resets its window on an interface change and reports a
+  zero-baseline tick instead of fabricated traffic.
+- **`history` was silently deleted from the config.** The rendered config
+  omitted the key, so saving (for example from the theme picker) rewrote the
+  file without it.
+- **Config warnings named the corrected value, not the offending one**, and
+  were never printed. `flow` now surfaces load-time warnings on stderr; NaN
+  `graph.smoothing` is rejected; `graph.window` accepts `10m`/`2h` style
+  values and warns on unrecognized ones; the flat `view` key is validated like
+  its section form.
+- **`Reload` decoded over a zero config**, so keys deleted from the file
+  reverted to zero values instead of defaults.
+- **Daily totals could be lost on crash.** `stats.json` is now written
+  atomically (temp + rename) instead of truncating in place.
+- **`NewGradientLUT` wrapped at descending gradients** (bright-to-dark ramps
+  snapped back to bright at the midpoint) due to uint8 subtraction.
+- **Interface details reported down links as up** when any flag was set; only
+  the `up` flag counts now.
+- **`--format` template edge cases**: negative `{{pad}}` widths and
+  negative/NaN `{{spark}}` samples are clamped, `{{spark .DownSamples}}` is
+  populated, and the template is compiled once instead of per sample.
+- **The UI title showed `dev` for `go install @latest` builds** while
+  `--version` showed the module version.
+- `sampler.New` clamps a non-positive interval (it reached
+  `time.NewTicker`, which panics); `config.Watch` guards its ticker the same
+  way.
+
 ## [0.3.4] - 2026-10-09
 
 Reliability, hardening, and verification patch.
@@ -19,7 +70,7 @@ Reliability, hardening, and verification patch.
   silently skipping. A separate `make dev-check` target is provided for
   fast local cycles without the linter.
 - **CI pinned and synchronised.** CI workflows now synchronise on `go.mod`
-  via `go-version-file`, enforce the pinned `golangci-lint` v2.14.0 release,
+  via `go-version-file`, enforce the pinned `golangci-lint` v2.1.6 release,
   run `make check`, and exercise a dedicated CLI smoke test.
 
 ### Added

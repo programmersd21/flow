@@ -83,3 +83,24 @@ func TestSaveLoadRoundTripUsesFlowData(t *testing.T) {
 		t.Error("Reset did not remove the stats file")
 	}
 }
+
+// Save is atomic (temp + rename) and leaves no temp file behind; Load must not
+// create the storage directory as a side effect of asking for the path.
+func TestSaveIsAtomicAndLoadDoesNotCreateStorage(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("FLOW_DATA", dir)
+
+	tr := NewTracker()
+	_ = tr.Load() // missing file is not an error for the caller
+	if _, err := os.Stat(filepath.Join(dir, "flow")); !os.IsNotExist(err) {
+		t.Error("Load created the storage directory")
+	}
+
+	tr.TodayDown, tr.TodayUp = 1, 2
+	if err := tr.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "flow", "stats.json.tmp")); !os.IsNotExist(err) {
+		t.Error("Save left a .tmp file behind")
+	}
+}

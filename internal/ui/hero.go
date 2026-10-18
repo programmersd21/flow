@@ -266,13 +266,25 @@ func idlePulseBrightness(now time.Time) float64 {
 }
 
 // buildThemeLUT builds a 32-step gradient LUT from the active theme.
+//
+// ANSI themes yield a palette LUT: their colors are terminal palette indices,
+// which have no RGB representation. Feeding them through hexToRGBRender (as an
+// RGB LUT would) read every index as black, which painted the entire waveform
+// black on the `ansi` theme.
 func buildThemeLUT(download bool) *render.LUT {
-	steps := make([]render.RGB, 32)
-	for i := range steps {
-		t := float64(i) / 31.0
-		steps[i] = hexToRGBRender(theme.GradientHex(download, t))
+	const steps = 32
+	if theme.UsesANSI() {
+		pal := make([]string, steps)
+		for i := range pal {
+			pal[i] = theme.GradientHex(download, float64(i)/float64(steps-1))
+		}
+		return &render.LUT{Palette: pal}
 	}
-	return &render.LUT{Steps: steps}
+	table := make([]render.RGB, steps)
+	for i := range table {
+		table[i] = hexToRGBRender(theme.GradientHex(download, float64(i)/float64(steps-1)))
+	}
+	return &render.LUT{Steps: table}
 }
 
 func hexToRGBRender(hex string) render.RGB {
@@ -283,14 +295,17 @@ func hexToRGBRender(hex string) render.RGB {
 	return render.RGB{R: r, G: g, B: b}
 }
 
-// flatLUT builds a single-color LUT for the no-gradient path.
+// flatLUT builds a single-color LUT for the no-gradient path. Palette indices
+// are kept as indices; only "#rrggbb" values go down the RGB path.
 func flatLUT(style lipgloss.Style) *render.LUT {
-	hex := theme.SubtleHex() // fallback, not a design color
+	col := theme.SubtleHex() // fallback, not a design color
 	if v, ok := style.GetForeground().(lipgloss.Color); ok {
-		hex = string(v)
+		col = string(v)
 	}
-	c := hexToRGBRender(hex)
-	return &render.LUT{Steps: []render.RGB{c}}
+	if !strings.HasPrefix(col, "#") {
+		return &render.LUT{Palette: []string{col}}
+	}
+	return &render.LUT{Steps: []render.RGB{hexToRGBRender(col)}}
 }
 
 // dimHexStr scales a theme color toward black for fixed chrome tones
@@ -440,7 +455,7 @@ func drawIdleLine(c *render.Canvas, brightness float64, inverted bool) {
 // brightenNowColumn tints the rightmost 2 columns toward the crest tone so the
 // eye sees live data entering.
 func brightenNowColumn(c *render.Canvas, lut *render.LUT) {
-	if lut == nil || len(lut.Steps) == 0 {
+	if lut == nil || lut.Empty() {
 		return
 	}
 	for cx := c.W - 2; cx < c.W; cx++ {
@@ -449,7 +464,7 @@ func brightenNowColumn(c *render.Canvas, lut *render.LUT) {
 		}
 		for cy := 0; cy < c.H; cy++ {
 			if c.Cell(cx, cy) != ' ' {
-				c.SetColor(cx, cy, lut.Sample(0.85).Hex())
+				c.SetColor(cx, cy, lut.SampleColor(0.85))
 			}
 		}
 	}
@@ -519,13 +534,13 @@ func cellHasDot(c *render.Canvas, x, y int) bool {
 
 // applyRipple overlays a gaussian brightness bump traveling leftward for ~400ms.
 func applyRipple(c *render.Canvas, elapsed time.Duration, lut *render.LUT, inverted bool) {
-	if elapsed < 0 || elapsed > 400*time.Millisecond || lut == nil || len(lut.Steps) == 0 {
+	if elapsed < 0 || elapsed > 400*time.Millisecond || lut == nil || lut.Empty() {
 		return
 	}
 	progress := elapsed.Seconds() / 0.4
 	centerX := float64(c.W) - progress*float64(c.W)*0.5
 	const sigma = 3.0
-	peak := lut.Sample(1.0).Hex()
+	peak := lut.SampleColor(1.0)
 	for cx := 0; cx < c.W; cx++ {
 		d := float64(cx) - centerX
 		if gain := math.Exp(-d * d / (2 * sigma * sigma)); gain > 0.6 {

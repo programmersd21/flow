@@ -78,7 +78,7 @@ func DrawAreaFill(c *Canvas, samples []float64, inverted bool) {
 // row shares one color, which keeps the waveform smooth — per-cell coloring
 // produced vertical striping artifacts.
 func ColorRows(c *Canvas, lut *LUT, inverted bool) {
-	if lut == nil || len(lut.Steps) == 0 || c.H <= 0 {
+	if lut == nil || lut.Empty() || c.H <= 0 {
 		return
 	}
 	denom := c.H - 1
@@ -93,7 +93,7 @@ func ColorRows(c *Canvas, lut *LUT, inverted bool) {
 			frac = float64(cy) / float64(denom) // axis at top
 		}
 		// Keep the axis-adjacent band readable, not invisible.
-		col := lut.Sample(0.2 + 0.8*frac).Hex()
+		col := lut.SampleColor(0.2 + 0.8*frac)
 		for cx := 0; cx < c.W; cx++ {
 			if c.Cell(cx, cy) != ' ' {
 				c.SetColor(cx, cy, col)
@@ -118,18 +118,4 @@ func Smooth(samples []float64, factor float64) []float64 {
 		out[i] = prev
 	}
 	return out
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

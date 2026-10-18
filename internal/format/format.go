@@ -2,6 +2,7 @@ package format
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"text/template"
@@ -47,6 +48,9 @@ var funcs = template.FuncMap{
 		return humanRate(bps, true)
 	},
 	"pad": func(n int, s string) string {
+		if n <= 0 {
+			return ""
+		}
 		r := []rune(s)
 		if len(r) >= n {
 			return string(r[:n])
@@ -84,7 +88,18 @@ var funcs = template.FuncMap{
 		}
 		var sb strings.Builder
 		for _, v := range samples {
+			// A negative or NaN sample must index block 0, not panic on a
+			// negative slice index.
+			if math.IsNaN(v) || v < 0 {
+				v = 0
+			}
 			idx := int(v / max * float64(len(blocks)-1))
+			if idx < 0 {
+				idx = 0
+			}
+			if idx >= len(blocks) {
+				idx = len(blocks) - 1
+			}
 			sb.WriteRune(blocks[idx])
 		}
 		return sb.String()
@@ -129,18 +144,29 @@ func humanBytes(b float64) string {
 	}
 }
 
-// RenderTemplate executes a user template against data. Template errors are
-// returned so the caller can exit with code 2 and a clear stderr message.
-func RenderTemplate(tmplStr string, data Data) (string, error) {
-	tmpl, err := template.New("format").Funcs(funcs).Parse(tmplStr)
-	if err != nil {
-		return "", err
-	}
+// Compile parses a template once, so streaming modes do not re-parse on every
+// sample. Use Render to execute it.
+func Compile(tmplStr string) (*template.Template, error) {
+	return template.New("format").Funcs(funcs).Parse(tmplStr)
+}
+
+// Render executes a compiled template against data.
+func Render(tmpl *template.Template, data Data) (string, error) {
 	var sb strings.Builder
 	if err := tmpl.Execute(&sb, data); err != nil {
 		return "", err
 	}
 	return sb.String(), nil
+}
+
+// RenderTemplate executes a user template against data. Template errors are
+// returned so the caller can exit with code 2 and a clear stderr message.
+func RenderTemplate(tmplStr string, data Data) (string, error) {
+	tmpl, err := Compile(tmplStr)
+	if err != nil {
+		return "", err
+	}
+	return Render(tmpl, data)
 }
 
 // FormatTime renders t in RFC3339Nano, always UTC.

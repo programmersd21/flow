@@ -305,3 +305,44 @@ func TestSamplerRateTimesIntervalIsDelta(t *testing.T) {
 		}
 	}
 }
+
+// When auto-selection switches interfaces the counters are unrelated lifetime
+// totals. Subtracting across the switch produced a multi-terabyte spike that
+// poisoned peaks, daily totals, and the graph scale.
+func TestSamplerInterfaceChangeDoesNotSpike(t *testing.T) {
+	const step = 100_000
+	totals := []collector.Snapshot{{Interface: "eth0", RxBytes: 1_000_000}}
+	for i := 1; i <= 6; i++ {
+		totals = append(totals, collector.Snapshot{Interface: "eth0", RxBytes: 1_000_000 + uint64(i)*step})
+	}
+	// wlan0 has a much larger lifetime counter when it takes over.
+	totals = append(totals, collector.Snapshot{Interface: "wlan0", RxBytes: 50_000_000})
+	for i := 1; i <= 6; i++ {
+		totals = append(totals, collector.Snapshot{Interface: "wlan0", RxBytes: 50_000_000 + uint64(i)*step/2})
+	}
+
+	got := collect(t, &counterReader{totals: totals}, 10*time.Millisecond, 12)
+	if len(got) == 0 {
+		t.Fatal("no samples delivered")
+	}
+	steady := float64(step) / 0.01 // 10 MB/s on eth0
+	for i, s := range got {
+		if s.Err != nil {
+			t.Fatalf("sample %d: %v", i, s.Err)
+		}
+		if s.DownBps > steady*1.5 {
+			t.Errorf("sample %d: %.0f B/s after interface switch, want <= %.0f",
+				i, s.DownBps, steady*1.5)
+		}
+	}
+}
+
+// The exported constructor must not hand time.NewTicker an interval that
+// makes it panic.
+func TestNewClampsNonPositiveInterval(t *testing.T) {
+	for _, d := range []time.Duration{0, -time.Second} {
+		if got := New(&counterReader{}, d).interval; got <= 0 {
+			t.Errorf("New(_, %v).interval = %v, want a positive default", d, got)
+		}
+	}
+}

@@ -127,7 +127,8 @@ const (
 )
 
 // DetectColorCap inspects the environment. NO_COLOR wins over everything,
-// then COLORTERM=truecolor/24bit, then a 256color TERM.
+// then TERM=dumb (no escape processing at all), then COLORTERM=truecolor/24bit,
+// then a 256color TERM.
 func DetectColorCap(noColorFlag bool) ColorCap {
 	if noColorFlag {
 		return CapNone
@@ -135,14 +136,18 @@ func DetectColorCap(noColorFlag bool) ColorCap {
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		return CapNone
 	}
+	term := strings.ToLower(os.Getenv("TERM"))
+	if term == "dumb" {
+		return CapNone
+	}
 	switch strings.ToLower(os.Getenv("COLORTERM")) {
 	case "truecolor", "24bit":
 		return CapTrue
 	}
-	if strings.Contains(strings.ToLower(os.Getenv("TERM")), "256color") {
+	if strings.Contains(term, "256color") {
 		return Cap256
 	}
-	if os.Getenv("TERM") == "" {
+	if term == "" {
 		return CapNone
 	}
 	return Cap16

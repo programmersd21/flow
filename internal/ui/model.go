@@ -249,10 +249,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) quickPing() tea.Cmd {
-	target := m.cfg.PingTarget
-	if target == "" {
-		target = "1.1.1.1"
-	}
+	target := m.pingTarget()
 	return func() tea.Msg {
 		latency, err := ping.Measure(target, 2*time.Second)
 		if err != nil {
@@ -260,6 +257,16 @@ func (m Model) quickPing() tea.Cmd {
 		}
 		return pingMsg(latency)
 	}
+}
+
+// pingTarget resolves the host to ping: the first configured latency target,
+// falling back to ping_target and then a well-known resolver.
+func (m Model) pingTarget() string {
+	targets := m.cfg.LatencyTargets()
+	if len(targets) > 0 && targets[0] != "" {
+		return targets[0]
+	}
+	return "1.1.1.1"
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -809,10 +816,7 @@ func tick() tea.Cmd {
 }
 
 func (m Model) pingTick() tea.Cmd {
-	target := m.cfg.PingTarget
-	if target == "" {
-		target = "1.1.1.1"
-	}
+	target := m.pingTarget()
 	return tea.Tick(5*time.Second, func(time.Time) tea.Msg {
 		latency, err := ping.Measure(target, 2*time.Second)
 		if err != nil {

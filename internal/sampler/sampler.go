@@ -56,11 +56,29 @@ type Sampler struct {
 // New returns a sampler reading counters from col. Sampling cadence is set by
 // interval; Out carries every computed Sample.
 func New(col collector.Reader, interval time.Duration) *Sampler {
+	if interval <= 0 {
+		// time.NewTicker panics on a non-positive interval; callers pass the
+		// validated config refresh, but the constructor is exported and must
+		// not carry a panic it can prevent.
+		interval = 100 * time.Millisecond
+	}
 	return &Sampler{
 		col:      col,
 		interval: interval,
 		Out:      make(chan Sample, 8),
 	}
+}
+
+// resetWindow clears the sliding window. It is used when the sampled
+// interface changes: the window holds deltas for the old link and averaging
+// them into the new one would misreport both.
+func (s *Sampler) resetWindow() {
+	s.ring = [windowSlots]entry{}
+	s.head = 0
+	s.full = false
+	s.rxSum = 0
+	s.txSum = 0
+	s.dtSum = 0
 }
 
 func (s *Sampler) Run(ctx context.Context) {
@@ -116,12 +134,24 @@ func (s *Sampler) Run(ctx context.Context) {
 				dt = s.interval.Seconds()
 			}
 
-			var rxDelta, txDelta uint64
-			if snap.RxBytes >= prev.RxBytes {
-				rxDelta = snap.RxBytes - prev.RxBytes
+			// An interface switch means the counters are unrelated: they are
+			// per-interface lifetime totals, so subtracting across the switch
+			// fabricates a multi-terabyte spike (the old NIC's total minus the
+			// new NIC's). Drop the window and report a zero-baseline tick
+			// instead of a lie.
+			switched := snap.Interface != prev.Interface
+			if switched {
+				s.resetWindow()
 			}
-			if snap.TxBytes >= prev.TxBytes {
-				txDelta = snap.TxBytes - prev.TxBytes
+
+			var rxDelta, txDelta uint64
+			if !switched {
+				if snap.RxBytes >= prev.RxBytes {
+					rxDelta = snap.RxBytes - prev.RxBytes
+				}
+				if snap.TxBytes >= prev.TxBytes {
+					txDelta = snap.TxBytes - prev.TxBytes
+				}
 			}
 
 			// Update the sliding window.

@@ -98,6 +98,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "flow: config error: %v\n", err)
 		// Non-fatal: continue with defaults already populated.
 	}
+	// Surface load-time warnings (unknown keys, clamped values) so config
+	// mistakes are visible instead of silently ignored.
+	for _, w := range cfg.Warnings() {
+		fmt.Fprintf(os.Stderr, "flow: config: %s\n", w)
+	}
 
 	if *flagIface != "" {
 		cfg.Interface = *flagIface
@@ -191,7 +196,7 @@ func main() {
 		initialIface = "auto"
 	}
 
-	ui.SetVersion(version)
+	ui.SetVersion(buildVersion())
 
 	model := ui.New(cfg, smp, ifaces, initialIface, cancel, forced)
 	if *flagWindow != "" {
@@ -391,6 +396,14 @@ func autoUnitExt(bps float64, bits bool) string {
 }
 
 func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int, refresh time.Duration) {
+	// Compile before sampling: a bad template is a usage error and should fail
+	// immediately, not after the first sample.
+	tmpl, err := format.Compile(tmplStr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "flow: template error: %v\n", err)
+		os.Exit(2)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -404,13 +417,24 @@ func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int, ref
 	tr := history.NewTracker()
 	tr.Record(s1.DownBps, s1.UpBps, sampleInterval(s1, refresh))
 
+	// Today totals are read once: they only change when this process writes
+	// them, which format mode never does.
+	todayDown, todayUp := todayTotals()
+
+	// recentDown feeds {{spark .DownSamples}}; it mirrors the sample stream
+	// rather than the full history so streaming stays allocation-light.
+	recentDown := make([]float64, 0, 60)
+
 	for s := range smp.Out {
 		if s.Err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", s.Err)
 			os.Exit(1)
 		}
 		tr.Record(s.DownBps, s.UpBps, sampleInterval(s, refresh))
-		todayDown, todayUp := todayTotals()
+		recentDown = append(recentDown, s.DownBps)
+		if len(recentDown) > 60 {
+			recentDown = recentDown[len(recentDown)-60:]
+		}
 		data := format.Data{
 			Iface:       s.Interface,
 			DownBps:     s.DownBps,
@@ -421,9 +445,10 @@ func runFormat(smp *sampler.Sampler, tmplStr string, stream bool, width int, ref
 			PeakUpBps:   tr.PeakUp,
 			TodayDown:   format.Bytes(todayDown),
 			TodayUp:     format.Bytes(todayUp),
+			DownSamples: recentDown,
 			Time:        s.At.UTC().Format(time.RFC3339Nano),
 		}
-		out, err := format.RenderTemplate(tmplStr, data)
+		out, err := format.Render(tmpl, data)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "flow: template error: %v\n", err)
 			os.Exit(2)

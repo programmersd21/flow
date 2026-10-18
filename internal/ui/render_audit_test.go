@@ -1,9 +1,11 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/programmersd21/flow/internal/render"
+	"github.com/programmersd21/flow/internal/theme"
 )
 
 // ─── render-path audit ───────────────────────────────────────────────────────
@@ -159,4 +161,40 @@ func contains(s, sub string) bool {
 		}
 	}
 	return false
+}
+
+// The ANSI theme's LUT must carry palette indices, not RGB. Converting them
+// through hexToRGBRender read every index as "#000000" and painted the entire
+// waveform black.
+func TestANSILUTKeepsPaletteIndices(t *testing.T) {
+	theme.SetTheme("ansi")
+	defer theme.SetTheme("default")
+
+	lut := buildThemeLUT(true)
+	if len(lut.Palette) == 0 {
+		t.Fatal("ANSI theme produced an RGB LUT; palette indices were lost")
+	}
+	for _, tc := range []float64{0, 0.25, 0.5, 0.75, 1} {
+		col := lut.SampleColor(tc)
+		if col == "" || strings.HasPrefix(col, "#") {
+			t.Errorf("SampleColor(%v) = %q, want a palette index", tc, col)
+		}
+	}
+	flat := flatLUT(theme.DownloadColor(0.85))
+	if len(flat.Palette) == 0 || strings.HasPrefix(flat.SampleColor(0.5), "#") {
+		t.Errorf("flat LUT lost the palette index: %+v", flat)
+	}
+
+	// End to end: the colored canvas must emit 16-color SGR, never black.
+	c := render.NewCanvas(20, 2)
+	render.DrawAreaFill(c, []float64{0.6, 0.6, 0.6}, false)
+	render.ColorRows(c, lut, false)
+	for _, line := range c.RenderLinesCap(render.CapTrue) {
+		if strings.Contains(line, "38;2;0;0;0") {
+			t.Errorf("ANSI waveform rendered black: %q", line)
+		}
+		if !strings.Contains(line, "\x1b[") {
+			t.Errorf("ANSI waveform rendered without color: %q", line)
+		}
+	}
 }
